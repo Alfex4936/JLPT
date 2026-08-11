@@ -52,7 +52,7 @@ jlpt-vocab-api(어휘) + KANJIDIC2(한자음)
 | 스크립트 | 역할 |
 |---|---|
 | `tools/build-base.js` | 원천 데이터 병합, 한자음 부착, 청크 TSV 생성. `SCRATCH` 에 원천 파일이 있어야 한다 |
-| `tools/kana2hangul.js` | かな → 한글. `{long:true}` 면 장음 표기(도쿄→도오쿄오). 단독 실행하면 자체 테스트 출력 |
+| `tools/kana2hangul.js` | かな → 한글. `{long:true}` 면 장음 표기(도쿄→도-쿄-). 단독 실행하면 자체 테스트 출력 |
 | `tools/example-hangul.js` | 예문 한글 발음. 한자 표기와 かな 읽기를 정렬해 어절 단위로 끊는다. 단독 실행 시 테스트 |
 | `tools/merge.js` | JSONL 병합 → `data/words-n*.js` + 품질 리포트. 정합성 검사와 중복 제거가 여기 있다 |
 | `tools/kanji-ko-fix.js` | KANJIDIC2 에 `korean_h` 가 없는 한자 보정표 + 두음법칙(령수→영수) |

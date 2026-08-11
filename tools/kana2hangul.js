@@ -53,10 +53,14 @@ function addFinal(syl, finalIdx) {
 }
 
 const VOWEL = { a: '아', i: '이', u: '우', e: '에', o: '오' };
+// 장음 표시 기호. 모음을 한 글자 더 쓰는 방식(도오쿄오)보다 길이를 눈에 바로 띄게 한다.
+// opts.longStyle = 'repeat' 를 주면 모음 반복 방식으로 돌아간다.
+const LONG_MARK = '-';
 
 // long: true 면 장모음을 한 글자 더 써서 박자를 살린다 (도쿄 -> 도오쿄오)
 function kanaToHangul(kana, opts) {
   const long = !!(opts && opts.long);
+  const mark = (opts && opts.longStyle === 'repeat') ? null : LONG_MARK;
   const s = KATA_TO_HIRA(String(kana).trim()).replace(/[・\s]/g, '');
   const out = [];
   let prevVowel = null;
@@ -68,7 +72,7 @@ function kanaToHangul(kana, opts) {
     const one = s[i];
 
     if (one === 'ー' || one === '～' || one === '〜') {
-      if (long && VOWEL[prevVowel]) out.push(VOWEL[prevVowel]); // コーヒー -> 고오히이
+      if (long && VOWEL[prevVowel]) out.push(mark || VOWEL[prevVowel]); // コーヒー -> 고-히-
       i += 1;
       continue;
     }
@@ -101,7 +105,7 @@ function kanaToHangul(kana, opts) {
       (entry.key === 'え' && prevVowel === 'e') ||
       (entry.key === 'お' && prevVowel === 'o');
     if (isLong) {
-      if (long && VOWEL[prevVowel]) out.push(VOWEL[prevVowel]);
+      if (long && VOWEL[prevVowel]) out.push(mark || VOWEL[prevVowel]);
       i += entry.len;
       continue;
     }
