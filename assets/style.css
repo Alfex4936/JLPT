@@ -12,8 +12,8 @@
 
 @font-face{font-family:"Noto Sans JP";font-style:normal;font-weight:400;font-display:swap;
   src:url("fonts/noto-sans-jp-japanese-400-normal.woff2") format("woff2")}
-@font-face{font-family:"Noto Sans JP";font-style:normal;font-weight:700;font-display:swap;
-  src:url("fonts/noto-sans-jp-japanese-700-normal.woff2") format("woff2")}
+/* JP 굵은 자체는 담지 않는다 — 굵게 쓰는 자리(.mark b)가 한국어라 KR 폰트가 그린다.
+   혹시 일본어에 700이 걸리면 브라우저 합성 볼드로 처리된다. 330KB 절약. */
 /* 라틴 서브셋은 unicode-range 로 좁혀야 일본어 선언을 덮어쓰지 않는다 */
 @font-face{font-family:"Noto Sans JP";font-style:normal;font-weight:400;font-display:swap;
   src:url("fonts/noto-sans-jp-latin-400-normal.woff2") format("woff2");
@@ -194,6 +194,8 @@ body.idle .chrome{opacity:0;pointer-events:none}
   font-weight:400;font-size:.62em;letter-spacing:.1em;
   color:var(--fg-3);margin-right:.45em;
 }
+/* 한자별 한자음은 아래 .hjp i b / .hjp i span 에서 이미 한자=Klee, 한글=KR 로 나뉘어 있다.
+   서브셋도 그 경계에 맞춰 글자를 담는다 (tools/font-charset.js). */
 .hjp{
   display:flex;gap:.9rem;flex-wrap:wrap;
   font-size:calc(clamp(.8rem,.9vmin + .48rem,1.15rem) * var(--scale));

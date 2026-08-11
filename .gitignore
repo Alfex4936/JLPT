@@ -8,3 +8,7 @@ _driver.js
 # 로컬 플러그인 토글 (머신마다 다름)
 .claude/settings.json
 .claude/settings.local.json
+
+# 서브셋 원본 폰트 (용량 큼, 재생성 가능)
+assets/fonts/original/
+tools/charset/
