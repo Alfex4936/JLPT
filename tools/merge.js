@@ -113,6 +113,8 @@ for (const f of files) {
     if (!PURE_KANA.test(k)) k = k.replace(/[^ぁ-んァ-ヴーゝゞ・]/g, '');
     if (!PURE_KANA.test(k)) k = PURE_KANA.test(w) ? w : (READING_FIX[w] || k);
     if (!k) k = w;
+    // 외래어 읽기가 히라가나로 풀려 온 항목이 있다 (アドレス帳 -> あどれすちょう). 표기에서 가타카나를 되살린다.
+    k = restoreKatakana(w, k);
     // 원천에 후리가나가 없으면 k 에 한자가 남고 kanaToHangul 이 조용히 그 글자를 버린다(食べる -> 베루).
     if (HAS_KANJI.test(k)) issues.kanjiInK++;
     // 읽기를 교정한 카드는 예문도 틀린 읽기로 쓰였을 수 있다 (昼間 -> ちゅうかん…). 같이 바꾼다.

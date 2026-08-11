@@ -58,14 +58,21 @@ const READING_FIX = {
   二人: 'ふたり',     // ににん — 「二人分」은 항상 ふたりぶん
 };
 
-// 외래어는 가타카나로 남아야 한다. 예문(e)에 가타카나가 그대로 있으므로 ek 를 복원할 수 있다.
-// 「ボールをうまくキャッチした」의 ek 가 「ぼーるをうまくきゃっちした」로 와 있었다.
+// 외래어는 가타카나로 남아야 한다. 표기(e)에 가타카나가 그대로 있으므로 읽기(ek)를 복원할 수 있다.
+// 예문에서: 「ボールをうまくキャッチした」의 ek 가 「ぼーるをうまくきゃっちした」로 와 있었다.
+// 표제어에서: 「アドレス帳」의 읽기가 「あどれすちょう」, 「コピー用紙」가 「こぴいようし」로 와 있었다.
+// 장음 부호는 원천에 따라 ー/い/お 로 갈리므로 그 자리만 느슨하게 맞춘다.
+const ESC = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 function restoreKatakana(e, ek) {
   if (!e || !ek) return ek;
   for (const run of e.match(/[ァ-ヴ][ァ-ヴー]*/g) || []) {
     if (ek.includes(run)) continue;
     const hira = run.replace(/[ァ-ヴ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
-    if (hira !== run && ek.includes(hira)) ek = ek.replace(hira, run);
+    if (hira === run) continue;
+    if (ek.includes(hira)) { ek = ek.replace(hira, run); continue; }
+    const loose = new RegExp([...hira].map((c) => (c === 'ー' ? '[ーあいうえお]' : ESC(c))).join(''));
+    const m = ek.match(loose);
+    if (m) ek = ek.replace(m[0], run);
   }
   return ek;
 }

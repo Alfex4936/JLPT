@@ -1,5 +1,7 @@
-// tools/gap-words.json 의 누락 어휘를 base.json 에 덧붙이고 번역용 청크 TSV 를 만든다.
-// 원천(jlpt-vocab-api)이 tanos 목록의 이형태·접사 행을 처리하다 흘린 단어들이다 (顔·父·母 포함).
+// 누락 어휘 목록을 base.json 에 덧붙이고 번역용 청크 TSV 를 만든다.
+// GAP=<tools 아래 파일명> 으로 목록을 고른다. PREFIX 는 청크 이름 접두사.
+//   gap-words.json : 원천(jlpt-vocab-api)이 tanos 의 이형태·접사 행을 흘린 302개 (顔·父·母 포함)
+//   rk-words.json  : realkana JLPT 덱에만 있던 912개 (実무·IT 어휘가 많다)
 const fs = require('fs');
 const path = require('path');
 const { kanaToHangul } = require('./kana2hangul');
@@ -30,7 +32,9 @@ const base = JSON.parse(fs.readFileSync(path.join(BUILD, 'base.json'), 'utf8'));
 const have = new Set(base.map((x) => x.w + '|' + x.k));
 let nextId = Math.max(...base.map((x) => x.id)) + 1;
 
-const gap = JSON.parse(fs.readFileSync(path.join(__dirname, 'gap-words.json'), 'utf8'));
+const GAP = process.env.GAP || 'gap-words.json';
+const PREFIX = process.env.PREFIX || 'gap';
+const gap = JSON.parse(fs.readFileSync(path.join(__dirname, GAP), 'utf8'));
 const added = [];
 for (const g of gap) {
   const key = g.w + '|' + g.k;
@@ -55,10 +59,10 @@ console.log('한자음 확보', added.filter((x) => x.hj).length, '| ? 포함', 
 
 // 청크: 급수 섞어서 gap-pNN. 이름을 분리해 기존 62개 청크와 섞이지 않게 한다.
 const manifest = JSON.parse(fs.readFileSync(path.join(BUILD, 'manifest.json'), 'utf8'))
-  .filter((m) => !m.name.startsWith('gap-'));
+  .filter((m) => !m.name.startsWith(PREFIX + '-'));
 for (let i = 0, part = 1; i < added.length; i += CHUNK, part++) {
   const slice = added.slice(i, i + CHUNK);
-  const name = `gap-p${String(part).padStart(2, '0')}`;
+  const name = `${PREFIX}-p${String(part).padStart(2, '0')}`;
   const tsv = slice.map((x) => [x.id, x.w, x.k, x.en].join('\t')).join('\n');
   fs.writeFileSync(path.join(BUILD, 'chunks', name + '.tsv'), tsv + '\n');
   manifest.push({ name, level: 0, count: slice.length, first: slice[0].w, last: slice.at(-1).w });
