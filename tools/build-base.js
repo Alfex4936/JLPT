@@ -66,7 +66,8 @@ console.log('한글표기 실패', all.filter((x) => !x.h).length);
 console.log('샘플:', all.filter(x=>x.hj).slice(0, 5).map((x) => `${x.w}(${x.k}/${x.h}/${x.hj}) ${x.en}`).join(' | '));
 
 // --- 청크: 급수별로 CHUNK개씩 TSV
-const CHUNK = Number(process.env.CHUNK || 280);
+// 140 초과 금지: 280행 청크는 번역 에이전트가 64000 output token 상한에 걸려 결과가 사라진다
+const CHUNK = Number(process.env.CHUNK || 140);
 const manifest = [];
 for (const lv of [5, 4, 3, 2, 1]) {
   const rows = all.filter((x) => x.lv === lv);

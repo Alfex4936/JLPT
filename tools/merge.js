@@ -21,7 +21,7 @@ const base = new Map(JSON.parse(fs.readFileSync(BASE_JSON, 'utf8')).map((x) => [
 const files = fs.existsSync(OUTDIR) ? fs.readdirSync(OUTDIR).filter((f) => f.endsWith('.jsonl')) : [];
 
 const merged = new Map();
-const issues = { badJson: 0, unknownId: 0, noKo: 0, badPos: [], kanjiInEk: 0, noEx: 0, dupe: 0, noKanjiKo: 0, rejectedFiles: [] };
+const issues = { badJson: 0, unknownId: 0, noKo: 0, badPos: [], kanjiInEk: 0, noEx: 0, dupe: 0, noKanjiKo: 0, kanjiInK: 0, rejectedFiles: [] };
 
 // id 정합성 검사: 예문에 그 id의 단어(또는 읽기)가 등장해야 한다.
 // 에이전트가 id를 1부터 새로 매기면 뜻이 엉뚱한 단어에 붙으므로 파일 단위로 걸러낸다.
@@ -113,6 +113,8 @@ for (const f of files) {
     if (!PURE_KANA.test(k)) k = k.replace(/[^ぁ-んァ-ヴーゝゞ・]/g, '');
     if (!PURE_KANA.test(k)) k = PURE_KANA.test(w) ? w : (READING_FIX[w] || k);
     if (!k) k = w;
+    // 원천에 후리가나가 없으면 k 에 한자가 남고 kanaToHangul 이 조용히 그 글자를 버린다(食べる -> 베루).
+    if (HAS_KANJI.test(k)) issues.kanjiInK++;
     // 읽기를 교정한 카드는 예문도 틀린 읽기로 쓰였을 수 있다 (昼間 -> ちゅうかん…). 같이 바꾼다.
     if (READING_FIX[w] && ek && !ek.includes(k) && kf[0] && ek.includes(kf[0])) ek = ek.replace(kf[0], k);
 
@@ -135,7 +137,7 @@ for (const f of files) {
 // 표기·읽기 정규화 후 같아진 항목 제거 (낮은 급수 → 작은 id 우선 보존)
 const seenPair = new Set();
 let collapsed = 0;
-for (const v of [...merged.values()].sort((a, b) => a.lv - b.lv || a.i - b.i)) {
+for (const v of [...merged.values()].sort((a, b) => b.lv - a.lv || a.i - b.i)) {
   const key = v.w + '|' + v.k;
   if (seenPair.has(key)) { merged.delete(v.i); collapsed++; continue; }
   seenPair.add(key);
