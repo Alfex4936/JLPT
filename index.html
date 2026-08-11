@@ -17,15 +17,16 @@ try{
 </script>
 
 <!-- ?v= 는 캐시 무효화용. CSS/JS 고칠 때 숫자만 올리면 새로고침에서 확실히 반영된다 -->
-<link rel="stylesheet" href="assets/style.css?v=20">
+<link rel="stylesheet" href="assets/style.css?v=22">
 
 <!-- 데이터: 없는 파일은 조용히 무시된다 (fetch 없음, script 태그만) -->
 <script>window.JLPT = window.JLPT || [];</script>
-<script src="data/words-n5.js?v=20"></script>
-<script src="data/words-n4.js?v=20"></script>
-<script src="data/words-n3.js?v=20"></script>
-<script src="data/words-n2.js?v=20"></script>
-<script src="data/words-n1.js?v=20"></script>
+<script src="data/words-n5.js?v=22"></script>
+<script src="data/words-n4.js?v=22"></script>
+<script src="data/words-n3.js?v=22"></script>
+<script src="data/words-n2.js?v=22"></script>
+<script src="data/words-n1.js?v=22"></script>
+<script src="data/kanji.js?v=22"></script>
 </head>
 <body>
 
@@ -79,6 +80,9 @@ try{
           <p class="ex-h" id="cExH"></p>
         </div>
       </div>
+
+      <!-- 한자 카드용: 이 한자를 쓰는 단어. 클릭하면 그 단어를 읽는다 -->
+      <div class="kex" id="cKex" hidden></div>
 
       <p class="en" id="cEn" hidden></p>
     </article>
@@ -158,6 +162,15 @@ try{
         <button class="btn" id="btnReshuffle" type="button">다시 섞기</button>
       </div>
       <p class="hint">셔플은 시드 기반이라 새로고침해도 같은 순서가 유지됩니다. 덱 끝에 닿으면 자동으로 다시 섞고 계속 재생합니다.</p>
+    </section>
+
+    <section class="grp">
+      <h3>학습 대상</h3>
+      <div class="chips" id="setChips">
+        <button class="btn" data-set="words" type="button">단어</button>
+        <button class="btn" data-set="kanji" type="button">한자</button>
+      </div>
+      <p class="hint" id="setHint"></p>
     </section>
 
     <section class="grp">
@@ -323,6 +336,6 @@ try{
   </div>
 </div>
 
-<script src="assets/app.js?v=20"></script>
+<script src="assets/app.js?v=22"></script>
 </body>
 </html>

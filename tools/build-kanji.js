@@ -71,8 +71,10 @@ const rows = [];
 for (const [c, lv] of [...lvOf.entries()].sort((a, b) => b[1] - a[1])) {
   const d = dic.get(c) || { on: [], kun: [], ko: null, en: [], st: 0, grade: 0 };
   const hj = d.ko || KANJI_KO_FIX[c] || null;
-  const on = d.on.slice(0, 4);
-  const kun = d.kun.map(KANA_CLEAN).filter(Boolean).slice(0, 4);
+  // KANJIDIC 은 오쿠리가나 경계를 점으로 준다(だ.す). 점을 떼면 だす 가 겹치므로 중복을 없앤다.
+  const uniq = (a) => [...new Set(a)];
+  const on = uniq(d.on).slice(0, 4);
+  const kun = uniq(d.kun.map(KANA_CLEAN).filter(Boolean)).slice(0, 4);
   rows.push({
     c, lv, st: d.st, grade: d.grade || 0,
     hj: hj ? initialSoundLaw(hj) : null,

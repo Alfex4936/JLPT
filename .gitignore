@@ -12,3 +12,4 @@ _driver.js
 # 서브셋 원본 폰트 (용량 큼, 재생성 가능)
 assets/fonts/original/
 tools/charset/
+_stub.js

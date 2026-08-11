@@ -260,6 +260,34 @@ body.idle .ex{cursor:none}
   line-height:1.5;color:var(--fg-3);
 }
 .ex-o{font-family:var(--f-kr);color:var(--fg-3)}
+
+/* 한자 카드: 이 한자를 쓰는 단어들 */
+.kex{display:flex;flex-direction:column;gap:.3em}
+.kex-row{
+  display:flex;align-items:baseline;gap:.55em;cursor:pointer;
+  border-radius:var(--r);border-left:2px solid transparent;
+  margin-left:-.8em;padding-left:.8em;
+  transition:border-color .18s ease;
+}
+.kex-row:hover{border-left-color:var(--accent)}
+body.idle .kex-row{cursor:none}
+.kex-row b{font-family:var(--f-word);font-weight:400;color:var(--fg);
+  font-size:calc(clamp(1rem,1.6vmin + .5rem,1.7rem) * var(--scale))}
+.kex-k{font-family:var(--f-jp);color:var(--fg-2)}
+.kex-h{font-family:var(--f-kr);color:var(--fg-3)}
+.kex-k,.kex-h{font-size:calc(clamp(.72rem,.85vmin + .32rem,1rem) * var(--scale))}
+.kex-row em{font-family:var(--f-kr);font-style:normal;color:var(--fg-3);margin-left:auto;
+  font-size:calc(clamp(.8rem,1vmin + .35rem,1.1rem) * var(--scale))}
+/* 훈독은 음독과 구별되게 — 음독이 한국 한자음과 이어지는 쪽이다 */
+.hjp i.is-kun b{color:var(--fg-3)}
+.hjp i.is-kun{opacity:.85}
+.hjp.k-read i:first-child::before,
+.hjp.k-read i.kun-first::before{
+  font-family:var(--f-kr);font-size:.8em;color:var(--fg-3);
+  margin-right:.15em;opacity:.75;
+}
+.hjp.k-read i:first-child::before{content:"음"}
+.hjp.k-read i.kun-first::before{content:"훈"}
 .en{
   font-size:calc(clamp(.8rem,.9vmin + .48rem,1.1rem) * var(--scale));
   color:var(--fg-3);letter-spacing:.01em;

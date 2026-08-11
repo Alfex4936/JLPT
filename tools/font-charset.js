@@ -7,16 +7,21 @@ const ROOT = path.join(__dirname, '..');
 const OUT = path.join(__dirname, 'charset');
 fs.mkdirSync(OUT, { recursive: true });
 
-global.window = { JLPT: [] };
+global.window = { JLPT: [], JLPT_KANJI: [] };
 for (const lv of [5, 4, 3, 2, 1]) {
   const f = path.join(ROOT, 'data', `words-n${lv}.js`);
   if (fs.existsSync(f)) require(f);
 }
+const KF = path.join(ROOT, 'data', 'kanji.js');
+if (fs.existsSync(KF)) require(KF);
 const W = global.window.JLPT;
+const KJ = global.window.JLPT_KANJI;
 
 // UI 문자 (마크업·스크립트 안의 한국어·기호 전부)
+// style.css 도 읽는다 — content: "음"/"훈" 처럼 CSS 안에만 있는 글자가 서브셋에서 빠지면 안 된다
 const ui = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')
-  + fs.readFileSync(path.join(ROOT, 'assets', 'app.js'), 'utf8');
+  + fs.readFileSync(path.join(ROOT, 'assets', 'app.js'), 'utf8')
+  + fs.readFileSync(path.join(ROOT, 'assets', 'style.css'), 'utf8');
 
 const add = (set, s) => { for (const ch of String(s || '')) set.add(ch); };
 
@@ -55,6 +60,23 @@ for (const x of W) {
   add(kr, x.p); add(kr, x.eo);
   add(kr, x.en);
 }
+// 한자 카드: 큰 글씨는 한자 한 자, 음독·훈독은 かな, 훈음·뜻은 한글, 예시 단어는 표기+かな+한글
+for (const k of KJ) {
+  add(word, k.c);
+  add(jp, k.c);
+  // 음독·훈독은 .hjp i b 가 그리고 그 셀렉터는 --f-word(Klee One) 다 — word 집합에도 넣어야 한다
+  (k.on || []).forEach((v) => { add(jp, v); add(word, v); });
+  (k.kun || []).forEach((v) => { add(jp, v); add(word, v); });
+  add(kr, k.hj); add(kr, k.hun);
+  (k.ko || []).forEach((m) => add(kr, m));
+  add(kr, k.en);
+  (k.ex || []).forEach(function (e) {
+    add(word, e[0]); add(jp, e[0]); add(jp, e[1]);
+    add(kr, e[2]); add(kr, e[3]);
+  });
+  (k.onH || []).concat(k.kunH || []).forEach((v) => add(kr, v));
+}
+
 // JP 폰트에서 한글 제거 (한글은 KR 폰트 담당)
 for (const c of [...jp]) if (isHangul(c)) jp.delete(c);
 

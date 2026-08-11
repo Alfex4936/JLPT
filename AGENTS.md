@@ -49,7 +49,16 @@ jlpt-vocab-api(어휘) + KANJIDIC2(한자음)
         │  tools/merge.js
         ▼
    data/words-n*.js
+        │  tools/build-kanji.js  (KANJIDIC2 + 이 단어들에서 예시 추출)
+        ▼
+   kanji-base.json ─ kchunks 8개 ─▶ 한자 에이전트 ─▶ kout/*.jsonl
+        │                            (.claude/agents/jlpt-kanji.md)
+        │  tools/merge-kanji.js
+        ▼
+   data/kanji.js
 ```
+
+한자 파이프라인이 단어 파이프라인 **뒤**에 온다 — 예시 단어를 `data/words-n*.js` 에서 뽑기 때문이다. 단어를 추가했으면 한자도 다시 만들어야 예시가 갱신된다.
 
 | 스크립트 | 역할 |
 |---|---|
@@ -58,6 +67,9 @@ jlpt-vocab-api(어휘) + KANJIDIC2(한자음)
 | `tools/kana2hangul.js` | かな → 한글. `{long:true}` 면 장음 표기(도쿄→도-쿄-). 단독 실행하면 자체 테스트 출력 |
 | `tools/example-hangul.js` | 예문 한글 발음. 한자 표기와 かな 읽기를 정렬해 어절 단위로 끊는다. 단독 실행 시 테스트 |
 | `tools/merge.js` | JSONL 병합 → `data/words-n*.js` + 품질 리포트. 정합성 검사와 중복 제거가 여기 있다 |
+| `tools/build-kanji.js` | 한자 2,118자: KANJIDIC2 읽기·획수·한자음 + 단어 덱에서 예시 단어 3개 → `kanji-base.json` + kchunks |
+| `tools/merge-kanji.js` | 한자 JSONL 병합 → `data/kanji.js`. 훈음 음절이 한자음과 어긋나면 버린다 |
+| `tools/kanji-list.txt` | 덱에 등장하는 고유 한자 2,118자, 급수별·빈도순. 외부 사이트에 붙여넣을 때 쓴다 |
 | `tools/kanji-ko-fix.js` | KANJIDIC2 에 `korean_h` 가 없는 한자 보정표 + 두음법칙(령수→영수) |
 | `tools/next-chunks.js` | 아직 번역 안 된 청크 이름 출력 |
 | `tools/wave.sh` | 유휴 에이전트 pane 회수 + 다음 청크 N개 출력 |
@@ -118,6 +130,25 @@ console.log("총",W.length,"| 배지",W.filter(x=>x.same).length);'
 ```
 
 기준값: 총 8,631 / 배지 3,909 / **예문-단어 불일치 1** / 나머지 전부 0.
+
+한자 데이터는 이걸 추가로 돌린다 — 기준값 한자 2,118 / 훈음 2,115 / 한자음 2,116, 나머지 0:
+
+```bash
+node -e '
+global.window={JLPT:[],JLPT_KANJI:[]};for(const l of [5,4,3,2,1])require("./data/words-n"+l+".js");
+require("./data/kanji.js");
+const W=window.JLPT, KJ=window.JLPT_KANJI;
+const chk=(n,v)=>console.log((v?"FAIL":"ok  ")+" "+n+(v?" = "+v:""));
+chk("한자 중복", KJ.length-new Set(KJ.map(x=>x.c)).size);
+chk("한자 뜻없음", KJ.filter(x=>!x.ko||!x.ko.length).length);
+chk("한자 예시없음", KJ.filter(x=>!x.ex||!x.ex.length).length);
+chk("훈음 음절 불일치", KJ.filter(x=>x.hun&&x.hj&&x.hun.split(/\s+/).pop()!==x.hj).length);
+const wu=new Set(W.map(x=>x.lv+"-"+x.i));
+chk("uid 충돌", KJ.filter(x=>wu.has(x.lv+"-"+x.i)).length);
+console.log("한자",KJ.length,"훈음",KJ.filter(x=>x.hun).length,"한자음",KJ.filter(x=>x.hj).length);'
+```
+
+`uid 충돌` 이 0 이어야 한다. 한자 카드의 `i` 는 `k1867` 처럼 접두사가 붙어 있어서 단어 uid(`5-12`)와 겹치지 않는다 — 겹치면 즐겨찾기·채점·본 횟수가 단어와 섞인다.
 
 그 1건은 `居る(おる)` 로, 예문이 かな 활용형(`部屋におります`)을 쓰는 정상 카드다 — 검사식이 `おる` 를 찾는데 문장에는 `おり` 만 있다. 0을 만들려고 검사식을 느슨하게 하지 말 것.
 
@@ -185,7 +216,9 @@ PY
 - **어절 경계는 발음을 바꾼다.** 표기법상 か·た행은 어두에서 평음, 어중에서 격음이라 잘못 끊으면 `とても`가 `토 데모`가 된다. 그래서 근거 없는 위치에서는 끊지 않는다(で·と·か·や 는 조사 분리 대상에서 제외 — です/とても 를 쪼갠다).
 - **헤드리스 TTS 검증은 발화 객체까지 가짜로 만들어야 한다.** `speechSynthesis` 만 바꿔치기하면 `utter()` 가 조용히 죽는다 — 가짜 음성 객체를 진짜 `SpeechSynthesisUtterance.voice` 에 대입하면 TypeError 고, 그게 `speak()` 의 `try` 에 먹힌다. `window.SpeechSynthesisUtterance` 도 같이 갈아끼울 것. 그리고 **드라이버 첫 줄에서 `localStorage.clear()`** — 헤드리스가 프로필을 재사용해서 앞 실행에서 켠 음소거가 남아 다음 실행이 전부 무음으로 나온다(실제로 한 번 헤맸다).
 - **`file://` 은 CSS/JS를 캐시한다.** 수정했는데 반영이 안 되면 `index.html` 의 `?v=N` 을 올린다. 안 올리면 사용자가 "안 바뀌었다"고 한다 — 실제로 두 번 겪었다.
-- **`.hjp i b` 는 Klee One(`--f-word`), `.hjp i span` 은 KR 폰트.** 폰트 서브셋이 이 경계를 전제로 글자를 나눠 담는다. 셀렉터를 바꾸면 서브셋도 다시 만들어야 한다.
+- **`.hjp i b` 는 Klee One(`--f-word`), `.hjp i span` 은 KR 폰트.** 폰트 서브셋이 이 경계를 전제로 글자를 나눠 담는다. 셀렉터를 바꾸면 서브셋도 다시 만들어야 한다. 한자 카드가 이 줄에 음독·훈독 かな 를 넣기 때문에 `tools/font-charset.js` 는 그 かな 를 `jp` 뿐 아니라 **`word` 집합에도** 넣는다 — 안 넣으면 Klee 가 못 그려서 폰트 폴백이 뜬다.
+- **CSS 안에만 있는 글자도 서브셋 대상이다.** 한자 카드의 음·훈 라벨은 `content:"음"` / `content:"훈"` 이라 마크업·JS 에 없다. `font-charset.js` 가 `style.css` 까지 읽는 이유다.
+- **한자 카드는 발음을 한 글자로 읽히지 않는다.** `日` 을 그냥 넘기면 음성이 ニチ/ひ 중 뭘 읽을지 알 수 없다. 대표 예시 단어의 かな 를 읽는다.
 - **Noto Sans JP 700 은 일부러 없다.** 굵은 일본어를 쓰는 자리가 `.mark b` 하나인데 내용이 한국어라 한 글자도 안 그렸다. 되살리지 말 것.
 
 ## UI 검증 방법
@@ -209,7 +242,9 @@ node -e 'const fs=require("fs");let h=fs.readFileSync("index.html","utf8");
 rm -f _test.html _driver.js
 ```
 
-기본 동작을 바꾸지 않았는지 항상 함께 확인한다: 전체 재생 모드에서 `1 / 8631`, 채점 버튼 `hidden`.
+기본 동작을 바꾸지 않았는지 항상 함께 확인한다: 전체 재생 모드에서 `1 / 8631`, 채점 버튼 `hidden`, 저장된 `set` 이 `words`.
+
+TTS 를 검증할 때는 발화 객체까지 가짜로 만들고(아래 함정 참고) `onend` 를 타이머로 흘려 줘야 발화 사슬(단어 → 쉼 → 예문)이 진행된다.
 
 ## 상태 저장
 

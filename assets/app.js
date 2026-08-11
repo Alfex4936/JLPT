@@ -19,7 +19,8 @@
     tts: true, voice: '', vol: 0.9, rate: 1, ttsAuto: true, ttsTwice: false, ttsEx: false, ttsGap: 700,
     showEx: true, showExH: true, longVowel: false, showEn: false, theme: 'dark',
     study: 'all', batchSize: 60, // study: all(기본, 지금까지의 동작) | batch | srs
-    tier: 'all', fastSame: false, tsuCh: false // tier: all | same(한자음=한국어) | diff(한자음 다름) | kana(한자 없음)
+    tier: 'all', fastSame: false, tsuCh: false, // tier: all | same(한자음=한국어) | diff(한자음 다름) | kana(한자 없음)
+    set: 'words' // set: words(기본) | kanji — 한자 카드는 옵션이다
   };
   var S = (function () {
     var saved = lsGet(K_SET, {}) || {}, o = {};
@@ -53,9 +54,11 @@
   window.addEventListener('pagehide', flush);
   document.addEventListener('visibilitychange', function () { if (document.hidden) { flush(); lsSet(K_SET, S); } });
 
-  /* ---------------- 데이터 ---------------- */
+  /* ---------------- 데이터 ----------------
+     단어 덱과 한자 덱은 별개 배열이고, 설정(S.set)이 지금 어느 쪽을 쓸지 고른다.
+     한자 데이터 파일이 없어도 앱은 그대로 뜬다 (절대 규칙 4). */
   var RAW = Array.isArray(window.JLPT) ? window.JLPT : [];
-  var ALL = [];
+  var ALL_W = [];
   for (var r = 0; r < RAW.length; r++) {
     var it = RAW[r];
     if (!it || typeof it !== 'object') continue;
@@ -63,14 +66,34 @@
     var lvn = Number(it.lv);
     if (!(lvn >= 1 && lvn <= 5)) continue;
     it.lv = lvn;
-    ALL.push(it);
+    ALL_W.push(it);
   }
-  var LEVELS = (function () {
+  var RAWK = Array.isArray(window.JLPT_KANJI) ? window.JLPT_KANJI : [];
+  var ALL_K = [];
+  for (var rk = 0; rk < RAWK.length; rk++) {
+    var kt = RAWK[rk];
+    if (!kt || typeof kt !== 'object' || !kt.c) continue;
+    var klv = Number(kt.lv);
+    if (!(klv >= 1 && klv <= 5)) continue;
+    kt.lv = klv; kt.kind = 'k'; kt.w = kt.c;
+    ALL_K.push(kt);
+  }
+  if (!ALL_K.length) S.set = 'words';
+  function activeSet() { return S.set === 'kanji' ? ALL_K : ALL_W; }
+  var ALL = activeSet();
+  function levelsOf(list) {
     var seen = {}, out = [];
-    for (var i = 0; i < ALL.length; i++) if (!seen[ALL[i].lv]) { seen[ALL[i].lv] = 1; out.push(ALL[i].lv); }
+    for (var i = 0; i < list.length; i++) if (!seen[list[i].lv]) { seen[list[i].lv] = 1; out.push(list[i].lv); }
     return out.sort(function (a, b) { return b - a; }); // N5 먼저
-  })();
+  }
+  var LEVELS = levelsOf(ALL);
+  // 한자 카드 uid 는 i 가 'k12' 라서 단어 uid('5-12')와 절대 겹치지 않는다 — 즐겨찾기·채점이 섞이면 안 된다.
   function uid(w) { return w.lv + '-' + (w.i != null ? w.i : w.w); }
+  function useSet(name) {
+    S.set = ALL_K.length && name === 'kanji' ? 'kanji' : 'words';
+    ALL = activeSet(); LEVELS = levelsOf(ALL);
+    save();
+  }
 
   /* ---------------- 덱 ---------------- */
   var deck = [], idx = 0;
@@ -98,6 +121,7 @@
      diff: 한자는 있는데 한국어 단어와 어긋난 단어 (勉強=면강/공부 — 진짜 외울 구간)
      kana: 한자가 없는 和語 (한국어 도움 0) */
   function tierOk(w) {
+    if (S.set === 'kanji') return true;   // 한자음 필터는 단어용이다 (한자 한 글자에는 '뜻과 겹친다'가 성립하지 않는다)
     if (S.tier === 'same') return !!w.same;
     if (S.tier === 'diff') return !!w.hj && !w.same;
     if (S.tier === 'kana') return !w.hj;
@@ -154,6 +178,7 @@
       cHangul = $('cHangul'), cHanja = $('cHanja'), cHanjaV = $('cHanjaV'), cHjp = $('cHjp'), cAlt = $('cAlt'),
       cMeans = $('cMeans'), meanWrap = $('meanWrap'), cEx = $('cEx'), ruleEx = $('ruleEx'),
       cExJ = $('cExJ'), cExK = $('cExK'), cExH = $('cExH'), cPron = $('cPron'), cExO = $('cExO'), cEn = $('cEn'),
+      cKex = $('cKex'),
       bar = $('bar'), counter = $('counter'), deckinfo = $('deckinfo'),
       panel = $('panel'), help = $('help'), icPlay = $('icPlay'),
       starGlyph = $('starGlyph'), btnFav = $('btnFav');
@@ -175,6 +200,25 @@
     cHjp.appendChild(ii);
     hjpNodes.push({ el: ii, k: bb, h: ss });
   }
+  // 한자 카드의 예시 단어 3줄. 줄을 클릭하면 그 단어를 읽는다.
+  var kexNodes = [];
+  for (var kx = 0; kx < 3; kx++) {
+    var row = document.createElement('div');
+    row.className = 'kex-row'; row.hidden = true;
+    row.title = '클릭하면 이 단어 발음';
+    var kw = document.createElement('b'), kk = document.createElement('span'),
+        kh = document.createElement('span'), ko2 = document.createElement('em');
+    kk.className = 'kex-k'; kh.className = 'kex-h';
+    row.appendChild(kw); row.appendChild(kk); row.appendChild(kh); row.appendChild(ko2);
+    cKex.appendChild(row);
+    kexNodes.push({ el: row, w: kw, k: kk, h: kh, o: ko2 });
+    (function (nodeIdx) {
+      row.onclick = function () {
+        var w = current(); if (!w || w.kind !== 'k' || !w.ex[nodeIdx]) return;
+        speakOne(w.ex[nodeIdx][1]);
+      };
+    })(kx);
+  }
 
   var ICON_PLAY = 'M7 4v16l13-8z';
   var ICON_PAUSE = 'M7 4h4v16H7zm6 0h4v16h-4z';
@@ -193,12 +237,83 @@
   // 출력에서 '쓰'는 つ/ツ 에서만 나오므로(kana2hangul 표 참조) 단순 치환이 정확하다.
   function pron(s) { return S.tsuCh && s ? s.replace(/쓰/g, '츠') : s; }
 
+  /* 한자 카드. 단어 카드와 자리를 공유한다:
+     큰 글씨 = 한자, 한글 발음 자리 = 훈음(날 일), 배지 = 한국 한자음, 한자별 한자음 줄 = 음독·훈독 쌍.
+     예문 자리에는 이 한자를 쓰는 단어 3개를 넣는다 — 이미 단어 카드로 본 것들이라 서로 보강된다. */
+  function paintKanji(w) {
+    cLv.textContent = LV_LABEL[w.lv] || ('N' + w.lv);
+    cPos.textContent = w.st ? w.st + '획' : '';
+    var seen = VIEWS[uid(w)] || 0;
+    cSeen.textContent = seen ? '본 횟수 ' + seen : '';
+
+    cKana.textContent = '';
+    cWord.textContent = w.c;
+    cHangul.textContent = w.hun || '';
+    if (w.hj) { cHanjaV.textContent = w.hj; cHanja.hidden = false; }
+    else cHanja.hidden = true;
+    cHanja.classList.remove('is-same');
+    cAlt.hidden = true;
+
+    // 음독·훈독을 かな + 한글 쌍으로. 8칸이므로 각각 최대 4개.
+    var pairs = [];
+    for (var a = 0; a < w.on.length && pairs.length < 4; a++) pairs.push([w.on[a], pron(w.onH[a] || '')]);
+    var onCount = pairs.length;
+    for (var b2 = 0; b2 < w.kun.length && pairs.length < 8; b2++) pairs.push([w.kun[b2], pron(w.kunH[b2] || '')]);
+    for (var i = 0; i < hjpNodes.length; i++) {
+      var n = hjpNodes[i];
+      if (i < pairs.length) {
+        n.k.textContent = pairs[i][0];
+        n.h.textContent = pairs[i][1];
+        n.el.hidden = false;
+        n.el.classList.toggle('is-kun', i >= onCount);
+        n.el.classList.toggle('kun-first', i === onCount);
+      } else { n.el.hidden = true; n.el.classList.remove('is-kun'); n.el.classList.remove('kun-first'); }
+    }
+    cHjp.classList.add('k-read');
+    cHjp.hidden = !pairs.length;
+
+    var ko = Array.isArray(w.ko) ? w.ko.slice(0, 3) : [];
+    for (var j = 0; j < meanNodes.length; j++) {
+      var mn = meanNodes[j];
+      if (j < ko.length) {
+        mn.num.textContent = ko.length > 1 ? String(j + 1) : '';
+        mn.num.hidden = ko.length <= 1;
+        mn.txt.textContent = ko[j];
+        mn.li.hidden = false;
+      } else mn.li.hidden = true;
+    }
+    revealed = !S.hide;
+    meanWrap.classList.toggle('masked', !revealed);
+
+    cEx.hidden = true;
+    var ex = Array.isArray(w.ex) ? w.ex.slice(0, 3) : [];
+    ruleEx.hidden = !ex.length;
+    cKex.hidden = !ex.length;
+    for (var e = 0; e < kexNodes.length; e++) {
+      var kn = kexNodes[e];
+      if (e < ex.length) {
+        kn.w.textContent = ex[e][0];
+        kn.k.textContent = ex[e][1];
+        kn.h.textContent = pron(ex[e][2] || '');
+        kn.o.textContent = ex[e][3] || '';
+        kn.el.hidden = false;
+      } else kn.el.hidden = true;
+    }
+
+    cEn.textContent = w.en || ''; cEn.hidden = !(S.showEn && w.en);
+    card.classList.remove('enter'); void card.offsetWidth; card.classList.add('enter');
+    fit();
+    paintChrome();
+  }
+
   function paint() {
     var w = current();
     var has = !!w;
     card.hidden = !has;
     empty.hidden = has;
     if (!has) { paintEmpty(); paintChrome(); return; }
+    if (w.kind === 'k') { paintKanji(w); return; }
+    cKex.hidden = true;
 
     cLv.textContent = LV_LABEL[w.lv] || ('N' + w.lv);
     cPos.textContent = w.p || '';
@@ -222,6 +337,7 @@
     cAlt.hidden = !alt.length;
 
     // 한자별 한자음
+    cHjp.classList.remove('k-read');
     var parts = w.hjp ? String(w.hjp).split(/\s+/).filter(Boolean) : [];
     for (var i = 0; i < hjpNodes.length; i++) {
       var n = hjpNodes[i];
@@ -301,9 +417,10 @@
     deckinfo.textContent = '';
     if (ALL.length) {
       var modeTxt = S.study === 'batch' ? '배치 루프' : S.study === 'srs' ? '복습' : (S.deck === 'fav' ? '즐겨찾기' : '전체');
-      if (S.tier !== 'all') modeTxt += ' · ' + TIER_LABEL[S.tier];
+      if (S.set === 'kanji') modeTxt = '한자 · ' + modeTxt;
+      else if (S.tier !== 'all') modeTxt += ' · ' + TIER_LABEL[S.tier];
       [lvTxt || '급수 없음',
-       modeTxt + ' ' + deck.length + '단어',
+       modeTxt + ' ' + deck.length + (S.set === 'kanji' ? '자' : '단어'),
        S.study === 'srs' ? '복습 대상 ' + dueCount() + '개' : (S.shuffle ? '셔플' : '순서대로')].forEach(function (s) {
         var el = document.createElement('span'); el.textContent = s; deckinfo.appendChild(el);
       });
@@ -507,10 +624,22 @@
     };
     try { SS.speak(u); } catch (e) {}
   }
+  function speakOne(text) {
+    if (!SS || !S.tts || !voices.length || !text) return;
+    stopSpeak();
+    speakChain([text], speakSeq);
+  }
   function speak() {
     if (!SS || !S.tts || !voices.length) return;
     var w = current(); if (!w) return;
     stopSpeak();
+    // 한자 한 글자는 음성이 읽기를 고를 수 없다 (日 = ニチ? ひ?). 대표 단어를 읽어 준다.
+    if (w.kind === 'k') {
+      var q2 = [];
+      for (var i = 0; i < w.ex.length && q2.length < (S.ttsEx ? 3 : 1); i++) q2.push(w.ex[i][1]);
+      if (q2.length) speakChain(S.ttsTwice ? [q2[0]].concat(q2) : q2, speakSeq);
+      return;
+    }
     var t = w.k || w.w, q = [t];
     if (S.ttsTwice) q.push(t);
     if (S.ttsEx && (w.ek || w.e)) q.push(w.ek || w.e);
@@ -718,6 +847,27 @@
 
   rng('rBatch', 'vBatch', 'batchSize', function (v) { return v + '단어'; }, 1);
 
+  function drawSet() {
+    Array.prototype.forEach.call($('setChips').children, function (b) {
+      b.classList.toggle('on', b.dataset.set === S.set);
+      b.setAttribute('aria-pressed', b.dataset.set === S.set ? 'true' : 'false');
+      b.disabled = b.dataset.set === 'kanji' && !ALL_K.length;
+    });
+    $('tierChips').parentNode.hidden = S.set === 'kanji';
+    $('setHint').textContent = !ALL_K.length
+      ? 'data/kanji.js 가 없어 한자 카드를 쓸 수 없습니다.'
+      : S.set === 'kanji'
+        ? '한자 ' + ALL_K.length + '자. 한 글자마다 한국 한자음·훈음·음독·훈독과 그 한자를 쓰는 단어를 보여줍니다. 단어 덱에 실제로 등장하는 한자만 있습니다.'
+        : '단어 ' + ALL_W.length + '개. 지금까지의 동작 그대로입니다.';
+  }
+  Array.prototype.forEach.call($('setChips').children, function (b) {
+    b.onclick = function () {
+      if (b.dataset.set === S.set) return;
+      useSet(b.dataset.set);
+      drawSet(); drawStudy(); drawLevels(); drawTier(); buildDeck();
+    };
+  });
+
   function drawStudy() {
     Array.prototype.forEach.call($('studyChips').children, function (b) {
       b.classList.toggle('on', b.dataset.study === S.study);
@@ -776,9 +926,10 @@
 
   $('selVoice').onchange = function () { S.voice = this.value; save(); };
 
-  // 급수 칩 - 런타임 데이터에서 유도
-  (function () {
+  // 급수 칩 - 런타임 데이터에서 유도. 학습 대상을 바꾸면 개수가 달라지므로 다시 그린다.
+  function drawLevels() {
     var box = $('lvChips'), hint = $('lvHint');
+    box.textContent = '';
     if (!LEVELS.length) {
       hint.textContent = '로드된 데이터가 없습니다. data 폴더에 words-n5.js 같은 파일을 넣으세요.';
       return;
@@ -802,7 +953,10 @@
     hint.textContent = missing.length
       ? '현재 ' + missing.map(function (n) { return LV_LABEL[n]; }).join(', ') + ' 데이터는 없습니다. 파일을 추가하면 자동으로 나타납니다.'
       : 'N5부터 N1까지 모두 로드되었습니다.';
-  })();
+    drawLv();
+  }
+  drawLevels();
+  drawSet();
   function drawLv() {
     var cur = activeLevels();
     Array.prototype.forEach.call($('lvChips').children, function (b) {
