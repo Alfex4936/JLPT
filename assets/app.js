@@ -172,6 +172,9 @@
 
   var ICON_PLAY = 'M7 4v16l13-8z';
   var ICON_PAUSE = 'M7 4h4v16H7zm6 0h4v16h-4z';
+  // 스피커 + 음파 / 스피커 + 사선(음소거)
+  var ICON_SOUND = 'M4 9v6h3l5 4V5L7 9H4zm11.5.5a4 4 0 010 5v-5zm1.8-2.3a7 7 0 010 9.6l1.1 1.1a8.5 8.5 0 000-11.8l-1.1 1.1z';
+  var ICON_MUTED = 'M4 9v6h3l5 4V5L7 9H4zm14.6 0L17.2 7.6 15 9.8l-2.2-2.2v2.1l1.1 1.1-1.1 1.1v2.1L15 14.2l2.2 2.2 1.4-1.4-2.2-2.2 2.2-2.2-1.4-1.4z';
 
   /* ---------------- 렌더 ---------------- */
   var revealed = false;
@@ -425,6 +428,7 @@
       sel.disabled = false; $('swTts').disabled = false;
       $('ttsHint').textContent = '카드가 바뀌면 이전 발화를 멈추고 새로 읽습니다.';
     }
+    syncMute(); // 음성 목록은 비동기로 도착하므로 음소거 버튼 상태를 다시 맞춘다
     paintChrome();
   }
   // macOS 는 노벨티 음성이 목록 앞에 오므로 표준 일본어 음성을 우선한다
@@ -546,6 +550,7 @@
       default:
         var c = e.key.toLowerCase();
         if (c === 's') { e.preventDefault(); $('btnFav').click(); }
+        else if (c === 'm') { e.preventDefault(); toggleMute(); }
         else if (c === 'v') { e.preventDefault(); speak(); }
         else if (c === 'f') { e.preventDefault(); toggleFs(); }
     }
@@ -587,7 +592,27 @@
 
   sw('swShuffle', 'shuffle', function () { var w = current(); buildDeck(w && uid(w)); });
   sw('swHide', 'hide', function () { revealed = !S.hide; meanWrap.classList.toggle('masked', !revealed); });
-  sw('swTts', 'tts', paintChrome);
+  /* 음소거: 설정의 '발음 사용' 스위치와 같은 값(S.tts)을 공유한다.
+     상태를 둘로 나누면 서로 어긋나므로 조작 경로만 둘로 둔다. */
+  var drawTts = sw('swTts', 'tts', function () { syncMute(); paintChrome(); });
+  function syncMute() {
+    var muted = !S.tts;
+    $('icMute').setAttribute('d', muted ? ICON_MUTED : ICON_SOUND);
+    $('btnMute').setAttribute('aria-pressed', muted ? 'true' : 'false');
+    $('btnMute').setAttribute('aria-label', muted ? '음소거 해제' : '음소거');
+    $('btnMute').title = (muted ? '음소거 해제' : '음소거') + ' (M)';
+    $('btnMute').classList.toggle('on', muted);
+    $('btnMute').disabled = !SS || !voices.length;
+  }
+  function toggleMute() {
+    if (!SS || !voices.length) return;
+    S.tts = !S.tts; save();
+    if (!S.tts) { try { SS.cancel(); } catch (e) {} }   // 재생 중인 발화도 즉시 끊는다
+    drawTts(); syncMute(); paintChrome();
+    toast(S.tts ? '소리 켜짐' : '음소거');
+  }
+  $('btnMute').onclick = toggleMute;
+  syncMute();
   sw('swAuto', 'ttsAuto');
   sw('swTwice', 'ttsTwice');
   sw('swExSpeak', 'ttsEx');
