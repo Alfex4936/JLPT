@@ -494,16 +494,26 @@
   });
 
   /* ---------------- 전체화면 ---------------- */
+  // Safari 는 아직 webkit 접두사만 지원한다. 접두사를 안 보면 F 가 아무 일도 안 하는 것처럼 보인다.
+  function fsEl() { return document.fullscreenElement || document.webkitFullscreenElement || null; }
   function toggleFs() {
     try {
-      if (!document.fullscreenElement) { var p = document.documentElement.requestFullscreen(); if (p && p['catch']) p['catch'](function () {}); }
-      else document.exitFullscreen();
+      var el = document.documentElement;
+      if (!fsEl()) {
+        var req = el.requestFullscreen || el.webkitRequestFullscreen;
+        if (req) { var p = req.call(el); if (p && p['catch']) p['catch'](function () {}); }
+      } else {
+        var ex = document.exitFullscreen || document.webkitExitFullscreen;
+        if (ex) ex.call(document);
+      }
     } catch (e) {}
   }
-  document.addEventListener('fullscreenchange', function () {
-    document.documentElement.dataset.fs = document.fullscreenElement ? '1' : '0';
+  function onFsChange() {
+    document.documentElement.dataset.fs = fsEl() ? '1' : '0';
     clearTimeout(fitT); fitT = setTimeout(fit, 60);
-  });
+  }
+  document.addEventListener('fullscreenchange', onFsChange);
+  document.addEventListener('webkitfullscreenchange', onFsChange);
 
   /* ---------------- 컨트롤 ---------------- */
   $('btnPlay').onclick = function () { setPlaying(!playing); };
