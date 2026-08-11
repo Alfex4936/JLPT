@@ -17,15 +17,15 @@ try{
 </script>
 
 <!-- ?v= 는 캐시 무효화용. CSS/JS 고칠 때 숫자만 올리면 새로고침에서 확실히 반영된다 -->
-<link rel="stylesheet" href="assets/style.css?v=14">
+<link rel="stylesheet" href="assets/style.css?v=15">
 
 <!-- 데이터: 없는 파일은 조용히 무시된다 (fetch 없음, script 태그만) -->
 <script>window.JLPT = window.JLPT || [];</script>
-<script src="data/words-n5.js?v=14"></script>
-<script src="data/words-n4.js?v=14"></script>
-<script src="data/words-n3.js?v=14"></script>
-<script src="data/words-n2.js?v=14"></script>
-<script src="data/words-n1.js?v=14"></script>
+<script src="data/words-n5.js?v=15"></script>
+<script src="data/words-n4.js?v=15"></script>
+<script src="data/words-n3.js?v=15"></script>
+<script src="data/words-n2.js?v=15"></script>
+<script src="data/words-n1.js?v=15"></script>
 </head>
 <body>
 
@@ -264,6 +264,10 @@ try{
         <button class="sw" id="swLongVowel" type="button" role="switch" aria-checked="false" aria-labelledby="lbLongVowel"></button>
       </div>
       <div class="row">
+        <span class="lbl" id="lbTsuCh">つ 를 '츠'로 <small>마쓰 → 마츠</small></span>
+        <button class="sw" id="swTsuCh" type="button" role="switch" aria-checked="false" aria-labelledby="lbTsuCh"></button>
+      </div>
+      <div class="row">
         <span class="lbl" id="lbShowExH">예문 한글 발음 표시</span>
         <button class="sw" id="swShowExH" type="button" role="switch" aria-checked="true" aria-labelledby="lbShowExH"></button>
       </div>
@@ -314,6 +318,6 @@ try{
   </div>
 </div>
 
-<script src="assets/app.js?v=14"></script>
+<script src="assets/app.js?v=15"></script>
 </body>
 </html>

@@ -19,7 +19,7 @@
     tts: true, voice: '', vol: 0.9, rate: 1, ttsAuto: true, ttsTwice: false, ttsEx: false,
     showEx: true, showExH: true, longVowel: false, showEn: false, theme: 'dark',
     study: 'all', batchSize: 60, // study: all(기본, 지금까지의 동작) | batch | srs
-    tier: 'all', fastSame: false // tier: all | same(한자음=한국어) | diff(한자음 다름) | kana(한자 없음)
+    tier: 'all', fastSame: false, tsuCh: false // tier: all | same(한자음=한국어) | diff(한자음 다름) | kana(한자 없음)
   };
   var S = (function () {
     var saved = lsGet(K_SET, {}) || {}, o = {};
@@ -189,6 +189,10 @@
 
   function current() { return deck.length ? deck[idx] : null; }
 
+  // 표기법은 つ 를 '쓰'로 적는다(쓰나미·마쓰다). 실제 발음은 [tsɯ] 라 '츠'가 더 가깝다는 사람이 많아 옵션.
+  // 출력에서 '쓰'는 つ/ツ 에서만 나오므로(kana2hangul 표 참조) 단순 치환이 정확하다.
+  function pron(s) { return S.tsuCh && s ? s.replace(/쓰/g, '츠') : s; }
+
   function paint() {
     var w = current();
     var has = !!w;
@@ -203,7 +207,7 @@
 
     cKana.textContent = w.k || '';
     cWord.textContent = w.w || '';
-    cHangul.textContent = (S.longVowel && w.hL ? w.hL : w.h) || '';
+    cHangul.textContent = pron((S.longVowel && w.hL ? w.hL : w.h) || '');
 
     if (w.hj) { cHanjaV.textContent = w.hj; cHanja.hidden = false; }
     else { cHanja.hidden = true; }
@@ -251,7 +255,7 @@
       cExJ.textContent = w.e || ''; cExJ.hidden = !w.e;
       cExK.textContent = w.ek || ''; cExK.hidden = !w.ek;
       var ehTxt = (S.longVowel && w.ehL ? w.ehL : w.eh) || '';
-      cExH.textContent = ehTxt; cExH.hidden = !(S.showExH && ehTxt);
+      cExH.textContent = pron(ehTxt); cExH.hidden = !(S.showExH && ehTxt);
       cPron.hidden = cExK.hidden && cExH.hidden;
       cExO.textContent = w.eo || ''; cExO.hidden = !w.eo;
     }
@@ -560,23 +564,30 @@
       if (e.key === 'Escape') { openPanel(false); openHelp(false); }
       return;
     }
-    switch (e.key) {
-      case ' ': case 'Spacebar': e.preventDefault(); setPlaying(!playing); break;
-      case 'ArrowLeft': e.preventDefault(); go(-1); break;
-      case 'ArrowRight': e.preventDefault(); go(1); break;
-      case 'ArrowUp': e.preventDefault(); reveal(); break;
-      case 'Escape': openPanel(false); openHelp(false); break;
-      case '?': openHelp(help.dataset.open !== '1'); break;
-      case '1': e.preventDefault(); grade(0); break;
-      case '2': e.preventDefault(); grade(1); break;
-      case '3': e.preventDefault(); grade(2); break;
-      default:
-        var c = e.key.toLowerCase();
-        if (c === 's') { e.preventDefault(); $('btnFav').click(); }
-        else if (c === 'm') { e.preventDefault(); toggleMute(); }
-        else if (c === 'v') { e.preventDefault(); speak(); }
-        else if (c === 'f') { e.preventDefault(); toggleFs(); }
+    // 한글 입력 상태에서는 e.key 가 'ㄹ'(f), 'ㄴ'(s), 'ㅍ'(v), 'ㅁ'(m) 으로 온다.
+    // 그래서 e.key 가 ASCII 가 아닐 때만 물리 키(e.code)로 폴백한다 —
+    // 이 순서라야 Dvorak 같은 배열에서도 눌린 글자 그대로 동작한다.
+    var raw = e.key || '';
+    var letter = /^[a-zA-Z]$/.test(raw) ? raw.toLowerCase()
+      : (/^Key[A-Z]$/.test(e.code || '') ? e.code.charAt(3).toLowerCase() : '');
+    var digit = /^[0-9]$/.test(raw) ? raw
+      : (/^(Digit|Numpad)[0-9]$/.test(e.code || '') ? e.code.slice(-1) : '');
+
+    switch (raw) {
+      case ' ': case 'Spacebar': e.preventDefault(); setPlaying(!playing); return;
+      case 'ArrowLeft': e.preventDefault(); go(-1); return;
+      case 'ArrowRight': e.preventDefault(); go(1); return;
+      case 'ArrowUp': e.preventDefault(); reveal(); return;
+      case 'Escape': openPanel(false); openHelp(false); return;
+      case '?': openHelp(help.dataset.open !== '1'); return;
     }
+    if (digit === '1') { e.preventDefault(); grade(0); }
+    else if (digit === '2') { e.preventDefault(); grade(1); }
+    else if (digit === '3') { e.preventDefault(); grade(2); }
+    else if (letter === 's') { e.preventDefault(); $('btnFav').click(); }
+    else if (letter === 'm') { e.preventDefault(); toggleMute(); }
+    else if (letter === 'v') { e.preventDefault(); speak(); }
+    else if (letter === 'f') { e.preventDefault(); toggleFs(); }
   });
 
   /* ---------------- 스와이프 ---------------- */
@@ -642,6 +653,7 @@
   sw('swShowEx', 'showEx', paint);
   sw('swShowExH', 'showExH', paint);
   sw('swLongVowel', 'longVowel', paint);
+  sw('swTsuCh', 'tsuCh', paint);
   sw('swShowEn', 'showEn', paint);
 
   rng('rBatch', 'vBatch', 'batchSize', function (v) { return v + '단어'; }, 1);
