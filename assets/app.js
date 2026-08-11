@@ -16,7 +16,7 @@
   var DEFAULTS = {
     sec: 15, shuffle: true, seed: 1, levels: null, deck: 'all',
     hide: false, hideDelay: 5,
-    tts: true, voice: '', vol: 0.9, rate: 1, ttsAuto: true, ttsTwice: false, ttsEx: false,
+    tts: true, voice: '', vol: 0.9, rate: 1, ttsAuto: true, ttsTwice: false, ttsEx: false, ttsGap: 700,
     showEx: true, showExH: true, longVowel: false, showEn: false, theme: 'dark',
     study: 'all', batchSize: 60, // study: all(기본, 지금까지의 동작) | batch | srs
     tier: 'all', fastSame: false, tsuCh: false // tier: all | same(한자음=한국어) | diff(한자음 다름) | kana(한자 없음)
@@ -356,7 +356,7 @@
     if (idx < 0) idx = deck.length - 1;
     elapsed = 0;
     markSeen(); paint();
-    if (S.ttsAuto || manual === 'speak') speak();
+    if (S.ttsAuto || manual === 'speak') speak(); else dropPending();
   }
   /* 채점: 0 몰라요 / 1 애매 / 2 알아요.
      모드와 무관하게 기록한다 — 나중에 복습 모드로 바꾸면 바로 쓰인다. */
@@ -373,7 +373,7 @@
       if (idx >= deck.length) idx = 0;
       elapsed = 0;
       if (!deck.length) { paint(); return; }
-      markSeen(); paint(); if (S.ttsAuto) speak();
+      markSeen(); paint(); if (S.ttsAuto) speak(); else dropPending();
     } else go(1);
     paintChrome();
   }
@@ -485,22 +485,43 @@
     for (var i = 0; i < voices.length; i++) if (voices[i].name === S.voice) { u.voice = voices[i]; break; }
     return u;
   }
+  /* 발화를 큐에 몰아넣으면 단어와 예문이 숨도 안 쉬고 붙어 나와 어디서 예문이 시작되는지 모른다.
+     Web Speech 에는 쉼 API 가 없어서 onend 뒤에 타이머로 끊는다.
+     seq: 카드가 바뀌면 대기 중인 다음 발화를 버린다 (SS.cancel 만으로는 타이머가 남는다). */
+  var speakSeq = 0, gapT = 0;
+  // 대기 중인 다음 발화만 버린다. 카드가 넘어갔는데 이전 카드 예문이 뒤늦게 나오면 안 된다.
+  function dropPending() {
+    speakSeq++;
+    if (gapT) { clearTimeout(gapT); gapT = 0; }
+  }
+  function stopSpeak() {
+    dropPending();
+    if (SS) { try { SS.cancel(); } catch (e) {} }
+  }
+  function speakChain(items, seq) {
+    if (!items.length || seq !== speakSeq) return;
+    var u = utter(items[0]);
+    u.onend = u.onerror = function () {
+      if (seq !== speakSeq || items.length < 2) return;
+      gapT = setTimeout(function () { gapT = 0; speakChain(items.slice(1), seq); }, S.ttsGap);
+    };
+    try { SS.speak(u); } catch (e) {}
+  }
   function speak() {
     if (!SS || !S.tts || !voices.length) return;
     var w = current(); if (!w) return;
-    try {
-      SS.cancel();
-      var t = w.k || w.w;
-      SS.speak(utter(t));
-      if (S.ttsTwice) SS.speak(utter(t));
-      if (S.ttsEx && (w.ek || w.e)) SS.speak(utter(w.ek || w.e));
-    } catch (e) {}
+    stopSpeak();
+    var t = w.k || w.w, q = [t];
+    if (S.ttsTwice) q.push(t);
+    if (S.ttsEx && (w.ek || w.e)) q.push(w.ek || w.e);
+    speakChain(q, speakSeq);
   }
   // 예문만 읽기. ek(かな)를 먼저 쓴다 — 한자 표기는 음성이 읽기를 틀릴 수 있다.
   function speakEx() {
     if (!SS || !S.tts || !voices.length) return;
     var w = current(); if (!w || !(w.ek || w.e)) return;
-    try { SS.cancel(); SS.speak(utter(w.ek || w.e)); } catch (e) {}
+    stopSpeak();
+    speakChain([w.ek || w.e], speakSeq);
   }
 
   /* ---------------- 화면 절전 방지 ---------------- */
@@ -661,6 +682,7 @@
   rng('rHideDelay', 'vHideDelay', 'hideDelay', function (v) { return v + '초'; }, 1);
   rng('rVol', 'vVol', 'vol', function (v) { return Math.round(v * 100) + '%'; }, 100);
   rng('rRate', 'vRate', 'rate', function (v) { return v.toFixed(2) + '배'; }, 100);
+  rng('rGap', 'vGap', 'ttsGap', function (v) { return v ? (v / 1000).toFixed(1) + '초' : '없음'; }, 1);
 
   sw('swShuffle', 'shuffle', function () { var w = current(); buildDeck(w && uid(w)); });
   sw('swHide', 'hide', function () { revealed = !S.hide; meanWrap.classList.toggle('masked', !revealed); });
@@ -679,7 +701,7 @@
   function toggleMute() {
     if (!SS || !voices.length) return;
     S.tts = !S.tts; save();
-    if (!S.tts) { try { SS.cancel(); } catch (e) {} }   // 재생 중인 발화도 즉시 끊는다
+    if (!S.tts) stopSpeak();   // 재생 중인 발화와 대기 중인 다음 발화를 즉시 끊는다
     drawTts(); syncMute(); paintChrome();
     toast(S.tts ? '소리 켜짐' : '음소거');
   }
