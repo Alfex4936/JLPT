@@ -446,18 +446,23 @@
   }
   // Apple 노벨티 음성. 일본어 목록에도 끼어 있고 알아듣기 어렵다 — 자동 선택에서 뒤로 뺀다.
   var NOVELTY = /^(Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley|Bells|Boing|Bubbles|Jester|Junior|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Albert|Bahh|Bad News|Good News)\b/i;
-  var HAS_GOOD = /premium|enhanced|프리미엄|고급|Google|Microsoft|Siri/i;
+  var HAS_GOOD = /premium|enhanced|natural|프리미엄|고급|Google|Microsoft/i;
   function voiceScore(v) {
     var n = v.name || '', s = 0;
-    if (/premium|프리미엄/i.test(n)) s += 6;        // macOS 추가 다운로드 음성이 음질 차이가 가장 크다
+    // Edge 의 Microsoft Online (Natural) 음성이 지금 브라우저로 얻을 수 있는 최고 음질이다 (네트워크 필요)
+    if (/natural/i.test(n)) s += 7;
+    else if (/premium|프리미엄/i.test(n)) s += 6;   // macOS 추가 다운로드 음성
     else if (/enhanced|고급/i.test(n)) s += 5;
     if (/^(Kyoko|Otoya|Hattori|O-ren)/.test(n)) s += 3;
-    if (/Google|Microsoft (Nanami|Ayumi|Keita)/i.test(n)) s += 2;
+    if (/Google|Microsoft (Nanami|Ayumi|Keita|Shiori|Daichi|Mayu|Naoki)/i.test(n)) s += 2;
     if (v['default']) s += 1;
+    // 네트워크 음성은 카드마다 요청이 나가고 오프라인에서 죽는다. 로컬 고음질이 있으면 그쪽을 쓴다.
+    if (v.localService === false) s -= 1;
     if (NOVELTY.test(n)) s -= 8;
     return s;
   }
   function voiceTag(v) {
+    if (/natural/i.test(v.name)) return ' · 자연 음성' + (v.localService === false ? '(네트워크)' : '');
     if (/premium|프리미엄/i.test(v.name)) return ' · 프리미엄';
     if (/enhanced|고급/i.test(v.name)) return ' · 고급';
     if (NOVELTY.test(v.name)) return ' · 노벨티(권장 안 함)';
