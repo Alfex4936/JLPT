@@ -1,0 +1,23 @@
+이 디렉터리의 데이터(`words-n1.js` ~ `words-n5.js`)는
+
+    Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+    https://creativecommons.org/licenses/by-sa/4.0/
+
+로 배포한다. 저장소 루트의 MIT 라이선스는 코드에만 적용되며 이 데이터에는 적용되지 않는다.
+
+## 왜 CC BY-SA 인가
+
+`hj`(한국 한자음)·`hjp`(한자별 한자음) 필드가 **KANJIDIC2** 의 `korean_h` 리딩에서 파생됐다.
+
+    KANJIDIC2 — Copyright (C) Electronic Dictionary Research and Development Group,
+    Monash University. Licensed under CC BY-SA 4.0.
+    http://www.edrdg.org/wiki/index.php/KANJIDIC_Project
+
+CC BY-SA 는 ShareAlike 조항이 있어, 파생물도 같은 라이선스로 배포해야 한다.
+
+## 그 외 출처
+
+- 표기·かな·급수·영어 뜻: https://github.com/wkei/jlpt-vocab-api (원 출처 http://www.tanos.co.uk/jlpt/).
+  **명시적 라이선스가 없다.** 자세한 사정은 저장소 루트의 `ATTRIBUTION.md` 참고.
+- 한국어 뜻·품사·예문(`ko`·`p`·`e`·`ek`·`eo`): Claude(Anthropic) 생성. 사람이 전수 검수하지 않았다.
+- 한글 발음 표기(`h`·`hL`·`eh`·`ehL`): `tools/kana2hangul.js`, `tools/example-hangul.js` 계산 결과.

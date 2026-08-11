@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark" data-fs="0">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="description" content="JLPT N5~N1 낱말 자동 슬라이드. 완전 오프라인.">
+<title>JLPT 낱말 셔플</title>
+
+<!-- 첫 페인트 전 테마 확정 (깜빡임 방지) -->
+<script>
+try{
+  var t=(JSON.parse(localStorage.getItem('jlpt.settings.v1')||'{}').theme)||'dark';
+  document.documentElement.dataset.theme =
+    t==='auto' ? (matchMedia('(prefers-color-scheme: light)').matches?'light':'dark') : t;
+}catch(e){}
+</script>
+
+<!-- ?v= 는 캐시 무효화용. CSS/JS 고칠 때 숫자만 올리면 새로고침에서 확실히 반영된다 -->
+<link rel="stylesheet" href="assets/style.css?v=7">
+
+<!-- 데이터: 없는 파일은 조용히 무시된다 (fetch 없음, script 태그만) -->
+<script>window.JLPT = window.JLPT || [];</script>
+<script src="data/words-n5.js?v=7"></script>
+<script src="data/words-n4.js?v=7"></script>
+<script src="data/words-n3.js?v=7"></script>
+<script src="data/words-n2.js?v=7"></script>
+<script src="data/words-n1.js?v=7"></script>
+</head>
+<body>
+
+<div id="app">
+
+  <header class="topbar chrome">
+    <div class="mark"><b>낱말</b> <span>JLPT 자동 슬라이드</span></div>
+    <div class="deckinfo" id="deckinfo"></div>
+    <div class="topacts">
+      <button class="btn btn-quiet" id="btnHelp" type="button" title="도움말 (?)">도움말</button>
+      <button class="btn btn-quiet btn-icon" id="btnFs" type="button" title="전체화면 (F)" aria-label="전체화면">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5v2H6v3zM15 4h5v5h-2V6h-3zM4 15h2v3h3v2H4zM18 15h2v5h-5v-2h3z"/></svg>
+      </button>
+      <button class="btn btn-quiet" id="btnSet" type="button" title="설정" aria-expanded="false">설정</button>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+
+    <article class="card" id="card">
+      <div class="meta">
+        <span class="lv" id="cLv">N5</span>
+        <span class="pos" id="cPos">명사</span>
+        <span class="seen" id="cSeen"></span>
+      </div>
+
+      <p class="kana" id="cKana"></p>
+      <h1 class="word" id="cWord" title="클릭하면 발음 (V)"></h1>
+
+      <p class="read">
+        <span class="hangul" id="cHangul"></span>
+        <span class="hanja" id="cHanja" hidden><small>한자음</small><span id="cHanjaV"></span></span>
+        <span class="alt" id="cAlt" hidden></span>
+      </p>
+      <p class="hjp" id="cHjp" hidden></p>
+
+      <hr class="rule">
+
+      <div class="meanwrap" id="meanWrap">
+        <ol class="means" id="cMeans"></ol>
+        <button class="mask" id="btnMask" type="button">뜻 보기 <kbd>↑</kbd></button>
+      </div>
+
+      <hr class="rule" id="ruleEx">
+
+      <div class="ex" id="cEx">
+        <p class="ex-j" id="cExJ"></p>
+        <p class="ex-o" id="cExO"></p>
+        <div class="pron" id="cPron">
+          <p class="ex-k" id="cExK"></p>
+          <p class="ex-h" id="cExH"></p>
+        </div>
+      </div>
+
+      <p class="en" id="cEn" hidden></p>
+    </article>
+
+    <output class="toast" id="toast" data-on="0" aria-live="polite"></output>
+
+    <section class="empty" id="empty" hidden>
+      <h2 id="emptyTitle">보여줄 단어가 없습니다</h2>
+      <p id="emptyBody"></p>
+      <button class="btn" id="btnEmptyFix" type="button">설정 열기</button>
+    </section>
+
+  </main>
+
+  <footer class="dock chrome">
+    <div class="progress" aria-hidden="true"><span id="bar"></span></div>
+    <div class="dockrow">
+
+      <div class="transport">
+        <button class="btn btn-quiet btn-icon" id="btnFirst" type="button" title="처음부터" aria-label="처음부터">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h2v14H7zm11 0v14l-9-7z"/></svg>
+        </button>
+        <button class="btn btn-quiet btn-icon" id="btnPrev" type="button" title="이전 (←)" aria-label="이전 단어">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 5v14L6 12z"/></svg>
+        </button>
+        <button class="btn btn-icon btn-play" id="btnPlay" type="button" title="재생 / 일시정지 (Space)" aria-label="재생">
+          <svg viewBox="0 0 24 24" aria-hidden="true" id="icPlay"><path d="M7 4v16l13-8z"/></svg>
+        </button>
+        <button class="btn btn-quiet btn-icon" id="btnNext" type="button" title="다음 (→)" aria-label="다음 단어">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l10-7z"/></svg>
+        </button>
+      </div>
+
+      <p class="counter" id="counter"></p>
+
+      <div class="dockacts">
+        <button class="btn btn-quiet" id="btnFav" type="button" title="즐겨찾기 (S)" aria-pressed="false">
+          <span class="star" id="starGlyph">☆</span> <span class="lbl">즐겨찾기</span>
+        </button>
+        <button class="btn btn-quiet" id="btnSpeak" type="button" title="발음 듣기 (V)"><span class="lbl">발음</span></button>
+      </div>
+
+      <div class="grades" id="grades" hidden>
+        <button class="btn" id="btnG0" type="button" title="몰라요 (1)">몰라요 <kbd>1</kbd></button>
+        <button class="btn" id="btnG1" type="button" title="애매 (2)">애매 <kbd>2</kbd></button>
+        <button class="btn" id="btnG2" type="button" title="알아요 (3)">알아요 <kbd>3</kbd></button>
+      </div>
+
+    </div>
+  </footer>
+
+</div>
+
+<!-- ---------------- 설정 ---------------- -->
+<aside class="panel" id="panel" data-open="0" aria-label="설정" role="dialog" aria-modal="false">
+  <header>
+    <h2>설정</h2>
+    <button class="btn btn-quiet" id="btnSetClose" type="button">닫기</button>
+  </header>
+  <div class="body">
+
+    <section class="grp">
+      <h3>재생</h3>
+      <div class="slider">
+        <div class="head"><span>전환 간격</span><span id="vSec">15초</span></div>
+        <input type="range" id="rSec" min="3" max="60" step="1" aria-label="전환 간격(초)">
+      </div>
+      <div class="row">
+        <span class="lbl" id="lbShuffle">셔플</span>
+        <button class="sw" id="swShuffle" type="button" role="switch" aria-checked="true" aria-labelledby="lbShuffle"></button>
+      </div>
+      <div class="row">
+        <span class="lbl">순서 다시 섞기</span>
+        <button class="btn" id="btnReshuffle" type="button">다시 섞기</button>
+      </div>
+      <p class="hint">셔플은 시드 기반이라 새로고침해도 같은 순서가 유지됩니다. 덱 끝에 닿으면 자동으로 다시 섞고 계속 재생합니다.</p>
+    </section>
+
+    <section class="grp">
+      <h3>학습 모드</h3>
+      <div class="chips" id="studyChips">
+        <button class="btn" data-study="all" type="button">전체 재생</button>
+        <button class="btn" data-study="batch" type="button">배치 루프</button>
+        <button class="btn" data-study="srs" type="button">복습(간격)</button>
+      </div>
+      <div class="slider" id="batchWrap">
+        <div class="head"><span>배치 크기</span><span id="vBatch">60단어</span></div>
+        <input type="range" id="rBatch" min="10" max="200" step="10" aria-label="배치 크기">
+        <div class="row" style="margin-top:.5rem">
+          <span class="lbl">지금 배치 교체</span>
+          <button class="btn" id="btnNewBatch" type="button">다음 배치</button>
+        </div>
+      </div>
+      <p class="hint" id="studyHint"></p>
+    </section>
+
+    <section class="grp">
+      <h3>한자음 필터</h3>
+      <div class="chips" id="tierChips">
+        <button class="btn" data-tier="all" type="button">전체</button>
+        <button class="btn" data-tier="same" type="button">한자음 = 한국어</button>
+        <button class="btn" data-tier="diff" type="button">한자음 다름</button>
+        <button class="btn" data-tier="kana" type="button">かな 단어</button>
+      </div>
+      <div class="row">
+        <span class="lbl" id="lbFastSame">배지 단어는 절반 시간만</span>
+        <button class="sw" id="swFastSame" type="button" role="switch" aria-checked="false" aria-labelledby="lbFastSame"></button>
+      </div>
+      <p class="hint" id="tierHint"></p>
+    </section>
+
+    <section class="grp">
+      <h3>급수</h3>
+      <div class="chips" id="lvChips"></div>
+      <p class="hint" id="lvHint"></p>
+    </section>
+
+    <section class="grp">
+      <h3>덱</h3>
+      <div class="chips">
+        <button class="btn" data-deck="all" type="button">전체</button>
+        <button class="btn" data-deck="fav" type="button">즐겨찾기</button>
+      </div>
+    </section>
+
+    <section class="grp">
+      <h3>가리기 모드</h3>
+      <div class="row">
+        <span class="lbl" id="lbHide">뜻 가리기</span>
+        <button class="sw" id="swHide" type="button" role="switch" aria-checked="false" aria-labelledby="lbHide"></button>
+      </div>
+      <div class="slider">
+        <div class="head"><span>공개까지</span><span id="vHideDelay">5초</span></div>
+        <input type="range" id="rHideDelay" min="1" max="30" step="1" aria-label="뜻 공개 지연(초)">
+      </div>
+      <p class="hint">뜻을 먼저 가리고 회상한 뒤 공개합니다. 클릭 또는 <kbd>↑</kbd> 로 바로 공개.</p>
+    </section>
+
+    <section class="grp">
+      <h3>발음</h3>
+      <div class="row">
+        <span class="lbl" id="lbTts">발음 사용</span>
+        <button class="sw" id="swTts" type="button" role="switch" aria-checked="true" aria-labelledby="lbTts"></button>
+      </div>
+      <div class="row">
+        <label class="lbl" for="selVoice">음성</label>
+        <select id="selVoice"></select>
+      </div>
+      <div class="slider">
+        <div class="head"><span>음량</span><span id="vVol">90%</span></div>
+        <input type="range" id="rVol" min="0" max="100" step="5" aria-label="음량">
+      </div>
+      <div class="slider">
+        <div class="head"><span>속도</span><span id="vRate">1.00배</span></div>
+        <input type="range" id="rRate" min="50" max="150" step="5" aria-label="속도">
+      </div>
+      <div class="row">
+        <span class="lbl" id="lbAuto">카드마다 자동 읽기</span>
+        <button class="sw" id="swAuto" type="button" role="switch" aria-checked="true" aria-labelledby="lbAuto"></button>
+      </div>
+      <div class="row">
+        <span class="lbl" id="lbTwice">단어 두 번 읽기</span>
+        <button class="sw" id="swTwice" type="button" role="switch" aria-checked="false" aria-labelledby="lbTwice"></button>
+      </div>
+      <div class="row">
+        <span class="lbl" id="lbExSpeak">예문도 읽기</span>
+        <button class="sw" id="swExSpeak" type="button" role="switch" aria-checked="false" aria-labelledby="lbExSpeak"></button>
+      </div>
+      <p class="hint" id="ttsHint"></p>
+    </section>
+
+    <section class="grp">
+      <h3>표시</h3>
+      <div class="row">
+        <span class="lbl" id="lbShowEx">예문 표시</span>
+        <button class="sw" id="swShowEx" type="button" role="switch" aria-checked="true" aria-labelledby="lbShowEx"></button>
+      </div>
+      <div class="row">
+        <span class="lbl" id="lbLongVowel">장음 표시 <small>도쿄 → 도오쿄오</small></span>
+        <button class="sw" id="swLongVowel" type="button" role="switch" aria-checked="false" aria-labelledby="lbLongVowel"></button>
+      </div>
+      <div class="row">
+        <span class="lbl" id="lbShowExH">예문 한글 발음 표시</span>
+        <button class="sw" id="swShowExH" type="button" role="switch" aria-checked="true" aria-labelledby="lbShowExH"></button>
+      </div>
+      <div class="row">
+        <span class="lbl" id="lbShowEn">영어 뜻 표시</span>
+        <button class="sw" id="swShowEn" type="button" role="switch" aria-checked="false" aria-labelledby="lbShowEn"></button>
+      </div>
+      <div class="row">
+        <span class="lbl">테마</span>
+        <div class="chips">
+          <button class="btn" data-theme="dark" type="button">다크</button>
+          <button class="btn" data-theme="light" type="button">라이트</button>
+          <button class="btn" data-theme="auto" type="button">시스템</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="grp">
+      <h3>기록</h3>
+      <div class="row">
+        <span class="lbl">즐겨찾기와 본 횟수</span>
+        <button class="btn" id="btnReset" type="button">모두 지우기</button>
+      </div>
+      <p class="hint" id="statHint"></p>
+    </section>
+
+  </div>
+</aside>
+
+<!-- ---------------- 도움말 ---------------- -->
+<div class="overlay" id="help" data-open="0" role="dialog" aria-modal="true" aria-label="키보드 단축키">
+  <div class="sheet">
+    <h2>키보드 단축키</h2>
+    <div class="keys">
+      <div><kbd>Space</kbd> 재생 / 일시정지</div>
+      <div><kbd>←</kbd> 이전 단어</div>
+      <div><kbd>→</kbd> 다음 단어</div>
+      <div><kbd>↑</kbd> 가려진 뜻 공개</div>
+      <div><kbd>S</kbd> 즐겨찾기 토글</div>
+      <div><kbd>V</kbd> 발음 듣기</div>
+      <div><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> 채점 — 몰라요 / 애매 / 알아요 (복습 간격이 이걸로 정해짐)</div>
+      <div><kbd>F</kbd> 전체화면</div>
+      <div><kbd>?</kbd> 이 도움말</div>
+      <div><kbd>Esc</kbd> 패널 닫기</div>
+    </div>
+    <button class="btn" id="btnHelpClose" type="button">닫기</button>
+  </div>
+</div>
+
+<script src="assets/app.js?v=7"></script>
+</body>
+</html>

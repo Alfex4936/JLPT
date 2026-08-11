@@ -1,0 +1,10 @@
+.DS_Store
+*.log
+
+# 기능 테스트용 임시 주입 파일 (실행 후 삭제됨)
+_test.html
+_driver.js
+
+# 로컬 플러그인 토글 (머신마다 다름)
+.claude/settings.json
+.claude/settings.local.json
