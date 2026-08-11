@@ -429,26 +429,47 @@
       $('ttsHint').textContent = '이 브라우저에 일본어(ja) 음성이 없어 발음 기능을 사용할 수 없습니다.';
       if (voiceTries++ < 6) setTimeout(loadVoices, 400);
     } else {
+      voices.sort(function (a, b) { return voiceScore(b) - voiceScore(a); });
       voices.forEach(function (v) {
         var o = document.createElement('option'); o.value = v.name;
-        o.textContent = v.name + ' (' + v.lang + ')'; sel.appendChild(o);
+        o.textContent = v.name + ' (' + v.lang + ')' + voiceTag(v); sel.appendChild(o);
       });
       if (S.voice && voices.some(function (v) { return v.name === S.voice; })) sel.value = S.voice;
       else { S.voice = pickVoice(); sel.value = S.voice; save(); }
       sel.disabled = false; $('swTts').disabled = false;
-      $('ttsHint').textContent = '카드가 바뀌면 이전 발화를 멈추고 새로 읽습니다.';
+      $('ttsHint').textContent = HAS_GOOD.test(S.voice)
+        ? '카드가 바뀌면 이전 발화를 멈추고 새로 읽습니다.'
+        : '지금 음성은 macOS 기본 압축판이라 음질이 나쁩니다. 시스템 설정 → 손쉬운 사용 → 음성 콘텐츠 → 시스템 음성 → 음성 관리에서 일본어 고급/프리미엄 음성을 받으면 훨씬 나아집니다.';
     }
     syncMute(); // 음성 목록은 비동기로 도착하므로 음소거 버튼 상태를 다시 맞춘다
     paintChrome();
   }
-  // macOS 는 노벨티 음성이 목록 앞에 오므로 표준 일본어 음성을 우선한다
+  // Apple 노벨티 음성. 일본어 목록에도 끼어 있고 알아듣기 어렵다 — 자동 선택에서 뒤로 뺀다.
+  var NOVELTY = /^(Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley|Bells|Boing|Bubbles|Jester|Junior|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Albert|Bahh|Bad News|Good News)\b/i;
+  var HAS_GOOD = /premium|enhanced|프리미엄|고급|Google|Microsoft|Siri/i;
+  function voiceScore(v) {
+    var n = v.name || '', s = 0;
+    if (/premium|프리미엄/i.test(n)) s += 6;        // macOS 추가 다운로드 음성이 음질 차이가 가장 크다
+    else if (/enhanced|고급/i.test(n)) s += 5;
+    if (/^(Kyoko|Otoya|Hattori|O-ren)/.test(n)) s += 3;
+    if (/Google|Microsoft (Nanami|Ayumi|Keita)/i.test(n)) s += 2;
+    if (v['default']) s += 1;
+    if (NOVELTY.test(n)) s -= 8;
+    return s;
+  }
+  function voiceTag(v) {
+    if (/premium|프리미엄/i.test(v.name)) return ' · 프리미엄';
+    if (/enhanced|고급/i.test(v.name)) return ' · 고급';
+    if (NOVELTY.test(v.name)) return ' · 노벨티(권장 안 함)';
+    return '';
+  }
   function pickVoice() {
-    var pref = ['Kyoko', 'Otoya', 'Hattori', 'O-ren', 'Google 日本語', 'Microsoft Nanami', 'Microsoft Ayumi'];
-    for (var i = 0; i < pref.length; i++)
-      for (var j = 0; j < voices.length; j++)
-        if (voices[j].name.indexOf(pref[i]) === 0) return voices[j].name;
-    for (var k = 0; k < voices.length; k++) if (voices[k]['default']) return voices[k].name;
-    return voices[0].name;
+    var best = voices[0], bs = -99;
+    for (var i = 0; i < voices.length; i++) {
+      var sc = voiceScore(voices[i]);
+      if (sc > bs) { bs = sc; best = voices[i]; }
+    }
+    return best.name;
   }
   if (SS) { SS.addEventListener ? SS.addEventListener('voiceschanged', loadVoices) : (SS.onvoiceschanged = loadVoices); }
   loadVoices();
