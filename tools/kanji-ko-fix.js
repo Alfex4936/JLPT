@@ -28,7 +28,41 @@ function initialSoundLaw(word) {
   return String.fromCharCode(0xac00 + (next * 588) + (jung * 28) + jong) + word.slice(1);
 }
 
-module.exports = { KANJI_KO_FIX, initialSoundLaw };
+/* 원천 어휘 목록(tanos.co.uk 유래)의 잘못된 읽기 교정.
+   전부 그 카드의 예문이 옳은 읽기를 쓰고 있어서 잡아낸 것들이다 — 예문은 맞고 읽기 필드가 틀렸다.
+   사용자는 한자를 못 읽으므로 이 필드가 틀리면 かな·한글·TTS 가 한꺼번에 틀린 발음을 가르친다.
+   검증: 각 카드의 ek 와 대조 + 표준 표기 확인. */
+const READING_FIX = {
+  賛成: 'さんせい',   // 원천 데이터가 깨져 있었음 (Uӣ[い)
+  伝言: 'でんごん',   // つてごと
+  梯子: 'はしご',     // ていし
+  夜行: 'やこう',     // やぎょう
+  傷: 'きず',         // しょう (음독은 복합어에서만)
+  他人: 'たにん',     // あだびと
+  真心: 'まごころ',   // まこころ — 연탁
+  日付: 'ひづけ',     // かづけ (N3 쪽은 이미 ひづけ)
+  途中: 'とちゅう',   // つちゅう (N4 쪽은 이미 とちゅう)
+  施行: 'しこう',     // しぎょう
+  人目: 'ひとめ',     // じんもく
+  反る: 'そる',       // かえる
+  難い: 'がたい',     // かたい (…しがたい)
+  昼間: 'ひるま',     // ちゅうかん — 中間의 읽기였다
+  真実: 'しんじつ',   // さな — 존재하지 않는 낱말
+};
+
+// 외래어는 가타카나로 남아야 한다. 예문(e)에 가타카나가 그대로 있으므로 ek 를 복원할 수 있다.
+// 「ボールをうまくキャッチした」의 ek 가 「ぼーるをうまくきゃっちした」로 와 있었다.
+function restoreKatakana(e, ek) {
+  if (!e || !ek) return ek;
+  for (const run of e.match(/[ァ-ヴ][ァ-ヴー]*/g) || []) {
+    if (ek.includes(run)) continue;
+    const hira = run.replace(/[ァ-ヴ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
+    if (hira !== run && ek.includes(hira)) ek = ek.replace(hira, run);
+  }
+  return ek;
+}
+
+module.exports = { KANJI_KO_FIX, initialSoundLaw, READING_FIX, restoreKatakana };
 
 if (require.main === module) {
   for (const w of ['령수', '려행', '료리', '련습', '락원', '리유', '녀자', '뢰성', '률동', '남자', '수확'])

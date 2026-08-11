@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { exampleHangul } = require('./example-hangul');
 const { kanaToHangul } = require('./kana2hangul');
-const { KANJI_KO_FIX, initialSoundLaw } = require('./kanji-ko-fix');
+const { KANJI_KO_FIX, initialSoundLaw, READING_FIX, restoreKatakana } = require('./kanji-ko-fix');
 
 const SCRATCH = process.env.SCRATCH || path.join(__dirname, 'cache');
 const BUILD = path.join(SCRATCH, 'build');
@@ -57,24 +57,37 @@ for (const f of files) {
     let p = typeof o.p === 'string' ? o.p.trim() : '';
     if (!POS.has(p)) { if (p) issues.badPos.push(p); p = p || '기타'; }
     const e = typeof o.e === 'string' && o.e.trim() ? o.e.trim() : null;
-    let ek = typeof o.ek === 'string' && o.ek.trim() ? o.ek.trim() : null;
+    let ek = typeof o.ek === 'string' && o.ek.trim() ? restoreKatakana(o.e, o.ek.trim()) : null;
     const eo = typeof o.eo === 'string' && o.eo.trim() ? o.eo.trim() : null;
     if (!e) issues.noEx++;
     if (ek && HAS_KANJI.test(ek)) { issues.kanjiInEk++; }
     // KANJIDIC2 에 korean_h 가 없는 한자(収 등)는 base 에서 「収?」로 들어온다.
     // 여기서 메우고, 전부 채워졌으면 단어 한자음(hj)도 다시 만든다 — 안 하면 배지까지 잃는다.
-    let pairs = b.hjp ? b.hjp.split(/\s+/).filter(Boolean).map((s) => [s[0], s.slice(1)]) : [];
-    for (const pr of pairs) if (pr[1] === '?' && KANJI_KO_FIX[pr[0]]) pr[1] = KANJI_KO_FIX[pr[0]];
-    // 모든 한자가 KANJIDIC2 에 없으면 base 가 hjp 를 null 로 준다(収める). 보정표로 세운다.
-    if (!pairs.length && HAS_KANJI.test(b.w)) {
-      const cs = [...b.w].filter((c) => HAS_KANJI.test(c));
-      if (cs.length && cs.every((c) => KANJI_KO_FIX[c])) pairs = cs.map((c) => [c, KANJI_KO_FIX[c]]);
+    // 한자음 쌍을 표기(w)에서 직접 세운다. base.hjp 는 읽기 사전으로만 쓴다 —
+    // base 는 반복 기호 々 를 한자로 보지 않아 「時々」가 '시' 한 글자로 잘렸다.
+    const readMap = {};
+    for (const t of (b.hjp || '').split(/\s+/).filter(Boolean)) readMap[t[0]] = t.slice(1);
+    const pairs = [];
+    let prevRead = null;
+    for (const c of b.w) {
+      if (c === '々' || c === '〻') {                    // 々 = 앞 한자 반복 (時々 -> 시시)
+        if (prevRead) { pairs.push([c, prevRead]); }
+        continue;
+      }
+      if (!HAS_KANJI.test(c)) continue;
+      let r = readMap[c] && readMap[c] !== '?' ? readMap[c] : (KANJI_KO_FIX[c] || '?');
+      pairs.push([c, r]);
+      prevRead = r;
     }
-    const hjp = pairs.length ? pairs.map((pr) => pr[0] + pr[1]).join(' ') : b.hjp;
-    const hj = pairs.length && pairs.every((pr) => pr[1] && pr[1] !== '?')
+    // 한자음을 모르는 글자는 카드에 「雫?」처럼 물음표로 노출하지 않고 아예 뺀다.
+    // 단어 한자음(hj)은 전부 알아냈을 때만 만든다 — 반쪽 한자음은 배지 오판을 부른다.
+    const unresolved = pairs.filter((pr) => pr[1] === '?').length;
+    const known = pairs.filter((pr) => pr[1] !== '?');
+    const hjp = known.length ? known.map((pr) => pr[0] + pr[1]).join(' ') : null;
+    const hj = pairs.length && !unresolved
       ? initialSoundLaw(pairs.map((pr) => pr[1]).join(''))   // 령수 -> 영수
-      : (b.hj ? initialSoundLaw(b.hj) : b.hj);
-    if (pairs.some((pr) => pr[1] === '?')) issues.noKanjiKo++;
+      : null;
+    if (unresolved) issues.noKanjiKo++;
 
     // 한자음이 한국어 뜻과 같은 단어(問題=문제)는 한국인에게 공짜 어휘 → 배지용 플래그.
     // 1음절 한자음은 부분일치로 오탐이 난다(磨く 한자음 '마' ⊂ '연마하다'). 접두 일치만 인정.
@@ -96,17 +109,18 @@ for (const f of files) {
     // 읽기 정규화: 반각 괄호는 벗기고 안의 かな는 살린다(あたたか(い) -> あたたかい).
     // 그래도 かな가 아니면 표기 자체가 かな인 경우 그것을 읽기로 쓴다.
     const PURE_KANA = /^[ぁ-んァ-ヴーゝゞ・]+$/;
-    const READING_FIX = { 賛成: 'さんせい' }; // 원천 데이터가 깨진 유일한 항목
     let k = READING_FIX[w] || (kf[0] || '').replace(/[()]/g, '').trim();
     if (!PURE_KANA.test(k)) k = k.replace(/[^ぁ-んァ-ヴーゝゞ・]/g, '');
     if (!PURE_KANA.test(k)) k = PURE_KANA.test(w) ? w : (READING_FIX[w] || k);
     if (!k) k = w;
+    // 읽기를 교정한 카드는 예문도 틀린 읽기로 쓰였을 수 있다 (昼間 -> ちゅうかん…). 같이 바꾼다.
+    if (READING_FIX[w] && ek && !ek.includes(k) && kf[0] && ek.includes(kf[0])) ek = ek.replace(kf[0], k);
 
     // 한글 발음은 두 벌: 표기법(장음 미표기) / 장음 표시(박자 보존)
     const h = kanaToHangul(k);
     const hL = kanaToHangul(k, { long: true });
-    const eh = ek ? exampleHangul(e, ek) : null;
-    const ehL = ek ? exampleHangul(e, ek, { long: true }) : null;
+    const eh = ek ? exampleHangul(e, ek, { k, w }) : null;
+    const ehL = ek ? exampleHangul(e, ek, { k, w, long: true }) : null;
     merged.set(o.i, {
       i: b.id, lv: b.lv, w, k, h, hj, hjp, ko, p, e, ek, eh, eo, en: b.en,
       ...(wAlt.length ? { wAlt } : {}),

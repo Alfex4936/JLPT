@@ -116,11 +116,17 @@
     lsSet(K_BATCH, BATCH);
   }
 
-  function buildDeck(keepUid) {
+  // 지금 설정으로 고를 수 있는 단어 집합. 배치를 만들 때도 반드시 이걸 써야 한다 —
+  // ALL 로 배치를 뽑으면 급수·한자음 필터와 교집합이 작아져 요청한 개수보다 덱이 작아진다.
+  function currentPool() {
     var set = {}; activeLevels().forEach(function (n) { set[n] = 1; });
     var pool = ALL.filter(function (w) { return set[w.lv]; });
     if (S.deck === 'fav') pool = pool.filter(function (w) { return FAV[uid(w)]; });
-    pool = pool.filter(tierOk);
+    return pool.filter(tierOk);
+  }
+
+  function buildDeck(keepUid) {
+    var pool = currentPool();
 
     if (S.study === 'srs') {
       pool = pool.filter(function (w) { return isDue(uid(w)); });
@@ -537,6 +543,13 @@
       if (e.key === 'Escape') t.blur();
       return;
     }
+    // 설정·도움말이 열려 있으면 카드 조작 키를 먹지 않는다.
+    // 안 그러면 Space 가 포커스된 스위치의 기본 동작을 preventDefault 로 막아버리고,
+    // 1·2·3 은 패널에 덮여 보이지도 않는 카드를 채점해 버린다.
+    if (panel.dataset.open === '1' || help.dataset.open === '1') {
+      if (e.key === 'Escape') { openPanel(false); openHelp(false); }
+      return;
+    }
     switch (e.key) {
       case ' ': case 'Spacebar': e.preventDefault(); setPlaying(!playing); break;
       case 'ArrowLeft': e.preventDefault(); go(-1); break;
@@ -642,10 +655,9 @@
       var w = current(); drawStudy(); buildDeck(w && uid(w));
     };
   });
-  $('rBatch').addEventListener('change', function () { if (S.study === 'batch') { makeBatch(ALL); buildDeck(); } drawStudy(); });
+  $('rBatch').addEventListener('change', function () { if (S.study === 'batch') { makeBatch(currentPool()); buildDeck(); } drawStudy(); });
   $('btnNewBatch').onclick = function () {
-    var set = {}; activeLevels().forEach(function (n) { set[n] = 1; });
-    makeBatch(ALL.filter(function (w) { return set[w.lv]; }));
+    makeBatch(currentPool());
     buildDeck(); drawStudy(); toast('새 배치 ' + BATCH.ids.length + '단어');
   };
   function drawTier() {
