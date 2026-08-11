@@ -1,0 +1,199 @@
+# AGENTS.md
+
+이 저장소에서 작업하는 에이전트용 지침. 사람이 읽을 문서는 [README.md](README.md), 데이터·UI 스펙은 [SPEC.md](SPEC.md).
+
+## 무엇인가
+
+JLPT N5~N1 어휘 8,343개를 자동으로 넘기는 **오프라인 단일 페이지 앱**. 한국인 학습자 한 명을 위해 만들었다.
+
+대상 사용자 프로필이 설계의 근거다 — 이걸 모르면 잘못된 판단을 한다:
+
+- 한국어 모어. **히라가나·가타카나는 읽는다. 한자는 전혀 못 읽는다.**
+- 그래서 한자만 큰 글씨로 보여주면 정보량이 0이다. 모든 카드에 かな 읽기와 한글 발음이 반드시 함께 나온다. 예문도 かな 읽기 줄이 없으면 못 읽는다.
+- 핵심 후크는 **한국 한자음**이다. `問題=문제`, `雑談=잡담`처럼 한자음이 한국어 단어와 그대로 겹치는 항목이 3,858개(46%)다. 이 카드에는 `한자음 = 한국어` 배지가 붙고, 사용자는 외울 게 없다.
+- 주 사용 패턴: 보조 모니터에 전체화면으로 몇 시간 방치. 그래서 무한 반복·유휴 시 UI 페이드·화면 절전 방지가 기능이 아니라 요구사항이다.
+
+## 절대 규칙
+
+깨면 앱이 사용자 환경에서 죽는다.
+
+1. **`file://` 로 `index.html` 을 더블클릭해서 동작해야 한다.** `fetch`·`XHR`·ES 모듈·동적 `import` 금지. 데이터는 `<script src>` 로만 로드한다.
+2. **네트워크 요청 0.** CDN 금지, 폰트도 로컬(`assets/fonts/`). 완전 오프라인.
+3. **빌드 도구 없음.** 번들러·트랜스파일러 없이 브라우저가 바로 읽는 vanilla JS/CSS. `assets/app.js` 는 ES5 스타일(`var`, 함수 선언)로 일관되게 유지한다.
+4. **데이터 파일은 부분적으로만 있어도 동작해야 한다.** `data/words-n3.js` 가 없어도 앱이 뜨고, 급수 목록은 로드된 데이터에서 런타임에 뽑는다. 선택 필드(`hj`·`hjp`·`e`·`ek`·`eh`·`eo`·`en`·`same`·`hL`·`ehL`·`kAlt`·`wAlt`)는 없을 수 있다.
+5. **UI 텍스트는 한국어.**
+6. **기본 동작을 바꾸지 않는다.** 사용자가 명시적으로 요구했다: 새 기능은 옵션으로 넣고 기본값은 지금까지의 동작(전체 재생 8,343 셔플, 15초, 채점 UI 숨김)을 유지한다.
+
+## 구조
+
+```
+index.html            앱 셸 + 설정 패널 + 도움말. 에셋 참조에 ?v=N 캐시 무효화
+assets/app.js         전부. IIFE 하나, 외부 의존 0
+assets/style.css      토큰 + 레이아웃. 다크 기본, 라이트 지원
+assets/fonts/*.woff2  서브셋된 폰트 5종 (원본은 original/, gitignore)
+data/words-n{1..5}.js window.JLPT.push(...) 하는 생성물. 직접 손으로 고치지 말 것
+tools/                데이터 파이프라인 (아래)
+start.command         더블클릭용 로컬 http 서버 (file:// 제약 우회 경로)
+```
+
+## 데이터 파이프라인
+
+```
+jlpt-vocab-api(어휘) + KANJIDIC2(한자음)
+        │  tools/build-base.js          SCRATCH 필요
+        ▼
+   base.json  ─ 청크 TSV 62개 ─▶ 번역 에이전트 62대 ─▶ out/v2-*.jsonl
+        │                          (.claude/agents/jlpt-translator.md)
+        │  tools/merge.js
+        ▼
+   data/words-n*.js
+```
+
+| 스크립트 | 역할 |
+|---|---|
+| `tools/build-base.js` | 원천 데이터 병합, 한자음 부착, 청크 TSV 생성. `SCRATCH` 에 원천 파일이 있어야 한다 |
+| `tools/kana2hangul.js` | かな → 한글. `{long:true}` 면 장음 표기(도쿄→도오쿄오). 단독 실행하면 자체 테스트 출력 |
+| `tools/example-hangul.js` | 예문 한글 발음. 한자 표기와 かな 읽기를 정렬해 어절 단위로 끊는다. 단독 실행 시 테스트 |
+| `tools/merge.js` | JSONL 병합 → `data/words-n*.js` + 품질 리포트. 정합성 검사와 중복 제거가 여기 있다 |
+| `tools/kanji-ko-fix.js` | KANJIDIC2 에 `korean_h` 가 없는 한자 보정표 + 두음법칙(령수→영수) |
+| `tools/next-chunks.js` | 아직 번역 안 된 청크 이름 출력 |
+| `tools/wave.sh` | 유휴 에이전트 pane 회수 + 다음 청크 N개 출력 |
+| `tools/font-charset.js` | 데이터·UI에 실제 등장하는 글자만 폰트별로 추출 → `tools/charset/*.txt` |
+| `tools/subset-fonts.sh` | 그 문자집합으로 폰트 서브셋 (원본은 `assets/fonts/original/` 로 보관) |
+
+### 재생성
+
+```bash
+# 데이터만 다시 만들기 (번역 결과가 SCRATCH/build/out/*.jsonl 에 있을 때)
+SCRATCH=<작업디렉터리> node tools/merge.js
+
+# 폰트 서브셋 (데이터에 새 한자가 생겼을 때 필수)
+node tools/font-charset.js && ./tools/subset-fonts.sh
+```
+
+`SCRATCH` 없이 `node tools/merge.js` 를 돌리면 `tools/cache/base.json` 만 읽고 **아무 파일도 쓰지 않는다**(단어 0개 → 기록 생략). 조용히 성공하니 착각하지 말 것.
+
+## 불변조건과 검증
+
+데이터를 건드렸으면 이걸 돌린다. 전부 통과해야 한다.
+
+```bash
+node -e '
+global.window={JLPT:[]};for(const l of [5,4,3,2,1])require("./data/words-n"+l+".js");
+const W=window.JLPT, KANA=/^[ぁ-んァ-ヴーゝゞ・]+$/, K=/[一-鿿]/;
+const bad=(n,v)=>console.log((v?"FAIL":"ok  ")+" "+n+(v?" = "+v:""));
+bad("완전중복",       W.length-new Set(W.map(x=>x.w+"|"+x.k)).size);
+bad("id중복",        W.length-new Set(W.map(x=>x.i)).size);
+bad("읽기 비かな",    W.filter(x=>!KANA.test(x.k)).length);
+bad("표기에 괄호/슬래시", W.filter(x=>/[（）()\/=]/.test(x.w)).length);
+bad("뜻 없음",       W.filter(x=>!x.ko||!x.ko.length).length);
+bad("예문 결손",      W.filter(x=>!x.e||!x.ek||!x.eo).length);
+bad("ek에 한자",      W.filter(x=>x.ek&&K.test(x.ek)).length);
+bad("예문에 숫자",     W.filter(x=>x.e&&/[0-9０-９]/.test(x.e)).length);
+const mis=W.filter(x=>{const s=x.w.slice(0,2),s1=x.w.slice(0,1);
+  return !((x.e&&(x.e.includes(s)||x.e.includes(s1)))||(x.ek&&x.ek.includes(x.k.slice(0,2))))});
+bad("예문-단어 불일치", mis.length);
+bad("한자음에 ?",     W.filter(x=>(x.hjp&&x.hjp.includes("?"))||(x.hj&&x.hj.includes("?"))).length);
+const noHj=W.filter(x=>K.test(x.w)&&!x.hj).map(x=>x.w);
+console.log((noHj.join("")==="雫枠"?"ok   ":"FAIL ")+"한자음 없는 한자어 = "+(noHj.join(" ")||"없음"));
+console.log("총",W.length,"| 배지",W.filter(x=>x.same).length);'
+```
+
+기준값: 총 8,343 / 배지 3,858 / 나머지 전부 0.
+`雫`·`枠` 만 한자음이 비어 있는 게 정상이다 — 일본에서 만든 국자(国字)라 한국 한자음이 존재하지 않는다. 목록이 늘어나면 `tools/kanji-ko-fix.js` 에 추가할 대상이다.
+
+폰트를 다시 서브셋했으면 글자 손실도 확인한다 (누락 목록이 `assets/fonts/original/` 의 원본과 같아야 하고, 서브셋 때문에 늘어나면 안 된다):
+
+```bash
+uv run --quiet --with "fonttools[woff]" python - <<'PY'
+from fontTools.ttLib import TTFont; import pathlib
+CS=pathlib.Path("tools/charset")
+for name,cs in {"klee-one-japanese-400-normal":"word","noto-sans-jp-japanese-400-normal":"jp","noto-sans-kr-korean-400-normal":"kr"}.items():
+    for base in ("assets/fonts","assets/fonts/original"):
+        p=pathlib.Path(base)/f"{name}.woff2"
+        if not p.exists(): continue
+        f=TTFont(p); have=set()
+        for t in f["cmap"].tables: have|=set(t.cmap.keys())
+        need={ord(c) for c in (CS/f"{cs}.txt").read_text(encoding="utf-8")}
+        print(f"{base:26s} {name:34s} 누락={len(need-have)}")
+PY
+```
+
+## 이미 밟은 함정
+
+같은 데 다시 빠지지 말 것. 전부 실제로 발생했다.
+
+- **번역 에이전트가 id를 1부터 새로 매긴다.** 뜻이 엉뚱한 단어에 붙어 데이터 전체가 조용히 오염된다(`問題` → "빵"). `tools/merge.js` 의 `alignment()` 가 파일 단위로 정합률 50% 미만이면 통째로 버린다. 이 가드를 제거하지 말 것.
+- **청크는 140행을 넘기지 않는다.** 280행짜리는 에이전트 출력이 `64000 output token maximum` 에 걸려 결과가 사라진다.
+- **에이전트 동시 실행은 8대가 상한**(tmux pane 풀). 초과하면 `fork failed: Device not configured`. `tools/wave.sh` 로 유휴 pane 회수 후 다음 웨이브를 띄운다.
+- **번역 에이전트는 반드시 낮은 추론 강도로.** 세션 설정을 물려받으면 `xhigh` 로 돌아 5배 느려진다. `.claude/agents/jlpt-translator.md` 의 `effort: low` 가 그 용도다.
+- **조사 분리는 원문 かな 안에서만.** 한자 읽기 구간에서 하면 `ながい` 의 `が` 를 조사로 착각해 `나가 / 이데스` 로 쪼갠다. `tools/example-hangul.js` 의 `refine()` 참고.
+- **1음절 한자음은 부분일치 금지.** `磨く` 의 한자음 `마` 가 `연마하다` 안에 걸려 배지가 잘못 붙었다. 지금은 접두 일치만 인정한다(`黒` 흑 → `흑색` 은 유지).
+- **원천 데이터에 복수 읽기·주석이 섞여 있다.** `九[きゅう / く]`, `ね[（感）]`. `merge.js` 가 대표 형태만 남기고 나머지는 `kAlt`·`wAlt` 로 분리한다. 정규화하면 중복이 새로 생기므로(29건) 그 뒤에 한 번 더 제거한다.
+- **KANJIDIC2 에 `korean_h` 가 없는 한자가 있다.** 신자체가 주로 그렇다(`収` — 구자체 `收` 에만 음이 달려 있음). 그러면 카드에 `収?` 가 뜨고 그 단어는 `hj` 전체를 잃어 배지까지 빠진다. `tools/kanji-ko-fix.js` 에 보정하고, `merge.js` 가 그걸로 `hjp`·`hj` 를 다시 세운다. 한자가 전부 미등록이면 base 가 `hjp` 를 `null` 로 주므로 표기에서 한자를 직접 뽑아 세우는 경로도 있다.
+- **두음법칙을 적용해야 배지가 붙는다.** KANJIDIC2 는 글자 음(領=령, 旅=려, 練=련)을 주는데 한국어 단어는 어두에서 바뀐다(영수·여행·연습). 적용 전 3,710 → 적용 후 3,858 로 147개가 살아났다. 단어 단위 `hj` 에만 적용하고, 글자별 `hjp` 는 사전형(령)으로 둔다.
+- **`file://` 은 CSS/JS를 캐시한다.** 수정했는데 반영이 안 되면 `index.html` 의 `?v=N` 을 올린다. 안 올리면 사용자가 "안 바뀌었다"고 한다 — 실제로 두 번 겪었다.
+- **`.hjp i b` 는 Klee One(`--f-word`), `.hjp i span` 은 KR 폰트.** 폰트 서브셋이 이 경계를 전제로 글자를 나눠 담는다. 셀렉터를 바꾸면 서브셋도 다시 만들어야 한다.
+- **Noto Sans JP 700 은 일부러 없다.** 굵은 일본어를 쓰는 자리가 `.mark b` 하나인데 내용이 한국어라 한 글자도 안 그렸다. 되살리지 말 것.
+
+## UI 검증 방법
+
+브라우저 없이는 확인이 안 되므로 헤드리스 Chrome 을 쓴다. 스크린샷:
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu \
+  --window-size=1500,950 --screenshot=/tmp/shot.png --virtual-time-budget=5000 \
+  --enable-logging=stderr --log-level=0 "file://$PWD/index.html" 2>&1 | grep -iE "SEVERE|Uncaught|TypeError"
+```
+
+클릭·키 입력이 필요한 검증은 임시 드라이버를 주입한다(둘 다 gitignore 돼 있다):
+
+```bash
+# _driver.js 에 검증 로직을 쓰고 결과를 document.title 에 넣는다
+node -e 'const fs=require("fs");let h=fs.readFileSync("index.html","utf8");
+  h=h.replace("</body>","<script src=\"_driver.js\"><\/script>\n</body>");fs.writeFileSync("_test.html",h)'
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu \
+  --virtual-time-budget=12000 --dump-dom "file://$PWD/_test.html" 2>/dev/null | rg -o "RESULT[^<]*"
+rm -f _test.html _driver.js
+```
+
+기본 동작을 바꾸지 않았는지 항상 함께 확인한다: 전체 재생 모드에서 `1 / 8343`, 채점 버튼 `hidden`.
+
+## 상태 저장
+
+localStorage 키 — 스키마를 바꾸려면 키 이름의 버전을 올린다.
+
+| 키 | 내용 |
+|---|---|
+| `jlpt.settings.v1` | 설정 전체 (`DEFAULTS` 참고) |
+| `jlpt.fav.v1` | 즐겨찾기, `lv-i` 로 키잉 |
+| `jlpt.views.v1` | 본 횟수 |
+| `jlpt.pos.v1` | 마지막 위치 |
+| `jlpt.srs.v1` | 간격 반복 상자 `{b, d, n}` |
+| `jlpt.batch.v1` | 현재 배치의 uid 목록 |
+
+`file://` 과 GitHub Pages 는 origin 이 달라 **저장소가 분리된다.** 한쪽에서 채점한 게 다른 쪽에 안 보이는 건 버그가 아니다.
+
+## 라이선스 (중요)
+
+혼합이다. 자세한 건 [ATTRIBUTION.md](ATTRIBUTION.md).
+
+- 코드는 MIT(`LICENSE`), **데이터는 CC BY-SA 4.0**(`data/LICENSE`). 한자음이 KANJIDIC2 파생이라 ShareAlike 가 전염된다. **데이터에 허용적 라이선스를 붙이지 말 것.**
+- 어휘 목록 원본(tanos.co.uk 유래)은 명시적 라이선스가 없다. 공개 재배포 근거가 불확실하다는 사실을 지우거나 흐리지 말 것.
+- 폰트는 SIL OFL 1.1. `assets/fonts/LICENSE-*.txt` 를 반드시 함께 배포한다.
+
+## 배포
+
+`main` 에 push 하면 GitHub Pages 가 https://alfex4936.github.io/JLPT/ 로 배포한다(`.nojekyll` 필요). 상태 확인:
+
+```bash
+GH_HOST=github.com gh api repos/Alfex4936/JLPT/pages --jq '.status'
+```
+
+`gh` 는 회사 호스트(git.linecorp.com)와 github.com 을 함께 물고 있다. 저장소 밖에서 `gh` 를 쓸 때만 `GH_HOST=github.com` 을 붙인다. 이 저장소의 커밋 identity 는 repo-local 로 `Alfex4936@users.noreply.github.com` 이다 — 전역(회사 이메일)으로 되돌리지 말 것.
+
+## 코드 스타일
+
+- 주석은 1줄, 최대 2줄. 코드를 다시 설명하는 주석은 쓰지 않는다. 비자명한 이유·함정·불변조건만 남긴다.
+- 커밋 메시지는 영어 산문, `feat:`/`fix:`/`perf:`/`chore:` 접두. 무엇을 왜 바꿨고 어떻게 검증했는지 쓴다.
+- 문서·UI·주석은 한국어. 식별자·명령·에러 문자열은 원문 그대로.

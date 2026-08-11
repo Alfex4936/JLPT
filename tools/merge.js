@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { exampleHangul } = require('./example-hangul');
 const { kanaToHangul } = require('./kana2hangul');
+const { KANJI_KO_FIX, initialSoundLaw } = require('./kanji-ko-fix');
 
 const SCRATCH = process.env.SCRATCH || path.join(__dirname, 'cache');
 const BUILD = path.join(SCRATCH, 'build');
@@ -20,7 +21,7 @@ const base = new Map(JSON.parse(fs.readFileSync(BASE_JSON, 'utf8')).map((x) => [
 const files = fs.existsSync(OUTDIR) ? fs.readdirSync(OUTDIR).filter((f) => f.endsWith('.jsonl')) : [];
 
 const merged = new Map();
-const issues = { badJson: 0, unknownId: 0, noKo: 0, badPos: [], kanjiInEk: 0, noEx: 0, dupe: 0, rejectedFiles: [] };
+const issues = { badJson: 0, unknownId: 0, noKo: 0, badPos: [], kanjiInEk: 0, noEx: 0, dupe: 0, noKanjiKo: 0, rejectedFiles: [] };
 
 // id 정합성 검사: 예문에 그 id의 단어(또는 읽기)가 등장해야 한다.
 // 에이전트가 id를 1부터 새로 매기면 뜻이 엉뚱한 단어에 붙으므로 파일 단위로 걸러낸다.
@@ -60,11 +61,26 @@ for (const f of files) {
     const eo = typeof o.eo === 'string' && o.eo.trim() ? o.eo.trim() : null;
     if (!e) issues.noEx++;
     if (ek && HAS_KANJI.test(ek)) { issues.kanjiInEk++; }
+    // KANJIDIC2 에 korean_h 가 없는 한자(収 등)는 base 에서 「収?」로 들어온다.
+    // 여기서 메우고, 전부 채워졌으면 단어 한자음(hj)도 다시 만든다 — 안 하면 배지까지 잃는다.
+    let pairs = b.hjp ? b.hjp.split(/\s+/).filter(Boolean).map((s) => [s[0], s.slice(1)]) : [];
+    for (const pr of pairs) if (pr[1] === '?' && KANJI_KO_FIX[pr[0]]) pr[1] = KANJI_KO_FIX[pr[0]];
+    // 모든 한자가 KANJIDIC2 에 없으면 base 가 hjp 를 null 로 준다(収める). 보정표로 세운다.
+    if (!pairs.length && HAS_KANJI.test(b.w)) {
+      const cs = [...b.w].filter((c) => HAS_KANJI.test(c));
+      if (cs.length && cs.every((c) => KANJI_KO_FIX[c])) pairs = cs.map((c) => [c, KANJI_KO_FIX[c]]);
+    }
+    const hjp = pairs.length ? pairs.map((pr) => pr[0] + pr[1]).join(' ') : b.hjp;
+    const hj = pairs.length && pairs.every((pr) => pr[1] && pr[1] !== '?')
+      ? initialSoundLaw(pairs.map((pr) => pr[1]).join(''))   // 령수 -> 영수
+      : (b.hj ? initialSoundLaw(b.hj) : b.hj);
+    if (pairs.some((pr) => pr[1] === '?')) issues.noKanjiKo++;
+
     // 한자음이 한국어 뜻과 같은 단어(問題=문제)는 한국인에게 공짜 어휘 → 배지용 플래그.
     // 1음절 한자음은 부분일치로 오탐이 난다(磨く 한자음 '마' ⊂ '연마하다'). 접두 일치만 인정.
-    const same = b.hj && ko.some((m) => {
+    const same = hj && ko.some((m) => {
       const s = m.replace(/[\s·,()]/g, '');
-      return b.hj.length >= 2 ? s.includes(b.hj) : s.startsWith(b.hj);
+      return hj.length >= 2 ? s.includes(hj) : s.startsWith(hj);
     }) ? 1 : 0;
     // 원천 데이터에 「九 / きゅう / く」처럼 복수 읽기·복수 표기가 한 필드에 섞인 항목이 있다.
     // 첫 형태를 대표로 쓰고 나머지는 alt 로 분리 — 안 하면 한글이 '규쿠'가 되고 TTS 가 슬래시를 읽는다.
@@ -92,7 +108,7 @@ for (const f of files) {
     const eh = ek ? exampleHangul(e, ek) : null;
     const ehL = ek ? exampleHangul(e, ek, { long: true }) : null;
     merged.set(o.i, {
-      i: b.id, lv: b.lv, w, k, h, hj: b.hj, hjp: b.hjp, ko, p, e, ek, eh, eo, en: b.en,
+      i: b.id, lv: b.lv, w, k, h, hj, hjp, ko, p, e, ek, eh, eo, en: b.en,
       ...(wAlt.length ? { wAlt } : {}),
       ...(kAlt.length ? { kAlt } : {}),
       ...(hL !== h ? { hL } : {}),
@@ -132,8 +148,13 @@ console.log('총', total, '/ base', base.size, '| 정규화 중복제거', colla
 console.log('품사분포', JSON.stringify(posCount, null, 0));
 console.log('이슈', JSON.stringify({ ...issues, badPos: [...new Set(issues.badPos)].slice(0, 10) }));
 
-// 청크별 결손 리포트
-const manifest = JSON.parse(fs.readFileSync(path.join(BUILD, 'manifest.json'), 'utf8'));
+// 청크별 결손 리포트 (청크가 있을 때만 — data/ 재생성만 할 때는 없어도 된다)
+const MANIFEST = path.join(BUILD, 'manifest.json');
+if (!fs.existsSync(MANIFEST)) {
+  console.log('청크 없음 — 결손 검사 생략 (build-base.js 를 돌린 SCRATCH 를 지정하면 검사한다)');
+  process.exit(0);
+}
+const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
 const missing = [];
 for (const m of manifest) {
   const ids = fs.readFileSync(path.join(BUILD, 'chunks', m.name + '.tsv'), 'utf8').split('\n')
