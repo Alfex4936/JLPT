@@ -231,7 +231,16 @@ body.idle .chrome{opacity:0;pointer-events:none}
 .meanwrap.masked .mask{display:flex}
 .mask:hover{color:var(--fg-2);border-color:var(--fg-3)}
 
-.ex{display:flex;flex-direction:column;gap:.42em}
+/* 클릭하면 예문을 읽는다. 커서만으로는 안 보이니 hover 에 왼쪽 띠를 세운다 */
+.ex{
+  display:flex;flex-direction:column;gap:.42em;
+  cursor:pointer;border-radius:var(--r);
+  margin-left:-.8em;padding-left:.8em;
+  border-left:2px solid transparent;
+  transition:border-color .18s ease;
+}
+.ex:hover{border-left-color:var(--accent)}
+body.idle .ex{cursor:none}
 .ex p{
   font-size:calc(clamp(.95rem,1.45vmin + .45rem,1.5rem) * var(--scale));
   line-height:1.6;

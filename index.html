@@ -17,15 +17,15 @@ try{
 </script>
 
 <!-- ?v= 는 캐시 무효화용. CSS/JS 고칠 때 숫자만 올리면 새로고침에서 확실히 반영된다 -->
-<link rel="stylesheet" href="assets/style.css?v=16">
+<link rel="stylesheet" href="assets/style.css?v=17">
 
 <!-- 데이터: 없는 파일은 조용히 무시된다 (fetch 없음, script 태그만) -->
 <script>window.JLPT = window.JLPT || [];</script>
-<script src="data/words-n5.js?v=16"></script>
-<script src="data/words-n4.js?v=16"></script>
-<script src="data/words-n3.js?v=16"></script>
-<script src="data/words-n2.js?v=16"></script>
-<script src="data/words-n1.js?v=16"></script>
+<script src="data/words-n5.js?v=17"></script>
+<script src="data/words-n4.js?v=17"></script>
+<script src="data/words-n3.js?v=17"></script>
+<script src="data/words-n2.js?v=17"></script>
+<script src="data/words-n1.js?v=17"></script>
 </head>
 <body>
 
@@ -71,7 +71,7 @@ try{
 
       <hr class="rule" id="ruleEx">
 
-      <div class="ex" id="cEx">
+      <div class="ex" id="cEx" title="클릭하면 예문 발음">
         <p class="ex-j" id="cExJ"></p>
         <p class="ex-o" id="cExO"></p>
         <div class="pron" id="cPron">
@@ -314,10 +314,11 @@ try{
       <div><kbd>?</kbd> 이 도움말</div>
       <div><kbd>Esc</kbd> 패널 닫기</div>
     </div>
+    <p class="hint">클릭으로도 읽습니다 — 큰 단어를 누르면 단어, 예문 줄을 누르면 예문.</p>
     <button class="btn" id="btnHelpClose" type="button">닫기</button>
   </div>
 </div>
 
-<script src="assets/app.js?v=16"></script>
+<script src="assets/app.js?v=17"></script>
 </body>
 </html>

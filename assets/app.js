@@ -470,6 +470,12 @@
       if (S.ttsEx && (w.ek || w.e)) SS.speak(utter(w.ek || w.e));
     } catch (e) {}
   }
+  // 예문만 읽기. ek(かな)를 먼저 쓴다 — 한자 표기는 음성이 읽기를 틀릴 수 있다.
+  function speakEx() {
+    if (!SS || !S.tts || !voices.length) return;
+    var w = current(); if (!w || !(w.ek || w.e)) return;
+    try { SS.cancel(); SS.speak(utter(w.ek || w.e)); } catch (e) {}
+  }
 
   /* ---------------- 화면 절전 방지 ---------------- */
   var wl = null;
@@ -526,6 +532,12 @@
   $('btnFirst').onclick = function () { idx = 0; elapsed = 0; markSeen(); paint(); if (S.ttsAuto) speak(); };
   $('btnSpeak').onclick = speak;
   cWord.onclick = speak;
+  // 예문 블록 클릭 = 예문 읽기. 드래그로 문장을 선택하는 중이면 읽지 않는다.
+  cEx.onclick = function () {
+    var sel = window.getSelection && window.getSelection();
+    if (sel && !sel.isCollapsed) return;
+    speakEx();
+  };
   $('btnMask').onclick = reveal;
   $('btnFs').onclick = toggleFs;
   $('btnFav').onclick = function () {
