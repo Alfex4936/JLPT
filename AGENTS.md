@@ -76,6 +76,21 @@ node tools/font-charset.js && ./tools/subset-fonts.sh
 
 `SCRATCH` 없이 `node tools/merge.js` 를 돌리면 `tools/cache/base.json` 만 읽고 **아무 파일도 쓰지 않는다**(단어 0개 → 기록 생략). 조용히 성공하니 착각하지 말 것.
 
+### 단어 추가
+
+`tools/gap-words.json` 형식(`{w, k, lv, en}`)으로 목록을 넣고:
+
+```bash
+SCRATCH=<작업디렉터리> CHUNK=101 node tools/add-words.js   # base.json 갱신 + gap-pNN 청크
+# 청크마다 jlpt-translator 에이전트 1대 → out/v2-gap-pNN.jsonl
+SCRATCH=<작업디렉터리> node tools/merge.js
+node tools/font-charset.js && ./tools/subset-fonts.sh      # 새 한자가 들어오므로 거의 항상 필요
+```
+
+`add-words.js` 는 기존 id 를 건드리지 않고 뒤에 붙이며, `SCRATCH/build/base.json` 과 `tools/cache/base.json` 을 함께 쓴다. `kanjidic2.xml` 이 `SCRATCH` 에 있어야 한자음이 붙는다 — 없으면 배지를 전부 잃는다.
+청크는 급수가 섞여 있으므로 에이전트 프롬프트에 그 사실을 알려야 한다(예문 난이도를 파일 단위가 아니라 단어별로 판단하게).
+끝나면 README·AGENTS 의 수록량·배지 수치와 `index.html` 의 `?v=N` 을 같이 올린다.
+
 ## 불변조건과 검증
 
 데이터를 건드렸으면 이걸 돌린다. 전부 통과해야 한다.
