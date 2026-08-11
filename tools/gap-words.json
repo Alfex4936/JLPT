@@ -1,0 +1,1814 @@
+[
+ {
+  "w": "キロメートル",
+  "k": "キロメートル",
+  "lv": 5,
+  "en": "kilometer, kilometre"
+ },
+ {
+  "w": "ご飯",
+  "k": "ごはん",
+  "lv": 5,
+  "en": "cooked rice, meal"
+ },
+ {
+  "w": "ページ",
+  "k": "ページ",
+  "lv": 5,
+  "en": "page, nth page, page ..."
+ },
+ {
+  "w": "もしもし",
+  "k": "もしもし",
+  "lv": 5,
+  "en": "hello (e.g. on phone), excuse me! (when calling out to someone)"
+ },
+ {
+  "w": "下さい",
+  "k": "ください",
+  "lv": 5,
+  "en": "please (give me), please (do for me)"
+ },
+ {
+  "w": "鞄",
+  "k": "かばん",
+  "lv": 5,
+  "en": "bag, satchel, briefcase"
+ },
+ {
+  "w": "顔",
+  "k": "かお",
+  "lv": 5,
+  "en": "face, visage, looks"
+ },
+ {
+  "w": "貴方",
+  "k": "あなた",
+  "lv": 5,
+  "en": "you, dear, honey"
+ },
+ {
+  "w": "鶏肉",
+  "k": "とりにく",
+  "lv": 5,
+  "en": "chicken meat, fowl, poultry"
+ },
+ {
+  "w": "出来る",
+  "k": "できる",
+  "lv": 5,
+  "en": "to be able to do, to be possible, to be permitted (to do)"
+ },
+ {
+  "w": "昼ご飯",
+  "k": "ひるごはん",
+  "lv": 5,
+  "en": "lunch, midday meal"
+ },
+ {
+  "w": "丁度",
+  "k": "ちょうど",
+  "lv": 5,
+  "en": "exactly, precisely, just"
+ },
+ {
+  "w": "朝ごはん",
+  "k": "あさごはん",
+  "lv": 5,
+  "en": "breakfast"
+ },
+ {
+  "w": "直ぐに",
+  "k": "すぐに",
+  "lv": 5,
+  "en": "immediately, right away, at once"
+ },
+ {
+  "w": "入り口",
+  "k": "いりぐち",
+  "lv": 5,
+  "en": "entrance, entry, gate"
+ },
+ {
+  "w": "父",
+  "k": "ちち",
+  "lv": 5,
+  "en": "father"
+ },
+ {
+  "w": "母",
+  "k": "はは",
+  "lv": 5,
+  "en": "mother"
+ },
+ {
+  "w": "良く",
+  "k": "よく",
+  "lv": 5,
+  "en": "nicely, properly, well"
+ },
+ {
+  "w": "綺麗",
+  "k": "きれい",
+  "lv": 5,
+  "en": "pretty, lovely, beautiful"
+ },
+ {
+  "w": "お金持ち",
+  "k": "おかねもち",
+  "lv": 4,
+  "en": "rich person, wealthy person"
+ },
+ {
+  "w": "お釣り",
+  "k": "おつり",
+  "lv": 4,
+  "en": "change (for a purchase), toilet splashback"
+ },
+ {
+  "w": "けがする",
+  "k": "けがする",
+  "lv": 4,
+  "en": "to get injured, to be hurt"
+ },
+ {
+  "w": "けんかする",
+  "k": "けんかする",
+  "lv": 4,
+  "en": "to quarrel, to fight"
+ },
+ {
+  "w": "ご主人",
+  "k": "ごしゅじん",
+  "lv": 4,
+  "en": "your husband, her husband"
+ },
+ {
+  "w": "ご存知",
+  "k": "ごぞんじ",
+  "lv": 4,
+  "en": "knowing, being aware (of), (an) acquaintance"
+ },
+ {
+  "w": "ご覧になる",
+  "k": "ごらんになる",
+  "lv": 4,
+  "en": "to see, to look, to watch"
+ },
+ {
+  "w": "スーパー",
+  "k": "スーパー",
+  "lv": 4,
+  "en": "supermarket, subtitles, telop"
+ },
+ {
+  "w": "それ程",
+  "k": "それほど",
+  "lv": 4,
+  "en": "to that degree, to that extent, that much"
+ },
+ {
+  "w": "チェック",
+  "k": "チェック",
+  "lv": 4,
+  "en": "check (pattern), plaid, check"
+ },
+ {
+  "w": "チェックする",
+  "k": "チェックする",
+  "lv": 4,
+  "en": "to check, to verify"
+ },
+ {
+  "w": "パパ",
+  "k": "パパ",
+  "lv": 4,
+  "en": "dad, daddy, papa"
+ },
+ {
+  "w": "ハンバーグ",
+  "k": "ハンバーグ",
+  "lv": 4,
+  "en": "Hamburg steak, hamburger steak"
+ },
+ {
+  "w": "びっくりする",
+  "k": "びっくりする",
+  "lv": 4,
+  "en": "to be surprised, to be startled"
+ },
+ {
+  "w": "一杯",
+  "k": "いっぱい",
+  "lv": 4,
+  "en": "one cup (of), one glass (of), one bowl (of)"
+ },
+ {
+  "w": "押入れ",
+  "k": "おしいれ",
+  "lv": 4,
+  "en": "closet (built into the wall, usu. with sliding doors), (built-in) wardrobe"
+ },
+ {
+  "w": "頑張る",
+  "k": "がんばる",
+  "lv": 4,
+  "en": "to persevere, to persist, to keep at it"
+ },
+ {
+  "w": "仰る",
+  "k": "おっしゃる",
+  "lv": 4,
+  "en": "to say, to speak, to tell"
+ },
+ {
+  "w": "失礼",
+  "k": "しつれい",
+  "lv": 4,
+  "en": "discourtesy, impoliteness, excuse me"
+ },
+ {
+  "w": "上手い",
+  "k": "うまい",
+  "lv": 4,
+  "en": "skillful, skilful, skilled"
+ },
+ {
+  "w": "正月",
+  "k": "しょうがつ",
+  "lv": 4,
+  "en": "New Year (esp. first three days), first month of the year, January"
+ },
+ {
+  "w": "専門",
+  "k": "せんもん",
+  "lv": 4,
+  "en": "speciality, specialty, special subject of study"
+ },
+ {
+  "w": "葡萄",
+  "k": "ぶどう",
+  "lv": 4,
+  "en": "grape, grapevine"
+ },
+ {
+  "w": "イメージ",
+  "k": "イメージ",
+  "lv": 3,
+  "en": "image (in one's mind), impression, imagining"
+ },
+ {
+  "w": "お辞儀",
+  "k": "おじぎ",
+  "lv": 3,
+  "en": "bow, bowing"
+ },
+ {
+  "w": "お前",
+  "k": "おまえ",
+  "lv": 3,
+  "en": "you, before (a god, nobleman, etc.), in front of"
+ },
+ {
+  "w": "これ等",
+  "k": "これら",
+  "lv": 3,
+  "en": "these"
+ },
+ {
+  "w": "トン",
+  "k": "トン",
+  "lv": 3,
+  "en": "ton (esp. a metric ton, i.e. 1000 kg), tonne"
+ },
+ {
+  "w": "医院",
+  "k": "いいん",
+  "lv": 3,
+  "en": "doctor's office, doctor's surgery, clinic"
+ },
+ {
+  "w": "温まる",
+  "k": "あたたまる",
+  "lv": 3,
+  "en": "to warm oneself, to sun oneself, to warm up"
+ },
+ {
+  "w": "温める",
+  "k": "あたためる",
+  "lv": 3,
+  "en": "to warm (up), to heat (up), to sit on (an idea, plan, etc.)"
+ },
+ {
+  "w": "下ろす",
+  "k": "おろす",
+  "lv": 3,
+  "en": "to take down, to bring down, to lower (a hand, flag, shutter, etc.)"
+ },
+ {
+  "w": "気づく",
+  "k": "きづく",
+  "lv": 3,
+  "en": "to notice, to realize, to realise"
+ },
+ {
+  "w": "菌",
+  "k": "きん",
+  "lv": 3,
+  "en": "fungus, germ, bacterium"
+ },
+ {
+  "w": "向い",
+  "k": "むかい",
+  "lv": 3,
+  "en": "facing, opposite, across the street"
+ },
+ {
+  "w": "祭り",
+  "k": "まつり",
+  "lv": 3,
+  "en": "festival, feast, matsuri"
+ },
+ {
+  "w": "支払い",
+  "k": "しはらい",
+  "lv": 3,
+  "en": "payment"
+ },
+ {
+  "w": "狩り",
+  "k": "かり",
+  "lv": 3,
+  "en": "hunting, hunt, shooting"
+ },
+ {
+  "w": "出場",
+  "k": "しゅつじょう",
+  "lv": 3,
+  "en": "participation (in a tournament, match, race, etc.), entry, taking part (in)"
+ },
+ {
+  "w": "人ごみ",
+  "k": "ひとごみ",
+  "lv": 3,
+  "en": "crowd of people"
+ },
+ {
+  "w": "正体",
+  "k": "しょうたい",
+  "lv": 3,
+  "en": "true character, true form, true colors"
+ },
+ {
+  "w": "生涯",
+  "k": "しょうがい",
+  "lv": 3,
+  "en": "life, lifetime, career"
+ },
+ {
+  "w": "生憎",
+  "k": "あいにく",
+  "lv": 3,
+  "en": "unfortunately, sorry, but ..."
+ },
+ {
+  "w": "精算",
+  "k": "せいさん",
+  "lv": 3,
+  "en": "exact calculation, squaring of accounts, adjustment"
+ },
+ {
+  "w": "体重",
+  "k": "たいじゅう",
+  "lv": 3,
+  "en": "(body) weight"
+ },
+ {
+  "w": "断つ",
+  "k": "たつ",
+  "lv": 3,
+  "en": "to sever, to cut off, to suppress"
+ },
+ {
+  "w": "頂きます",
+  "k": "いただきます",
+  "lv": 3,
+  "en": "thank you (for the meal just served), I receive (this meal)"
+ },
+ {
+  "w": "頂戴",
+  "k": "ちょうだい",
+  "lv": 3,
+  "en": "receiving, getting, accepting"
+ },
+ {
+  "w": "追いつく",
+  "k": "おいつく",
+  "lv": 3,
+  "en": "to catch up (with), to draw level, to pull even"
+ },
+ {
+  "w": "当然",
+  "k": "とうぜん",
+  "lv": 3,
+  "en": "natural, right, proper"
+ },
+ {
+  "w": "童謡",
+  "k": "どうよう",
+  "lv": 3,
+  "en": "children's song, nursery rhyme"
+ },
+ {
+  "w": "銅貨",
+  "k": "どうか",
+  "lv": 3,
+  "en": "copper coin"
+ },
+ {
+  "w": "表示",
+  "k": "ひょうじ",
+  "lv": 3,
+  "en": "indication, expression, showing"
+ },
+ {
+  "w": "迷う",
+  "k": "まよう",
+  "lv": 3,
+  "en": "to lose one's way, to get lost, to go astray"
+ },
+ {
+  "w": "いつの間にか",
+  "k": "いつのまにか",
+  "lv": 2,
+  "en": "before one knows, before one becomes aware of, unnoticed"
+ },
+ {
+  "w": "ウェイトレス",
+  "k": "ウェイトレス",
+  "lv": 2,
+  "en": "waitress"
+ },
+ {
+  "w": "えっと",
+  "k": "えっと",
+  "lv": 2,
+  "en": "let me see, well, errr ..."
+ },
+ {
+  "w": "おかまいなく",
+  "k": "おかまいなく",
+  "lv": 2,
+  "en": "please don't fuss over me"
+ },
+ {
+  "w": "おしまい",
+  "k": "おしまい",
+  "lv": 2,
+  "en": "the end, closing, being done for"
+ },
+ {
+  "w": "お陰様で",
+  "k": "おかげさまで",
+  "lv": 2,
+  "en": "thankfully, fortunately, luckily"
+ },
+ {
+  "w": "お出かけ",
+  "k": "おでかけ",
+  "lv": 2,
+  "en": "about to start out, just about to leave or go out, outing"
+ },
+ {
+  "w": "お待たせしました",
+  "k": "おまたせしました",
+  "lv": 2,
+  "en": "thank you for waiting, sorry to have kept you waiting"
+ },
+ {
+  "w": "カタカナ",
+  "k": "カタカナ",
+  "lv": 2,
+  "en": "katakana, angular Japanese syllabary used primarily for loanwords"
+ },
+ {
+  "w": "ご馳走様",
+  "k": "ごちそうさま",
+  "lv": 2,
+  "en": "thank you (for the meal), that was a delicious meal, thank you (for displaying lovey-dovey behaviour)"
+ },
+ {
+  "w": "ご覧",
+  "k": "ごらん",
+  "lv": 2,
+  "en": "(please) try to, (please) look, seeing"
+ },
+ {
+  "w": "そう言えば",
+  "k": "そういえば",
+  "lv": 2,
+  "en": "now that you mention it, come to think of it, that reminds me"
+ },
+ {
+  "w": "その他",
+  "k": "そのほか",
+  "lv": 2,
+  "en": "the rest, the others, in addition (to that)"
+ },
+ {
+  "w": "それなら",
+  "k": "それなら",
+  "lv": 2,
+  "en": "if that's the case ..., if so ..., that being the case ..."
+ },
+ {
+  "w": "ダイアグラム",
+  "k": "ダイアグラム",
+  "lv": 2,
+  "en": "diagram"
+ },
+ {
+  "w": "ため息",
+  "k": "ためいき",
+  "lv": 2,
+  "en": "sigh"
+ },
+ {
+  "w": "ちり紙",
+  "k": "ちりがみ",
+  "lv": 2,
+  "en": "tissue paper, toilet paper"
+ },
+ {
+  "w": "どう致しまして",
+  "k": "どういたしまして",
+  "lv": 2,
+  "en": "you're welcome, don't mention it, not at all"
+ },
+ {
+  "w": "ネジ",
+  "k": "ネジ",
+  "lv": 2,
+  "en": "screw, key (of a clock, watch, etc.), spring"
+ },
+ {
+  "w": "ひっくり返る",
+  "k": "ひっくりかえる",
+  "lv": 2,
+  "en": "to be overturned, to be reversed, to turn over"
+ },
+ {
+  "w": "やたら",
+  "k": "やたら",
+  "lv": 2,
+  "en": "indiscriminately, blindly, at random"
+ },
+ {
+  "w": "やむを得ない",
+  "k": "やむをえない",
+  "lv": 2,
+  "en": "cannot be helped, unavoidable"
+ },
+ {
+  "w": "一先ず",
+  "k": "ひとまず",
+  "lv": 2,
+  "en": "for now, for the time being, for the present"
+ },
+ {
+  "w": "一段",
+  "k": "いちだん",
+  "lv": 2,
+  "en": "even more, still more, much more"
+ },
+ {
+  "w": "引き算",
+  "k": "ひきざん",
+  "lv": 2,
+  "en": "subtraction"
+ },
+ {
+  "w": "引き返す",
+  "k": "ひきかえす",
+  "lv": 2,
+  "en": "to turn back, to go back, to come back"
+ },
+ {
+  "w": "引っかかる",
+  "k": "ひっかかる",
+  "lv": 2,
+  "en": "to be caught in, to be stuck in, to stop by"
+ },
+ {
+  "w": "引っ越し",
+  "k": "ひっこし",
+  "lv": 2,
+  "en": "moving (dwelling, office, etc.), changing residence"
+ },
+ {
+  "w": "歌留多",
+  "k": "カルタ",
+  "lv": 2,
+  "en": "karuta, traditional Japanese playing cards, esp. hyakunin isshu karuta or iroha karuta"
+ },
+ {
+  "w": "関わる",
+  "k": "かかわる",
+  "lv": 2,
+  "en": "to be involved (in), to get involved (in), to concern oneself (with)"
+ },
+ {
+  "w": "気をつける",
+  "k": "きをつける",
+  "lv": 2,
+  "en": "to be careful, to pay attention, to take care"
+ },
+ {
+  "w": "近づける",
+  "k": "ちかづける",
+  "lv": 2,
+  "en": "to bring near, to bring close, to let go near"
+ },
+ {
+  "w": "隙",
+  "k": "すき",
+  "lv": 2,
+  "en": "gap, opening, room"
+ },
+ {
+  "w": "欠伸",
+  "k": "あくび",
+  "lv": 2,
+  "en": "yawn, yawning, kanji \"yawning\" radical (radical 76)"
+ },
+ {
+  "w": "懸命",
+  "k": "けんめい",
+  "lv": 2,
+  "en": "eager, earnest, strenuous"
+ },
+ {
+  "w": "見かけ",
+  "k": "みかけ",
+  "lv": 2,
+  "en": "outward appearance, apparent"
+ },
+ {
+  "w": "見つめる",
+  "k": "みつめる",
+  "lv": 2,
+  "en": "to stare (at), to gaze (at), to look hard (at)"
+ },
+ {
+  "w": "見上げる",
+  "k": "みあげる",
+  "lv": 2,
+  "en": "to look up at, to raise one's eyes, to look up to"
+ },
+ {
+  "w": "元日",
+  "k": "がんじつ",
+  "lv": 2,
+  "en": "New Year's Day"
+ },
+ {
+  "w": "呼びかける",
+  "k": "よびかける",
+  "lv": 2,
+  "en": "to call out to, to hail, to address"
+ },
+ {
+  "w": "乞う",
+  "k": "こう",
+  "lv": 2,
+  "en": "to beg, to ask, to request"
+ },
+ {
+  "w": "交代",
+  "k": "こうたい",
+  "lv": 2,
+  "en": "change, alternation, rotation"
+ },
+ {
+  "w": "絞める",
+  "k": "しめる",
+  "lv": 2,
+  "en": "to strangle, to constrict"
+ },
+ {
+  "w": "荒れる",
+  "k": "あれる",
+  "lv": 2,
+  "en": "to become stormy, to become rough (of the sea), to fall into ruin"
+ },
+ {
+  "w": "行ってきます",
+  "k": "いってきます",
+  "lv": 2,
+  "en": "I'm off (and will be back later), see you later"
+ },
+ {
+  "w": "行ってらっしゃい",
+  "k": "いってらっしゃい",
+  "lv": 2,
+  "en": "have a good day, take care, see you"
+ },
+ {
+  "w": "行方",
+  "k": "ゆくえ",
+  "lv": 2,
+  "en": "(one's) whereabouts, destination, where one is headed"
+ },
+ {
+  "w": "仕方がない",
+  "k": "しかたがない",
+  "lv": 2,
+  "en": "there's no (other) way, cannot be helped, unavoidable"
+ },
+ {
+  "w": "思いがけない",
+  "k": "おもいがけない",
+  "lv": 2,
+  "en": "unexpected, contrary to expectations, by chance"
+ },
+ {
+  "w": "思いっきり",
+  "k": "おもいっきり",
+  "lv": 2,
+  "en": "to one's heart's content, as much as one wants, as hard as one can"
+ },
+ {
+  "w": "思い切り",
+  "k": "おもいきり",
+  "lv": 2,
+  "en": "to one's heart's content, as much as one wants, as hard as one can"
+ },
+ {
+  "w": "自ら",
+  "k": "みずから",
+  "lv": 2,
+  "en": "oneself, oneself, for oneself"
+ },
+ {
+  "w": "自宅",
+  "k": "じたく",
+  "lv": 2,
+  "en": "one's home, one's house"
+ },
+ {
+  "w": "失礼しました",
+  "k": "しつれいしました",
+  "lv": 2,
+  "en": "my apologies, I'm sorry, excuse me"
+ },
+ {
+  "w": "主人",
+  "k": "しゅじん",
+  "lv": 2,
+  "en": "head (of a household), proprietor (of a store), proprietress"
+ },
+ {
+  "w": "手ごろ",
+  "k": "てごろ",
+  "lv": 2,
+  "en": "handy, convenient, suitable"
+ },
+ {
+  "w": "手ぬぐい",
+  "k": "てぬぐい",
+  "lv": 2,
+  "en": "tenugui, (hand) towel (usu. thin cotton cloth)"
+ },
+ {
+  "w": "叔母",
+  "k": "おば",
+  "lv": 2,
+  "en": "aunt"
+ },
+ {
+  "w": "初めまして",
+  "k": "はじめまして",
+  "lv": 2,
+  "en": "nice to meet you, I'm glad to make your acquaintance, how do you do?"
+ },
+ {
+  "w": "初歩",
+  "k": "しょほ",
+  "lv": 2,
+  "en": "basics, rudiments, elements"
+ },
+ {
+  "w": "上品",
+  "k": "じょうひん",
+  "lv": 2,
+  "en": "elegant, refined, polished"
+ },
+ {
+  "w": "乗り越し",
+  "k": "のりこし",
+  "lv": 2,
+  "en": "riding past (one's station)"
+ },
+ {
+  "w": "職場",
+  "k": "しょくば",
+  "lv": 2,
+  "en": "one's post, place of work, workplace"
+ },
+ {
+  "w": "寝巻き",
+  "k": "ねまき",
+  "lv": 2,
+  "en": "nightclothes, nightwear, sleepwear"
+ },
+ {
+  "w": "振り向く",
+  "k": "ふりむく",
+  "lv": 2,
+  "en": "to turn one's face, to turn around, to look over one's shoulder"
+ },
+ {
+  "w": "振る舞う",
+  "k": "ふるまう",
+  "lv": 2,
+  "en": "to behave, to conduct oneself, to act"
+ },
+ {
+  "w": "人差し指",
+  "k": "ひとさしゆび",
+  "lv": 2,
+  "en": "index finger, forefinger, first (occ. second) finger"
+ },
+ {
+  "w": "人事",
+  "k": "じんじ",
+  "lv": 2,
+  "en": "human affairs, mundane matters, things human"
+ },
+ {
+  "w": "水着",
+  "k": "みずぎ",
+  "lv": 2,
+  "en": "bathing suit, swimsuit, swimmers"
+ },
+ {
+  "w": "水面",
+  "k": "すいめん",
+  "lv": 2,
+  "en": "water's surface"
+ },
+ {
+  "w": "先ほど",
+  "k": "さきほど",
+  "lv": 2,
+  "en": "a short while ago, a moment ago, just now"
+ },
+ {
+  "w": "千切る",
+  "k": "ちぎる",
+  "lv": 2,
+  "en": "to tear to pieces, to tear to shreds, to tear up"
+ },
+ {
+  "w": "洗面",
+  "k": "せんめん",
+  "lv": 2,
+  "en": "washing one's face"
+ },
+ {
+  "w": "全力",
+  "k": "ぜんりょく",
+  "lv": 2,
+  "en": "all one's power (strength, energy, efforts), one's utmost"
+ },
+ {
+  "w": "捉える",
+  "k": "とらえる",
+  "lv": 2,
+  "en": "to catch, to capture, to seize"
+ },
+ {
+  "w": "足元",
+  "k": "あしもと",
+  "lv": 2,
+  "en": "at one's feet, underfoot, one's step (as in \"watch your step\")"
+ },
+ {
+  "w": "替わる",
+  "k": "かわる",
+  "lv": 2,
+  "en": "to succeed, to relieve, to replace"
+ },
+ {
+  "w": "貸出",
+  "k": "かしだし",
+  "lv": 2,
+  "en": "lending, loaning"
+ },
+ {
+  "w": "大雑把",
+  "k": "おおざっぱ",
+  "lv": 2,
+  "en": "rough (estimate, summary, etc.), broad, general"
+ },
+ {
+  "w": "只今",
+  "k": "ただいま",
+  "lv": 2,
+  "en": "I'm home!, I'm back!, it's me!"
+ },
+ {
+  "w": "地面",
+  "k": "じめん",
+  "lv": 2,
+  "en": "ground, earth's surface, land"
+ },
+ {
+  "w": "着替える",
+  "k": "きがえる",
+  "lv": 2,
+  "en": "to change (one's clothes)"
+ },
+ {
+  "w": "追いかける",
+  "k": "おいかける",
+  "lv": 2,
+  "en": "to chase, to run after, to pursue"
+ },
+ {
+  "w": "弟子",
+  "k": "でし",
+  "lv": 2,
+  "en": "pupil, disciple, adherent"
+ },
+ {
+  "w": "田んぼ",
+  "k": "たんぼ",
+  "lv": 2,
+  "en": "rice field, rice paddy, paddy field"
+ },
+ {
+  "w": "湯のみ",
+  "k": "ゆのみ",
+  "lv": 2,
+  "en": "teacup"
+ },
+ {
+  "w": "独りでに",
+  "k": "ひとりでに",
+  "lv": 2,
+  "en": "by itself, automatically, naturally"
+ },
+ {
+  "w": "謎々",
+  "k": "なぞなぞ",
+  "lv": 2,
+  "en": "riddle, puzzle, enigma"
+ },
+ {
+  "w": "日にち",
+  "k": "ひにち",
+  "lv": 2,
+  "en": "date (of a planned event, act, etc.), day, (number of) days"
+ },
+ {
+  "w": "日差し",
+  "k": "ひざし",
+  "lv": 2,
+  "en": "sunlight, rays of the Sun"
+ },
+ {
+  "w": "売り上げ",
+  "k": "うりあげ",
+  "lv": 2,
+  "en": "amount sold, sales, proceeds"
+ },
+ {
+  "w": "苗字",
+  "k": "みょうじ",
+  "lv": 2,
+  "en": "surname, family name, last name"
+ },
+ {
+  "w": "瓶詰め",
+  "k": "びんづめ",
+  "lv": 2,
+  "en": "bottling, bottled"
+ },
+ {
+  "w": "編み物",
+  "k": "あみもの",
+  "lv": 2,
+  "en": "knitting, knitted material, crochet"
+ },
+ {
+  "w": "目覚まし",
+  "k": "めざまし",
+  "lv": 2,
+  "en": "alarm clock, waking up, keeping oneself awake"
+ },
+ {
+  "w": "勿体ない",
+  "k": "もったいない",
+  "lv": 2,
+  "en": "wasteful, a waste, too good"
+ },
+ {
+  "w": "落ち着く",
+  "k": "おちつく",
+  "lv": 2,
+  "en": "to calm down, to compose oneself, to regain presence of mind"
+ },
+ {
+  "w": "話しかける",
+  "k": "はなしかける",
+  "lv": 2,
+  "en": "to address (someone), to accost a person, to talk (to someone)"
+ },
+ {
+  "w": "眩暈",
+  "k": "めまい",
+  "lv": 2,
+  "en": "dizziness, giddiness, vertigo"
+ },
+ {
+  "w": "瞼",
+  "k": "まぶた",
+  "lv": 2,
+  "en": "eyelid"
+ },
+ {
+  "w": "頷く",
+  "k": "うなずく",
+  "lv": 2,
+  "en": "to nod, to bow one's head in assent, to agree"
+ },
+ {
+  "w": "ありふれる",
+  "k": "ありふれる",
+  "lv": 1,
+  "en": "to be common, to be commonplace"
+ },
+ {
+  "w": "おおまかな",
+  "k": "おおまかな",
+  "lv": 1,
+  "en": "rough, broad, general"
+ },
+ {
+  "w": "オドオド",
+  "k": "オドオド",
+  "lv": 1,
+  "en": "timidly, nervously, hesitantly"
+ },
+ {
+  "w": "おんぶ",
+  "k": "おんぶ",
+  "lv": 1,
+  "en": "carrying (someone) on one's back (esp. a child), piggyback ride, relying on (someone)"
+ },
+ {
+  "w": "お袋",
+  "k": "おふくろ",
+  "lv": 1,
+  "en": "(one's) mother"
+ },
+ {
+  "w": "くじ引き",
+  "k": "くじびき",
+  "lv": 1,
+  "en": "lottery, drawn lot"
+ },
+ {
+  "w": "さっぱりする",
+  "k": "さっぱりする",
+  "lv": 1,
+  "en": "to feel refreshed, to feel relieved"
+ },
+ {
+  "w": "たどり着く",
+  "k": "たどりつく",
+  "lv": 1,
+  "en": "to (finally) arrive at, to reach (at last), to (manage to) get to"
+ },
+ {
+  "w": "タンパク質",
+  "k": "たんぱくしつ",
+  "lv": 1,
+  "en": "protein"
+ },
+ {
+  "w": "ちり取り",
+  "k": "ちりとり",
+  "lv": 1,
+  "en": "dustpan"
+ },
+ {
+  "w": "つかの間",
+  "k": "つかのま",
+  "lv": 1,
+  "en": "moment, brief space of time"
+ },
+ {
+  "w": "つくづく",
+  "k": "つくづく",
+  "lv": 1,
+  "en": "deeply, keenly, severely"
+ },
+ {
+  "w": "トランジスタ",
+  "k": "トランジスタ",
+  "lv": 1,
+  "en": "transistor"
+ },
+ {
+  "w": "にも関わらず",
+  "k": "にもかかわらず",
+  "lv": 1,
+  "en": "in spite of, despite, although"
+ },
+ {
+  "w": "ばい菌",
+  "k": "ばいきん",
+  "lv": 1,
+  "en": "germ, germs, bacteria"
+ },
+ {
+  "w": "バッテリー",
+  "k": "バッテリー",
+  "lv": 1,
+  "en": "battery, battery (pitcher and catcher)"
+ },
+ {
+  "w": "ハマる",
+  "k": "ハマる",
+  "lv": 1,
+  "en": "to fit, to get into, to go into"
+ },
+ {
+  "w": "ハラハラ",
+  "k": "はらはら",
+  "lv": 1,
+  "en": "to feel anxious, to feel nervous, to be kept in suspense"
+ },
+ {
+  "w": "ばら撒く",
+  "k": "ばらまく",
+  "lv": 1,
+  "en": "to scatter, to disseminate (e.g. a rumor), to spread (e.g. germs)"
+ },
+ {
+  "w": "ひな祭り",
+  "k": "ひなまつり",
+  "lv": 1,
+  "en": "Hinamatsuri (March 3), Hina Matsuri, Girls' Festival"
+ },
+ {
+  "w": "ふらふら",
+  "k": "ふらふら",
+  "lv": 1,
+  "en": "unsteadily (e.g. on one's feet), shakily, staggering"
+ },
+ {
+  "w": "マイクロフォン",
+  "k": "マイクロフォン",
+  "lv": 1,
+  "en": "microphone"
+ },
+ {
+  "w": "やけに",
+  "k": "やけに",
+  "lv": 1,
+  "en": "awfully, terribly, excessively"
+ },
+ {
+  "w": "よそ見",
+  "k": "よそみ",
+  "lv": 1,
+  "en": "looking away, looking aside, outsider's perspective"
+ },
+ {
+  "w": "ロープウェイ",
+  "k": "ロープウエイ",
+  "lv": 1,
+  "en": "ropeway, cableway, aerial lift"
+ },
+ {
+  "w": "悪しからず",
+  "k": "あしからず",
+  "lv": 1,
+  "en": "don't get me wrong, but ..., I'm sorry"
+ },
+ {
+  "w": "圧倒",
+  "k": "あっとう",
+  "lv": 1,
+  "en": "to overwhelm (e.g. an opponent), to overpower, to crush"
+ },
+ {
+  "w": "斡旋",
+  "k": "あっせん",
+  "lv": 1,
+  "en": "good offices, kind offices, services"
+ },
+ {
+  "w": "一重",
+  "k": "ひとえ",
+  "lv": 1,
+  "en": "one layer, single layer, monopetalous"
+ },
+ {
+  "w": "往診",
+  "k": "おうしん",
+  "lv": 1,
+  "en": "doctor's visit, house call"
+ },
+ {
+  "w": "押し切る",
+  "k": "おしきる",
+  "lv": 1,
+  "en": "to overcome (opposition), to push past, to force one's way"
+ },
+ {
+  "w": "仮に",
+  "k": "かりに",
+  "lv": 1,
+  "en": "supposing, even if, granting that"
+ },
+ {
+  "w": "何だかんだ",
+  "k": "なんだかんだ",
+  "lv": 1,
+  "en": "something or other, one thing or another, this or that"
+ },
+ {
+  "w": "顔つき",
+  "k": "かおつき",
+  "lv": 1,
+  "en": "(outward) looks, features, face"
+ },
+ {
+  "w": "偽物",
+  "k": "にせもの",
+  "lv": 1,
+  "en": "spurious article, forgery, counterfeit"
+ },
+ {
+  "w": "虚しい",
+  "k": "むなしい",
+  "lv": 1,
+  "en": "empty, void, vacant"
+ },
+ {
+  "w": "郷土",
+  "k": "きょうど",
+  "lv": 1,
+  "en": "native place, birth-place, one's old home"
+ },
+ {
+  "w": "近づく",
+  "k": "ちかづく",
+  "lv": 1,
+  "en": "to approach, to draw near, to get close"
+ },
+ {
+  "w": "倶楽部",
+  "k": "クラブ",
+  "lv": 1,
+  "en": "club, fraternity, sorority"
+ },
+ {
+  "w": "群衆",
+  "k": "ぐんしゅう",
+  "lv": 1,
+  "en": "group (of people), crowd, horde"
+ },
+ {
+  "w": "結びつき",
+  "k": "むすびつき",
+  "lv": 1,
+  "en": "connection, relation"
+ },
+ {
+  "w": "結びつく",
+  "k": "むすびつく",
+  "lv": 1,
+  "en": "to be related, to be connected, to be joined together"
+ },
+ {
+  "w": "嫌らしい",
+  "k": "いやらしい",
+  "lv": 1,
+  "en": "unpleasant, disagreeable, nasty"
+ },
+ {
+  "w": "見かける",
+  "k": "みかける",
+  "lv": 1,
+  "en": "to (happen to) see, to notice, to catch sight of"
+ },
+ {
+  "w": "見なす",
+  "k": "みなす",
+  "lv": 1,
+  "en": "to regard (as), to consider (to be), to deem"
+ },
+ {
+  "w": "見習う",
+  "k": "みならう",
+  "lv": 1,
+  "en": "to follow (someone's) example, to imitate, to copy"
+ },
+ {
+  "w": "見積もり",
+  "k": "みつもり",
+  "lv": 1,
+  "en": "estimate, estimation, valuation"
+ },
+ {
+  "w": "原型",
+  "k": "げんけい",
+  "lv": 1,
+  "en": "model, prototype, archetype"
+ },
+ {
+  "w": "戸締まり",
+  "k": "とじまり",
+  "lv": 1,
+  "en": "locking up (doors and windows), fastening the doors"
+ },
+ {
+  "w": "控え室",
+  "k": "ひかえしつ",
+  "lv": 1,
+  "en": "waiting room, anteroom, antechamber"
+ },
+ {
+  "w": "壕",
+  "k": "ごう",
+  "lv": 1,
+  "en": "moat, fosse, trench"
+ },
+ {
+  "w": "使い",
+  "k": "つかい",
+  "lv": 1,
+  "en": "errand, mission, going on an errand"
+ },
+ {
+  "w": "思いつき",
+  "k": "おもいつき",
+  "lv": 1,
+  "en": "idea, plan, fancy"
+ },
+ {
+  "w": "失脚",
+  "k": "しっきゃく",
+  "lv": 1,
+  "en": "losing one's position, losing one's standing, downfall"
+ },
+ {
+  "w": "実家",
+  "k": "じっか",
+  "lv": 1,
+  "en": "(one's parents') home"
+ },
+ {
+  "w": "屡々",
+  "k": "しばしば",
+  "lv": 1,
+  "en": "often, again and again, frequently"
+ },
+ {
+  "w": "取り分け",
+  "k": "とりわけ",
+  "lv": 1,
+  "en": "especially, particularly, above all"
+ },
+ {
+  "w": "取引",
+  "k": "とりひき",
+  "lv": 1,
+  "en": "transactions, dealings, business"
+ },
+ {
+  "w": "手がかり",
+  "k": "てがかり",
+  "lv": 1,
+  "en": "clue, lead, key"
+ },
+ {
+  "w": "手がける",
+  "k": "てがける",
+  "lv": 1,
+  "en": "to handle, to manage, to deal with"
+ },
+ {
+  "w": "手のひら",
+  "k": "てのひら",
+  "lv": 1,
+  "en": "palm (of the hand)"
+ },
+ {
+  "w": "手当",
+  "k": "てあて",
+  "lv": 1,
+  "en": "salary, pay, compensation"
+ },
+ {
+  "w": "受け持ち",
+  "k": "うけもち",
+  "lv": 1,
+  "en": "charge (of something), matter in one's charge, (one's) assignment"
+ },
+ {
+  "w": "淑やか",
+  "k": "しとやか",
+  "lv": 1,
+  "en": "graceful, ladylike, modest"
+ },
+ {
+  "w": "出現",
+  "k": "しゅつげん",
+  "lv": 1,
+  "en": "appearance, emergence, advent"
+ },
+ {
+  "w": "所有",
+  "k": "しょゆう",
+  "lv": 1,
+  "en": "possession, ownership"
+ },
+ {
+  "w": "渚",
+  "k": "なぎさ",
+  "lv": 1,
+  "en": "water's edge, beach, shore"
+ },
+ {
+  "w": "傷つく",
+  "k": "きずつく",
+  "lv": 1,
+  "en": "to be wounded, to get injured, to get hurt feelings"
+ },
+ {
+  "w": "傷つける",
+  "k": "きずつける",
+  "lv": 1,
+  "en": "to wound, to injure, to hurt someone's feelings (pride, etc.)"
+ },
+ {
+  "w": "勝手",
+  "k": "かって",
+  "lv": 1,
+  "en": "one's own convenience, one's way, selfishness"
+ },
+ {
+  "w": "情けない",
+  "k": "なさけない",
+  "lv": 1,
+  "en": "miserable, pitiable, shameful"
+ },
+ {
+  "w": "織り",
+  "k": "おり",
+  "lv": 1,
+  "en": "weave, weaving, woven item"
+ },
+ {
+  "w": "心がけ",
+  "k": "こころがけ",
+  "lv": 1,
+  "en": "(mental) attitude, way of thinking, attention"
+ },
+ {
+  "w": "心がける",
+  "k": "こころがける",
+  "lv": 1,
+  "en": "to keep in mind, to bear in mind, to try"
+ },
+ {
+  "w": "振り返る",
+  "k": "ふりかえる",
+  "lv": 1,
+  "en": "to turn one's head, to look over one's shoulder, to turn around"
+ },
+ {
+  "w": "申し出",
+  "k": "もうしで",
+  "lv": 1,
+  "en": "proposal, offer, request"
+ },
+ {
+  "w": "親父",
+  "k": "おやじ",
+  "lv": 1,
+  "en": "one's father, one's old man, dad"
+ },
+ {
+  "w": "身の回り",
+  "k": "みのまわり",
+  "lv": 1,
+  "en": "one's personal belongings, one's vicinity, one's daily life"
+ },
+ {
+  "w": "身の上",
+  "k": "みのうえ",
+  "lv": 1,
+  "en": "one's station in life, one's personal history, one's circumstances"
+ },
+ {
+  "w": "人影",
+  "k": "ひとかげ",
+  "lv": 1,
+  "en": "figure of a person, figures of people, shadow of a person"
+ },
+ {
+  "w": "生きがい",
+  "k": "いきがい",
+  "lv": 1,
+  "en": "reason for living, something one lives for, purpose in life"
+ },
+ {
+  "w": "生ける",
+  "k": "いける",
+  "lv": 1,
+  "en": "to arrange (flowers), to plant, living"
+ },
+ {
+  "w": "生ぬるい",
+  "k": "なまぬるい",
+  "lv": 1,
+  "en": "lukewarm, tepid, half-hearted"
+ },
+ {
+  "w": "生む",
+  "k": "うむ",
+  "lv": 1,
+  "en": "to give birth, to bear (child), to lay (eggs)"
+ },
+ {
+  "w": "誠に",
+  "k": "まことに",
+  "lv": 1,
+  "en": "really, truly, very"
+ },
+ {
+  "w": "切り替え",
+  "k": "きりかえ",
+  "lv": 1,
+  "en": "exchange, conversion, replacement"
+ },
+ {
+  "w": "束ねる",
+  "k": "たばねる",
+  "lv": 1,
+  "en": "to tie up in a bundle (e.g. straw, hair, bills, letters), to bundle, to sheathe"
+ },
+ {
+  "w": "速やか",
+  "k": "すみやか",
+  "lv": 1,
+  "en": "quick, speedy, prompt"
+ },
+ {
+  "w": "打ち明ける",
+  "k": "うちあける",
+  "lv": 1,
+  "en": "to confide, to reveal, to disclose"
+ },
+ {
+  "w": "体つき",
+  "k": "からだつき",
+  "lv": 1,
+  "en": "body build, figure"
+ },
+ {
+  "w": "題する",
+  "k": "だいする",
+  "lv": 1,
+  "en": "to be titled (e.g. a book), to be named"
+ },
+ {
+  "w": "耽る",
+  "k": "ふける",
+  "lv": 1,
+  "en": "to indulge in, to give oneself up to, to be obsessed by"
+ },
+ {
+  "w": "敵わない",
+  "k": "かなわない",
+  "lv": 1,
+  "en": "no match for, cannot compete with, not in the same league as"
+ },
+ {
+  "w": "滴",
+  "k": "しずく",
+  "lv": 1,
+  "en": "drop (e.g. of water), drip"
+ },
+ {
+  "w": "天辺",
+  "k": "てっぺん",
+  "lv": 1,
+  "en": "top, summit, apex"
+ },
+ {
+  "w": "途切れる",
+  "k": "とぎれる",
+  "lv": 1,
+  "en": "to break off, to come to an end, to be interrupted"
+ },
+ {
+  "w": "届",
+  "k": "とどけ",
+  "lv": 1,
+  "en": "report, notification, registration"
+ },
+ {
+  "w": "内緒",
+  "k": "ないしょ",
+  "lv": 1,
+  "en": "secrecy, confidentiality, privacy"
+ },
+ {
+  "w": "内心",
+  "k": "ないしん",
+  "lv": 1,
+  "en": "inner thoughts, real intention, inmost heart"
+ },
+ {
+  "w": "内蔵",
+  "k": "ないぞう",
+  "lv": 1,
+  "en": "internal (e.g. mechanism, feature), built-in, equipped (with)"
+ },
+ {
+  "w": "年賀",
+  "k": "ねんが",
+  "lv": 1,
+  "en": "New Year's greetings, New Year's call, New Year's gift"
+ },
+ {
+  "w": "念願",
+  "k": "ねんがん",
+  "lv": 1,
+  "en": "one's heart's desire, one's dearest wish"
+ },
+ {
+  "w": "敗北",
+  "k": "はいぼく",
+  "lv": 1,
+  "en": "defeat, loss, reverse"
+ },
+ {
+  "w": "梅干し",
+  "k": "うめぼし",
+  "lv": 1,
+  "en": "umeboshi, pickled dried ume, pickled dried plum"
+ },
+ {
+  "w": "晩年",
+  "k": "ばんねん",
+  "lv": 1,
+  "en": "one's later years, final years (in life)"
+ },
+ {
+  "w": "庇う",
+  "k": "かばう",
+  "lv": 1,
+  "en": "to protect (someone), to look after (e.g. an injured leg), to defend"
+ },
+ {
+  "w": "母国",
+  "k": "ぼこく",
+  "lv": 1,
+  "en": "one's home country, one's homeland"
+ },
+ {
+  "w": "呆ける",
+  "k": "ぼける",
+  "lv": 1,
+  "en": "to grow senile, to be childish with age, to be mentally slow"
+ },
+ {
+  "w": "抱っこ",
+  "k": "だっこ",
+  "lv": 1,
+  "en": "carrying in one's arms (a baby, pet, doll, etc.), holding, up!"
+ },
+ {
+  "w": "膨張",
+  "k": "ぼうちょう",
+  "lv": 1,
+  "en": "expansion, swelling, increase"
+ },
+ {
+  "w": "本国",
+  "k": "ほんごく",
+  "lv": 1,
+  "en": "home country, one's own country, country of origin"
+ },
+ {
+  "w": "目つき",
+  "k": "めつき",
+  "lv": 1,
+  "en": "look (in someone's eyes), expression (of the eyes), eyes"
+ },
+ {
+  "w": "目覚ましい",
+  "k": "めざましい",
+  "lv": 1,
+  "en": "remarkable, striking, brilliant"
+ },
+ {
+  "w": "目処",
+  "k": "めど",
+  "lv": 1,
+  "en": "aim, goal, prospect"
+ },
+ {
+  "w": "目盛り",
+  "k": "めもり",
+  "lv": 1,
+  "en": "graduations (on a ruler, thermometer, etc.), gradations, division"
+ },
+ {
+  "w": "予て",
+  "k": "かねて",
+  "lv": 1,
+  "en": "previously, already, for some time"
+ },
+ {
+  "w": "乱用",
+  "k": "らんよう",
+  "lv": 1,
+  "en": "abuse, misuse, misappropriation"
+ },
+ {
+  "w": "立ち去る",
+  "k": "たちさる",
+  "lv": 1,
+  "en": "to leave, to depart, to take one's leave"
+ },
+ {
+  "w": "立て替える",
+  "k": "たてかえる",
+  "lv": 1,
+  "en": "to pay for someone else (with the expectation of being reimbursed later), to lend someone the money to pay for (e.g. rent), to make a temporary payment on someone's behalf"
+ },
+ {
+  "w": "良し悪し",
+  "k": "よしあし",
+  "lv": 1,
+  "en": "right or wrong, good or bad, quality"
+ },
+ {
+  "w": "俯く",
+  "k": "うつむく",
+  "lv": 1,
+  "en": "to hang one's head, to look down, to cast one's eyes downward"
+ },
+ {
+  "w": "儚い",
+  "k": "はかない",
+  "lv": 1,
+  "en": "fleeting, transient, short-lived"
+ },
+ {
+  "w": "咄嗟に",
+  "k": "とっさに",
+  "lv": 1,
+  "en": "at once, immediately, instantly"
+ },
+ {
+  "w": "奢る",
+  "k": "おごる",
+  "lv": 1,
+  "en": "to treat (someone) to (something), to give (someone) a treat, to buy (someone a meal, drink, etc.)"
+ },
+ {
+  "w": "灌漑",
+  "k": "かんがい",
+  "lv": 1,
+  "en": "irrigation"
+ },
+ {
+  "w": "炬燵",
+  "k": "こたつ",
+  "lv": 1,
+  "en": "kotatsu, table over an electric heater, with a hanging quilt to retain heat (orig. over a charcoal brazier in a floor well)"
+ },
+ {
+  "w": "籠もる",
+  "k": "こもる",
+  "lv": 1,
+  "en": "to shut oneself in (e.g. one's room), to be confined in, to seclude oneself"
+ },
+ {
+  "w": "舐める",
+  "k": "なめる",
+  "lv": 1,
+  "en": "to lick, to lap, to suck"
+ }
+]
