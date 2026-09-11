@@ -35,6 +35,15 @@
     o.vol = Math.min(1, Math.max(0, Number(o.vol)));
     o.rate = Math.min(1.5, Math.max(0.5, Number(o.rate) || 1));
     if (!Array.isArray(o.levels)) o.levels = null;
+    /* 칩으로 고르는 값은 저장된 값이 칩 목록에 없으면 아무것도 안 켜진다 — 되돌아갈 방법이 사라진다.
+       칩 값을 바꾼 적이 있으므로(0.58 -> 0.62) 가장 가까운 칩으로 스냅해 준다. */
+    var RT_STEPS = [0.52, 0.62, 0.74, 0.88];
+    var rt = Number(o.rt) || DEFAULTS.rt, near = RT_STEPS[0];
+    for (var i = 1; i < RT_STEPS.length; i++) {
+      if (Math.abs(RT_STEPS[i] - rt) < Math.abs(near - rt)) near = RT_STEPS[i];
+    }
+    o.rt = near;
+    if (['kosugi', 'noto', 'yusei', 'dela'].indexOf(o.rtFont) < 0) o.rtFont = DEFAULTS.rtFont;
     return o;
   })();
   var saveT = 0;
