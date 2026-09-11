@@ -59,6 +59,8 @@
   --f-word:var(--f-sel,) "Klee One","Hiragino Mincho ProN","Noto Sans JP","Hiragino Kaku Gothic ProN","Apple SD Gothic Neo",system-ui,sans-serif;
   --f-jp:var(--f-sel,) "Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
   --f-kana:var(--f-sel,) "Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
+  /* 후리가나 크기. 濁点(゛)과 半濁点(゜)은 작으면 구별이 안 된다 — ば/ぱ 를 못 가린다. */
+  --rt:.58em;
   --f-kr:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
   --f-ui:"Noto Sans KR","Noto Sans JP","Apple SD Gothic Neo",system-ui,-apple-system,sans-serif;
   color-scheme:dark;
@@ -713,4 +715,81 @@ select:disabled{opacity:.4;cursor:not-allowed}
   .sum-grid{grid-template-columns:repeat(auto-fill,minmax(5rem,1fr));max-height:52vh}
   .miss b{font-size:1.5rem}
   .sum-acts .btn{flex:1}
+}
+
+/* ============================================================
+   읽기 (뉴스 기사)
+   ============================================================ */
+.art{display:flex;flex-direction:column;gap:clamp(.5rem,1.4vh,1rem)}
+.art-body{display:flex;flex-direction:column}
+.art-row{padding:.45em 0;border-bottom:1px solid var(--line-soft)}
+.art-row:last-child{border-bottom:0}
+.art-head{display:flex;align-items:flex-start;gap:.6rem}
+/* 문장을 누르면 읽어 준다. 커서만으로는 안 보이니 예문 줄과 같은 왼쪽 띠 idiom */
+.art-jp{
+  flex:1;cursor:pointer;font-family:var(--f-jp);color:var(--fg);
+  font-size:calc(clamp(.95rem,1.35vmin + .5rem,1.35rem) * var(--scale));
+  line-height:2.1;                       /* 루비가 들어갈 자리 */
+  margin-left:-.6em;padding-left:.6em;
+  border-left:2px solid transparent;border-radius:var(--r);
+  transition:border-color .18s ease;
+}
+.art-jp:hover{border-left-color:var(--accent)}
+body.idle .art-jp{cursor:none}
+.art-row.is-title .art-jp{
+  font-weight:700;color:var(--fg);
+  font-size:calc(clamp(1.15rem,1.9vmin + .6rem,1.8rem) * var(--scale));
+  line-height:1.9;
+}
+.art-jp ruby{ruby-align:center}
+.art-jp rt{
+  font-family:var(--f-jp);color:var(--fg-2);
+  font-size:var(--rt);line-height:1.1;letter-spacing:.02em;
+  /* 작은 글자에서 획이 뭉개지지 않게. ば 와 ぱ 가 같아 보이면 루비가 제 일을 못 한다 */
+  -webkit-font-smoothing:subpixel-antialiased;
+  font-feature-settings:"palt" 0;
+}
+/* 후리가나를 끄면 줄 높이가 그대로여야 한다 — 글줄이 튀면 읽던 자리를 잃는다 */
+:root[data-furi="0"] .art-jp rt{visibility:hidden}
+.art-ko{
+  font-family:var(--f-kr);color:var(--fg-2);
+  font-size:calc(clamp(.82rem,1vmin + .45rem,1.05rem) * var(--scale));
+  line-height:1.65;word-break:keep-all;
+  padding:.15em 0 .2em .8em;margin-top:.1em;
+  border-left:1px solid var(--line);
+}
+.eye{
+  flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;
+  width:1.9rem;height:1.9rem;padding:0;margin-top:.2em;
+  color:var(--fg-3);background:transparent;
+  border:1px solid transparent;border-radius:var(--r);cursor:pointer;
+  transition:color .15s ease,border-color .15s ease,background-color .15s ease;
+}
+.eye svg{width:1.05rem;height:1.05rem;fill:currentColor}
+.eye:hover{color:var(--fg-2);border-color:var(--line)}
+.eye.on{color:var(--accent);border-color:var(--accent);background:var(--accent-sunk)}
+.art-src{
+  display:flex;gap:.7rem;flex-wrap:wrap;align-items:baseline;
+  font-size:.72rem;color:var(--fg-3);padding-top:.3em;
+}
+.art-src a{color:var(--fg-2);text-decoration:none;border-bottom:1px solid var(--line)}
+.art-src a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+.readacts{display:flex;gap:.35rem;flex-wrap:wrap}
+.readacts .btn{font-size:.74rem;padding:.42rem .55rem;display:inline-flex;align-items:center;gap:.35rem}
+.dockrow.is-read{grid-template-columns:auto auto 1fr auto}
+.dockrow.is-read .transport{grid-column:1;grid-row:1;justify-self:start}
+.dockrow.is-read .readacts{grid-column:2;grid-row:1;justify-self:start}
+.dockrow.is-read .counter{grid-column:3;grid-row:1;justify-self:center}
+.dockrow.is-read .dockacts{grid-column:4;grid-row:1;justify-self:end}
+
+@media (max-width:640px){
+  .art-jp{line-height:2.2}
+  .art-ko{padding-left:.6em}
+  .dockrow.is-read{grid-template-columns:auto 1fr auto;gap:.4rem}
+  .dockrow.is-read .transport{grid-column:1;grid-row:1;justify-self:start}
+  .dockrow.is-read .readacts{grid-column:2;grid-row:1;justify-self:center}
+  .dockrow.is-read .counter{grid-column:3;grid-row:1;justify-self:end}
+  .dockrow.is-read .dockacts{grid-column:1 / -1;grid-row:2;justify-self:center}
+  .dockrow.is-read .readacts kbd{display:none}
+  .dockrow.is-read .readacts .btn{padding:.42rem .45rem}
 }

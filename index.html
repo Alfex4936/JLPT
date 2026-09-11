@@ -17,17 +17,18 @@ try{
 </script>
 
 <!-- ?v= 는 캐시 무효화용. CSS/JS 고칠 때 숫자만 올리면 새로고침에서 확실히 반영된다 -->
-<link rel="stylesheet" href="assets/style.css?v=25">
+<link rel="stylesheet" href="assets/style.css?v=26">
 
 <!-- 데이터: 없는 파일은 조용히 무시된다 (fetch 없음, script 태그만) -->
 <script>window.JLPT = window.JLPT || [];</script>
-<script src="data/words-n5.js?v=25"></script>
-<script src="data/words-n4.js?v=25"></script>
-<script src="data/words-n3.js?v=25"></script>
-<script src="data/words-n2.js?v=25"></script>
-<script src="data/words-n1.js?v=25"></script>
-<script src="data/kanji.js?v=25"></script>
-<script src="data/kana.js?v=25"></script>
+<script src="data/words-n5.js?v=26"></script>
+<script src="data/words-n4.js?v=26"></script>
+<script src="data/words-n3.js?v=26"></script>
+<script src="data/words-n2.js?v=26"></script>
+<script src="data/words-n1.js?v=26"></script>
+<script src="data/kanji.js?v=26"></script>
+<script src="data/kana.js?v=26"></script>
+<script src="data/reading.js?v=26"></script>
 </head>
 <body>
 
@@ -69,6 +70,11 @@ try{
           <span class="pick-spec pick-spec-kana" aria-hidden="true">あア</span>
           <span class="pick-txt"><b>かな</b><em>히라가나·가타카나 타자 연습. 로마자로 받아쓰기</em></span>
           <span class="pick-n" id="pickNKana"></span>
+        </button>
+        <button class="pickrow" data-go="reading" type="button">
+          <span class="pick-spec" aria-hidden="true">新聞</span>
+          <span class="pick-txt"><b>읽기</b><em>실제 뉴스 기사. 한자 위에 かな, 문장마다 번역과 발음</em></span>
+          <span class="pick-n" id="pickNRead"></span>
         </button>
       </div>
       <p class="home-foot" id="homeFoot"></p>
@@ -119,6 +125,12 @@ try{
                maxlength="4" aria-label="로마자 입력">
         <p class="drill-ans" id="kanaAns"><b id="kanaAnsR"></b><span id="kanaAnsH"></span><em id="kanaAnsA"></em></p>
         <span class="drill-tip" id="kanaTip">로마자로 입력하면 바로 넘어갑니다</span>
+      </div>
+
+      <!-- 읽기: 기사 한 편. 문장마다 루비·번역·발음이 따로 논다 -->
+      <div class="art" id="cArt" hidden>
+        <div class="art-body" id="artBody"></div>
+        <p class="art-src" id="artSrc"></p>
       </div>
 
       <p class="en" id="cEn" hidden></p>
@@ -182,6 +194,11 @@ try{
         <button class="btn" id="btnG2" type="button" title="알아요 (3)">알아요 <kbd>3</kbd></button>
       </div>
 
+      <div class="readacts" id="readActs" hidden>
+        <button class="btn" id="btnAllKo" type="button" title="번역 모두 보기 / 숨기기">번역 <kbd>K</kbd></button>
+        <button class="btn" id="btnFuri" type="button" title="후리가나 켜기 / 끄기">후리가나 <kbd>R</kbd></button>
+      </div>
+
       <div class="drillacts" id="drillActs" hidden>
         <button class="btn" id="btnKanaShow" type="button" title="정답 보기 (Enter)">정답 보기 <kbd>↵</kbd></button>
         <button class="btn" id="btnKanaSkip" type="button" title="건너뛰기">건너뛰기</button>
@@ -223,6 +240,7 @@ try{
         <button class="btn" data-set="words" type="button">단어</button>
         <button class="btn" data-set="kanji" type="button">한자</button>
         <button class="btn" data-set="kana" type="button">かな</button>
+        <button class="btn" data-set="reading" type="button">읽기</button>
       </div>
       <p class="hint" id="setHint"></p>
     </section>
@@ -246,6 +264,28 @@ try{
         <button class="btn" id="btnKanaReset" type="button">정답률 지우기</button>
       </div>
       <p class="hint" id="kanaHint"></p>
+    </section>
+
+    <section class="grp" id="grpRead">
+      <h3>읽기</h3>
+      <div class="row">
+        <span class="lbl" id="lbFuri">후리가나 표시 <small>한자 위 かな</small></span>
+        <button class="sw" id="swFuri" type="button" role="switch" aria-checked="true" aria-labelledby="lbFuri"></button>
+      </div>
+      <div class="row">
+        <span class="lbl">후리가나 크기 <small>ば 와 ぱ 가 구별되는 크기로</small></span>
+        <div class="chips" id="rtChips">
+          <button class="btn" data-rt="0.5" type="button">작게</button>
+          <button class="btn" data-rt="0.58" type="button">보통</button>
+          <button class="btn" data-rt="0.68" type="button">크게</button>
+          <button class="btn" data-rt="0.8" type="button">아주 크게</button>
+        </div>
+      </div>
+      <div class="row">
+        <span class="lbl" id="lbKoAll">번역 처음부터 보이기</span>
+        <button class="sw" id="swKoAll" type="button" role="switch" aria-checked="false" aria-labelledby="lbKoAll"></button>
+      </div>
+      <p class="hint" id="readHint"></p>
     </section>
 
     <section class="grp">
@@ -432,6 +472,14 @@ try{
       <div><kbd>?</kbd> 이 도움말</div>
       <div><kbd>Esc</kbd> 패널 닫기</div>
     </div>
+    <h2 class="keys-h">읽기</h2>
+    <div class="keys">
+      <div><kbd>K</kbd> 번역 모두 보기 / 숨기기</div>
+      <div><kbd>R</kbd> 후리가나 켜기 / 끄기</div>
+      <div><kbd>←</kbd> <kbd>→</kbd> 이전 / 다음 기사</div>
+    </div>
+    <p class="hint">문장을 누르면 그 문장을 읽어 줍니다. 눈 버튼은 그 문장의 번역만 엽니다.</p>
+
     <h2 class="keys-h">かな 연습</h2>
     <div class="keys">
       <div><kbd>a</kbd><kbd>b</kbd><kbd>c</kbd> 로마자를 입력하면 맞는 순간 다음 글자로</div>
@@ -443,6 +491,6 @@ try{
   </div>
 </div>
 
-<script src="assets/app.js?v=25"></script>
+<script src="assets/app.js?v=26"></script>
 </body>
 </html>

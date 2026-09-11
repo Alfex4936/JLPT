@@ -24,7 +24,8 @@
     tier: 'all', fastSame: false, tsuCh: false, // tier: all | same(한자음=한국어) | diff(한자음 다름) | kana(한자 없음)
     set: 'words', // set: words(기본) | kanji | kana — 단어 외의 카드는 전부 옵션이다
     font: '', // 일본어 글꼴 키. ''=지금까지의 스택, 'random'=かな 카드마다 바꿈
-    kanaTries: 3, kanaShowH: true
+    kanaTries: 3, kanaShowH: true,
+    furi: true, koAll: false, rt: 0.58   // 읽기: 후리가나 표시 · 번역 처음부터 · 후리가나 크기(em)
   };
   var S = (function () {
     var saved = lsGet(K_SET, {}) || {}, o = {};
@@ -101,9 +102,17 @@
       }
     }
   }
+  /* 읽기: 기사 한 편이 카드 하나다. 루비는 빌드 때 만들어져 있고 앱은 그리기만 한다. */
+  var READ = (window.JLPT_READING && Array.isArray(window.JLPT_READING.a)) ? window.JLPT_READING : null;
+  var ALL_R = READ ? READ.a.slice() : [];
+  for (var ri2 = 0; ri2 < ALL_R.length; ri2++) { ALL_R[ri2].kind = 'r'; ALL_R[ri2].w = ''; }
+
   if (!ALL_K.length && S.set === 'kanji') S.set = 'words';
+  if (!ALL_R.length && S.set === 'reading') S.set = 'words';
   if (!ALL_N.length && S.set === 'kana') S.set = 'words';
-  function activeSet() { return S.set === 'kanji' ? ALL_K : S.set === 'kana' ? ALL_N : ALL_W; }
+  function activeSet() {
+    return S.set === 'kanji' ? ALL_K : S.set === 'kana' ? ALL_N : S.set === 'reading' ? ALL_R : ALL_W;
+  }
   var ALL = activeSet();
 
   // 선택된 열. 기본은 히라가나 기본 전체 — 처음 들어오자마자 연습이 시작돼야 한다.
@@ -127,10 +136,15 @@
   var LEVELS = levelsOf(ALL);
   // 한자 카드 uid 는 i 가 'k12' 라서 단어 uid('5-12')와 절대 겹치지 않는다 — 즐겨찾기·채점이 섞이면 안 된다.
   // かな 는 급수가 없어 'n-き' 로 키잉한다. 세 덱의 키가 서로 겹치면 안 된다.
-  function uid(w) { return w.kind === 'n' ? 'n-' + w.c : w.lv + '-' + (w.i != null ? w.i : w.w); }
+  function uid(w) {
+    if (w.kind === 'n') return 'n-' + w.c;
+    if (w.kind === 'r') return 'r-' + w.i;
+    return w.lv + '-' + (w.i != null ? w.i : w.w);
+  }
   function useSet(name) {
     S.set = (ALL_K.length && name === 'kanji') ? 'kanji'
-      : (ALL_N.length && name === 'kana') ? 'kana' : 'words';
+      : (ALL_N.length && name === 'kana') ? 'kana'
+      : (ALL_R.length && name === 'reading') ? 'reading' : 'words';
     ALL = activeSet(); LEVELS = levelsOf(ALL);
     save();
   }
@@ -186,6 +200,8 @@
     var pool;
     if (S.set === 'kana') {
       pool = ALL.filter(function (w) { return KCOLSET[w.col]; });   // 급수 대신 선택한 열이 범위다
+    } else if (S.set === 'reading') {
+      pool = ALL.slice();                                            // 기사는 급수가 없다
     } else {
       var set = {}; activeLevels().forEach(function (n) { set[n] = 1; });
       pool = ALL.filter(function (w) { return set[w.lv]; });
@@ -209,6 +225,14 @@
       idx = 0; elapsed = 0;
       roundN = deck.length; cleared = {}; roundOk = 0; roundNg = 0; roundMiss = {};
       resetDrill(); paint(); focusDrill();
+      return;
+    }
+
+    if (S.set === 'reading') {
+      deck = S.shuffle ? shuffled(pool, S.seed) : pool.slice();
+      idx = 0; elapsed = 0;
+      if (keepUid) for (var ir = 0; ir < deck.length; ir++) if (uid(deck[ir]) === keepUid) { idx = ir; break; }
+      paint();
       return;
     }
 
@@ -246,7 +270,8 @@
       transport = document.querySelector('.transport'), progress = document.querySelector('.progress'),
       cDrill = $('cDrill'), kanaIn = $('kanaIn'), kanaTip = $('kanaTip'),
       kanaAns = $('kanaAns'), kanaAnsR = $('kanaAnsR'), kanaAnsH = $('kanaAnsH'), kanaAnsA = $('kanaAnsA'),
-      kanaPick = $('kanaPick'), drillActs = $('drillActs');
+      kanaPick = $('kanaPick'), drillActs = $('drillActs'),
+      cArt = $('cArt'), artBody = $('artBody'), artSrc = $('artSrc'), readActs = $('readActs');
 
   // 노드 풀 (카드 전환 시 재생성 없이 재사용)
   var meanNodes = [];
@@ -348,10 +373,12 @@
   function paintHome() {
     $('pickNWords').textContent = ALL_W.length ? ALL_W.length.toLocaleString('ko-KR') + '개' : '없음';
     $('pickNKanji').textContent = ALL_K.length ? ALL_K.length.toLocaleString('ko-KR') + '자' : '없음';
+    $('pickNRead').textContent = ALL_R.length ? ALL_R.length + '편' : '없음';
     var kn = ALL_N.length ? kanaSelN() : 0;
     $('pickNKana').textContent = ALL_N.length ? (kn ? kn + '자 선택' : '글자 미선택') : '없음';
     Array.prototype.forEach.call($('pickRows').children, function (b) {
-      var n = b.dataset.go === 'kanji' ? ALL_K.length : b.dataset.go === 'kana' ? ALL_N.length : ALL_W.length;
+      var n = b.dataset.go === 'kanji' ? ALL_K.length : b.dataset.go === 'kana' ? ALL_N.length
+        : b.dataset.go === 'reading' ? ALL_R.length : ALL_W.length;
       b.setAttribute('aria-disabled', n ? 'false' : 'true');
       b.disabled = !n;
     });
@@ -491,6 +518,110 @@
     kanaAnsH.textContent = S.kanaShowH ? w.h : '';
     kanaAnsA.textContent = (withAlt && w.ans.length > 1) ? w.ans.slice(1).join(' · ') : '';
     kanaAns.classList.add('on');
+  }
+
+  /* ---------------- 읽기 ----------------
+     문장 하나가 [루비 원문][눈 버튼][번역] 한 묶음이다. 문장을 누르면 かな 읽기를 TTS 로 읽는다 —
+     한자 표기를 그대로 넘기면 음성이 읽기를 틀린다(단어 카드와 같은 이유). */
+  var artNodes = [];
+  var koOpen = {};        // 이 기사에서 열어 둔 문장 번호
+
+  function makeRuby(parts, host) {
+    host.textContent = '';
+    for (var i = 0; i < parts.length; i++) {
+      var t = parts[i][0], r = parts[i][1];
+      if (r == null) { host.appendChild(document.createTextNode(t)); continue; }
+      var ruby = document.createElement('ruby');
+      ruby.appendChild(document.createTextNode(t));
+      var rt = document.createElement('rt');
+      rt.textContent = r;
+      ruby.appendChild(rt);
+      host.appendChild(ruby);
+    }
+  }
+
+  function artNode(i) {
+    if (artNodes[i]) return artNodes[i];
+    var row = document.createElement('div'); row.className = 'art-row';
+    var jp = document.createElement('p'); jp.className = 'art-jp';
+    jp.title = '클릭하면 이 문장 발음';
+    var eye = document.createElement('button');
+    eye.type = 'button'; eye.className = 'eye';
+    eye.setAttribute('aria-label', '이 문장 뜻 보기');
+    eye.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5 0-9 4.5-9 7s4 7 9 7 9-4.5 9-7-4-7-9-7zm0 11a4 4 0 110-8 4 4 0 010 8zm0-6a2 2 0 100 4 2 2 0 000-4z"/></svg>';
+    var ko = document.createElement('p'); ko.className = 'art-ko';
+    var head = document.createElement('div'); head.className = 'art-head';
+    head.appendChild(jp); head.appendChild(eye);
+    row.appendChild(head); row.appendChild(ko);
+    artBody.appendChild(row);
+    var n = { el: row, jp: jp, eye: eye, ko: ko, i: i };
+    jp.onclick = function () {
+      var sel = window.getSelection && window.getSelection();
+      if (sel && !sel.isCollapsed) return;
+      var w = current(); if (!w || w.kind !== 'r') return;
+      var s = i === 0 ? { k: w.tk } : w.s[i - 1];
+      if (s && s.k) speakOne(s.k);
+    };
+    eye.onclick = function (e) {
+      e.stopPropagation();
+      if (koOpen[i]) delete koOpen[i]; else koOpen[i] = 1;
+      drawKo(n);
+    };
+    artNodes[i] = n;
+    return n;
+  }
+
+  function drawKo(n) {
+    var on = !!koOpen[n.i];
+    n.ko.hidden = !on;
+    n.eye.classList.toggle('on', on);
+    n.eye.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+
+  function paintArticle(w) {
+    cLv.textContent = READ && READ.src ? READ.src.name : '뉴스';
+    cPos.textContent = w.n + '문장';
+    var seen = VIEWS[uid(w)] || 0;
+    cSeen.textContent = seen ? '본 횟수 ' + seen : '';
+
+    cKana.textContent = '';
+    cWord.textContent = '';
+    cWord.classList.remove('is-kana');
+    card.classList.remove('is-drill');
+    cWord.hidden = true;
+    cRead.hidden = true; cHjp.hidden = true; cAlt.hidden = true;
+    meanWrap.hidden = true; cEx.hidden = true; cKex.hidden = true; cEn.hidden = true;
+    cDrill.hidden = true; ruleEx.hidden = true; rule1.hidden = false;
+    cArt.hidden = false;
+
+    koOpen = {};
+    if (S.koAll) for (var q = 0; q <= w.s.length; q++) koOpen[q] = 1;
+
+    var rows = [{ r: w.t, o: w.to, title: 1 }].concat(w.s);
+    for (var i = 0; i < rows.length; i++) {
+      var n = artNode(i);
+      n.el.hidden = false;
+      n.el.classList.toggle('is-title', i === 0);
+      makeRuby(rows[i].r, n.jp);
+      n.ko.textContent = rows[i].o || '';
+      n.eye.hidden = !rows[i].o;
+      drawKo(n);
+    }
+    for (var j = rows.length; j < artNodes.length; j++) artNodes[j].el.hidden = true;
+
+    artSrc.textContent = '';
+    var a = document.createElement('a');
+    a.href = w.u; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.textContent = 'ウィキニュース 원문';
+    artSrc.appendChild(a);
+    var lic = document.createElement('span');
+    lic.textContent = (w.d ? w.d + ' · ' : '') + (READ.src.license || '');
+    artSrc.appendChild(lic);
+
+    document.documentElement.dataset.furi = S.furi ? '1' : '0';
+    card.classList.remove('enter'); void card.offsetWidth; card.classList.add('enter');
+    fit();
+    paintChrome();
   }
 
   function drillInput() {
@@ -638,6 +769,8 @@
       card.style.removeProperty('--f-kana');
       cRead.hidden = false; meanWrap.hidden = false;
     }
+    if (w.kind !== 'r') { cArt.hidden = true; cWord.hidden = false; }
+    if (w.kind === 'r') { paintArticle(w); return; }
     if (w.kind === 'n') { paintKana(w); return; }
     if (w.kind === 'k') { paintKanji(w); return; }
     cKex.hidden = true;
@@ -758,11 +891,19 @@
       ? clearedN() + ' / ' + (roundN || deck.length)
       : (deck.length ? (idx + 1) + ' / ' + deck.length : '0 / 0');
 
-    $('grades').hidden = kana || S.study === 'all';
+    var reading = S.set === 'reading';
+    $('grades').hidden = kana || reading || S.study === 'all';
     drillActs.hidden = !kana;
+    readActs.hidden = !reading;
+    $('btnAllKo').classList.toggle('on', S.koAll);
+    $('btnFuri').classList.toggle('on', S.furi);
     document.querySelector('.dockrow').classList.toggle('is-drill', kana);
+    document.querySelector('.dockrow').classList.toggle('is-read', reading);
     transport.hidden = kana;
-    progress.hidden = kana;
+    // 읽기는 스스로 넘긴다 — 남은 시간 바나 재생 버튼이 있으면 쫓기게 된다. 기사 이동만 남긴다.
+    $('btnPlay').hidden = reading;
+    $('btnFirst').hidden = reading;
+    progress.hidden = kana || reading;
     if (kana) {
       $('btnKanaShow').disabled = !w || drillShown || drillDone;
       $('btnKanaSkip').disabled = !w;
@@ -775,6 +916,8 @@
       parts = ['かな 타자', retryRound ? '틀린 글자 ' + (roundN || deck.length) + '자 다시'
                                         : KCOLS.length + '열 · ' + (roundN || deck.length) + '자'];
       if (roundOk + roundNg) parts.push('정답률 ' + pct(roundOk, roundOk + roundNg));
+    } else if (reading) {
+      parts = ['읽기', (READ && READ.src ? READ.src.name : '뉴스') + ' ' + deck.length + '편'];
     } else if (ALL.length) {
       var modeTxt = S.study === 'batch' ? '배치 루프' : S.study === 'srs' ? '복습' : (S.deck === 'fav' ? '즐겨찾기' : '전체');
       if (S.set === 'kanji') modeTxt = '한자 · ' + modeTxt;
@@ -808,7 +951,7 @@
     screen = 'study';
     drawSet(); drawStudy(); drawLevels(); drawTier();
     buildDeck(lsGet(K_POS, null));
-    setPlaying(S.set !== 'kana' && deck.length > 0);
+    setPlaying(S.set !== 'kana' && S.set !== 'reading' && deck.length > 0);
     markSeen();
     paint();
     focusDrill();
@@ -902,7 +1045,8 @@
     requestAnimationFrame(tick);
     var dt = last ? Math.min(t - last, 250) : 0;
     last = t;
-    if (!playing || !deck.length || S.set === 'kana') return;   // かな 는 시간이 아니라 입력으로 넘어간다
+    // かな·읽기는 시간이 아니라 사용자가 넘긴다
+    if (!playing || !deck.length || S.set === 'kana' || S.set === 'reading') return;
     elapsed += dt;
     // 배지 단어는 이미 아는 단어라 빨리 넘겨도 된다 (옵션)
     var cw = current();
@@ -1018,6 +1162,7 @@
     var w = current(); if (!w) return;
     // かな 카드는 답하기 전에 읽어주면 정답을 알려주는 셈이다
     if (w.kind === 'n') { if (drillShown || drillDone) speakOne(w.c); return; }
+    if (w.kind === 'r') { speakOne(w.tk); return; }   // 기사는 제목만. 본문은 문장을 눌러서 듣는다
     stopSpeak();
     // 한자 한 글자는 음성이 읽기를 고를 수 없다 (日 = ニチ? ひ?). 대표 단어를 읽어 준다.
     if (w.kind === 'k') {
@@ -1183,6 +1328,8 @@
     else if (letter === 'v') { e.preventDefault(); speak(); }
     else if (letter === 'f') { e.preventDefault(); toggleFs(); }
     else if (letter === 'h') { e.preventDefault(); if (screen === 'home') enterMode(S.set); else goHome(); }
+    else if (letter === 'k' && S.set === 'reading') { e.preventDefault(); toggleAllKo(); }
+    else if (letter === 'r' && S.set === 'reading') { e.preventDefault(); toggleFuri(); }
   });
 
   /* ---------------- 스와이프 ---------------- */
@@ -1260,15 +1407,18 @@
     Array.prototype.forEach.call($('setChips').children, function (b) {
       b.classList.toggle('on', b.dataset.set === S.set);
       b.setAttribute('aria-pressed', b.dataset.set === S.set ? 'true' : 'false');
-      b.disabled = (b.dataset.set === 'kanji' && !ALL_K.length) || (b.dataset.set === 'kana' && !ALL_N.length);
+      b.disabled = (b.dataset.set === 'kanji' && !ALL_K.length) || (b.dataset.set === 'kana' && !ALL_N.length)
+        || (b.dataset.set === 'reading' && !ALL_R.length);
     });
     // 한자음 필터·급수·학습 모드·재생 간격은 단어 덱 전용이다
     $('tierChips').parentNode.hidden = S.set !== 'words';
-    $('lvChips').parentNode.hidden = S.set === 'kana';
-    $('studyChips').parentNode.hidden = S.set === 'kana';
+    $('lvChips').parentNode.hidden = S.set === 'kana' || S.set === 'reading';
+    $('studyChips').parentNode.hidden = S.set === 'kana' || S.set === 'reading';
     $('grpKana').hidden = !ALL_N.length;
+    $('grpRead').hidden = !ALL_R.length;
     $('setHint').textContent =
-      S.set === 'kana' ? 'かな ' + ALL_N.length + '자. 글자가 뜨면 로마자로 칩니다. 맞는 순간 다음 글자로 넘어갑니다.'
+      S.set === 'reading' ? (READ ? 'ウィキニュース 기사 ' + ALL_R.length + '편. 한자 위에 かな 가 붙고, 문장마다 번역과 발음이 있습니다.' : '')
+      : S.set === 'kana' ? 'かな ' + ALL_N.length + '자. 글자가 뜨면 로마자로 칩니다. 맞는 순간 다음 글자로 넘어갑니다.'
       : S.set === 'kanji'
         ? (ALL_K.length ? '한자 ' + ALL_K.length + '자. 한 글자마다 한국 한자음·훈음·음독·훈독과 그 한자를 쓰는 단어를 보여줍니다. 단어 덱에 실제로 등장하는 한자만 있습니다.'
                         : 'data/kanji.js 가 없어 한자 카드를 쓸 수 없습니다.')
@@ -1281,7 +1431,7 @@
       useSet(b.dataset.set);
       screen = 'study';
       drawSet(); drawStudy(); drawLevels(); drawTier(); buildDeck();
-      setPlaying(S.set !== 'kana' && deck.length > 0);
+      setPlaying(S.set !== 'kana' && S.set !== 'reading' && deck.length > 0);
     };
   });
 
@@ -1552,6 +1702,51 @@
     paint();
   };
 
+  /* ---------------- 읽기 토글 ---------------- */
+  function applyFuri() {
+    document.documentElement.dataset.furi = S.furi ? '1' : '0';
+    document.documentElement.style.setProperty('--rt', S.rt + 'em');
+    paintChrome();
+  }
+  function drawRtChips() {
+    Array.prototype.forEach.call($('rtChips').children, function (b) {
+      var on = Math.abs(Number(b.dataset.rt) - S.rt) < 0.001;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+  Array.prototype.forEach.call($('rtChips').children, function (b) {
+    b.onclick = function () { S.rt = Number(b.dataset.rt); save(); applyFuri(); drawRtChips(); };
+  });
+  function toggleAllKo() {
+    S.koAll = !S.koAll; save();
+    var w = current();
+    if (w && w.kind === 'r') {
+      koOpen = {};
+      if (S.koAll) for (var i = 0; i <= w.s.length; i++) koOpen[i] = 1;
+      for (var j = 0; j < artNodes.length; j++) if (!artNodes[j].el.hidden) drawKo(artNodes[j]);
+    }
+    drawReadSw();
+    paintChrome();
+  }
+  function toggleFuri() { S.furi = !S.furi; save(); applyFuri(); drawReadSw(); }
+  $('btnAllKo').onclick = toggleAllKo;
+  $('btnFuri').onclick = toggleFuri;
+  var drawFuriSw = sw('swFuri', 'furi', applyFuri);
+  var drawKoSw = sw('swKoAll', 'koAll', function () {
+    var w = current();
+    if (w && w.kind === 'r') {
+      koOpen = {};
+      if (S.koAll) for (var i = 0; i <= w.s.length; i++) koOpen[i] = 1;
+      for (var j = 0; j < artNodes.length; j++) if (!artNodes[j].el.hidden) drawKo(artNodes[j]);
+    }
+    paintChrome();
+  });
+  function drawReadSw() { drawFuriSw(); drawKoSw(); }
+  $('readHint').textContent = READ
+    ? '기사는 ' + (READ.src.name || '') + '(' + (READ.src.site || '') + ') 에서 왔고 ' + (READ.src.license || '') + ' 입니다. 문장을 누르면 그 문장만 읽어 줍니다.'
+    : 'data/reading.js 가 없어 읽기 모드를 쓸 수 없습니다.';
+
   /* ---------------- 글꼴 타일 ---------------- */
   function drawFonts() {
     var box = $('fontTiles');
@@ -1589,7 +1784,7 @@
   /* ---------------- 부트 ----------------
      항상 시작 화면에서 출발한다 (사용자 요구). 덱은 미리 세워 두므로 모드를 고르면 바로 뜬다. */
   applyTheme(); drawThemeChips(); drawDeckChips(); drawLv(); paintStats();
-  applyFont(); drawFonts();
+  applyFont(); drawFonts(); applyFuri(); drawRtChips();
   screen = 'home';
   buildDeck(lsGet(K_POS, null));
   setPlaying(false);

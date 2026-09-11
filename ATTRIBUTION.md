@@ -42,7 +42,15 @@ ShareAlike 이므로 이 필드를 포함한 데이터를 재배포할 때는 **
 [realkana.com](https://realkana.com) 의 오십음도·확장표 구성을 참고했다 — 배치는 오십음도 그 자체이고
 저작물성이 있는 자료를 옮겨오지는 않았다.
 
-## 6. 폰트 — SIL OFL 1.1 + Apache-2.0
+## 6. 읽기 기사 — ウィキニュース (CC BY 4.0)
+
+`data/reading.js` 의 기사 본문은 [ウィキニュース 日本語판](https://ja.wikinews.org) 에서 가져왔다.
+
+- 라이선스: **Creative Commons Attribution 4.0** (API 의 `rightsinfo` 로 확인). ShareAlike 가 아니라 출처 표시만 요구한다.
+- 기사마다 `u` 에 원문 주소가 있고, 앱이 카드 하단에 원문 링크·날짜·라이선스를 표시한다. 이 표시를 지우지 말 것 — CC BY 의 요구사항이다.
+- 후리가나(`r`)와 문장 かな 읽기(`k`)는 이 저장소에서 만든 파생물이고, 한국어 번역(`o`)도 이 저장소 생성물이다. 사람이 전수 검수하지 않았다.
+
+## 7. 폰트 — SIL OFL 1.1 + Apache-2.0
 
 `assets/fonts/` 에 woff2 파일을 함께 담고 있다. 두 라이선스 모두 재배포를 허용하되 라이선스 사본 포함을 요구한다.
 かな 글꼴 6종은 かな 만 남기고 서브셋했다(각 18~36KB).
@@ -68,4 +76,5 @@ Kosugi Maru 만 Apache-2.0 이다. OFL 로 뭉뚱그리지 말 것.
 | 코드 (`index.html`, `assets/app.js`, `assets/style.css`, `tools/*`) | 자유 선택 (MIT 등) |
 | 데이터 (`data/words-n*.js`, `data/kanji.js`, `tools/cache/*.json`) | **CC BY-SA 4.0** — KANJIDIC2 파생이라 강제됨 |
 | `data/kana.js` | KANJIDIC2 파생이 아니다. 코드와 같은 라이선스로 둘 수 있다 |
+| `data/reading.js` | ウィキニュース 파생 — **CC BY 4.0**, 출처 표시 필요 |
 | 폰트 (`assets/fonts/*`) | SIL OFL 1.1, Kosugi Maru 는 Apache-2.0 (사본 포함, 위 표) |

@@ -11,6 +11,7 @@
 | `words` | JLPT N5~N1 어휘 9,543개 | 자동 슬라이드 (기본, 지금까지의 동작) |
 | `kanji` | 한자 2,142자 | 자동 슬라이드 |
 | `kana` | かな 244자 | **타자 드릴** — 글자가 뜨면 로마자를 치고, 맞는 순간 다음 글자로 |
+| `reading` | ウィキニュース 기사 10편 | 후리가나 달린 실제 기사. 문장마다 번역·발음, 자동 넘김 없음 |
 
 화면 상태는 `screen` 하나로 관리한다: `home`(학습 선택) · `study`(카드/드릴) · `done`(한 바퀴 정리).
 `done` 은 かな 에서 **틀린 글자가 있을 때만** 나온다 — 다 맞힌 바퀴를 멈춰 세울 이유가 없다.
@@ -44,6 +45,7 @@ assets/fonts/*.woff2  서브셋된 폰트 12종 + LICENSE 사본 (원본은 orig
 data/words-n{1..5}.js window.JLPT.push(...) 하는 생성물. 직접 손으로 고치지 말 것
 data/kanji.js         window.JLPT_KANJI.push(...) 하는 생성물
 data/kana.js          window.JLPT_KANA = {...} 생성물. 표 구조까지 여기 들어 있다
+data/reading.js       window.JLPT_READING = {...} 생성물. 루비 조각이 이미 박혀 있다
 tools/                데이터 파이프라인 (아래)
 start.command         더블클릭용 로컬 http 서버 (file:// 제약 우회 경로)
 ```
@@ -72,6 +74,27 @@ jlpt-vocab-api(어휘) + KANJIDIC2(한자음)
 
 한자 파이프라인이 단어 파이프라인 **뒤**에 온다 — 예시 단어를 `data/words-n*.js` 에서 뽑기 때문이다. 단어를 추가했으면 한자도 다시 만들어야 예시가 갱신된다.
 
+읽기 파이프라인은 또 따로다 (`SCRATCH` 불필요, **kuromoji 는 빌드 전용**):
+
+```
+ja.wikinews API ─ tools/fetch-wikinews.js ─▶ tools/cache/wikinews.json
+        │  tools/build-reading.js   (형태소 분석 + 조수사 교정 + furigana.js)
+        ▼
+   cache/review/reading-draft.tsv  ◀── 사람이 읽기·번역을 검수하는 지점
+        │  tools/merge-reading.js   + tools/reading-ko.tsv
+        ▼
+   data/reading.js
+```
+
+```bash
+npm i kuromoji                        # 빌드 전용. 앱에는 안 들어간다
+node tools/fetch-wikinews.js          # SCAN=4500 WANT=80 로 범위 조절
+KUROMOJI_DICT=<kuromoji 설치 경로>/dict NODE_PATH=<설치 경로> node tools/build-reading.js
+# reading-draft.tsv 의 읽기·번역을 검수해 tools/reading-ko.tsv 를 채운 뒤
+node tools/merge-reading.js
+node tools/font-charset.js && ./tools/subset-fonts.sh   # 기사 한자가 덱 밖에 있어서 거의 항상 필요
+```
+
 **かな 는 이 파이프라인과 무관하다.** 표가 손으로 적힌 상수라 `node tools/build-kana.js` 한 번으로 끝난다. 원천 데이터도, `SCRATCH` 도, 에이전트도 필요 없다.
 
 | 스크립트 | 역할 |
@@ -87,6 +110,11 @@ jlpt-vocab-api(어휘) + KANJIDIC2(한자음)
 | `tools/kanji-list.txt` | 덱에 등장하는 고유 한자 2,118자(2,142 로 갱신 필요), 급수별·빈도순. 외부 사이트에 붙여넣을 때 쓴다 |
 | `tools/kanji-ko-fix.js` | KANJIDIC2 에 `korean_h` 가 없는 한자 보정표 + 두음법칙(령수→영수) |
 | `tools/build-kana.js` | かな 244자(히라 71+36 · 가타 71+36+30) → `data/kana.js`. 표 배치·로마자는 이 파일의 상수, 한글은 `kana2hangul.js` |
+| `tools/fetch-wikinews.js` | ja.wikinews 기사 수집 → `tools/cache/wikinews.json`. 덱과 겹치는 정도로 난이도를 매겨 쉬운 순으로 고른다 |
+| `tools/furigana.js` | 표기 + 전체 かな 읽기 → 루비 조각. 의존성 0. 단독 실행하면 자체 테스트 |
+| `tools/build-reading.js` | 형태소 분석기로 읽기 초안 + 루비 → `cache/review/reading-draft.{json,tsv}`. **kuromoji 필요** |
+| `tools/merge-reading.js` | 초안 + `tools/reading-ko.tsv`(번역) → `data/reading.js`. 번역 없는 줄은 버린다 |
+| `tools/reading-ko.tsv` | 기사 문장별 한국어 번역. 손으로 쓰는 유일한 읽기 데이터 |
 | `tools/next-chunks.js` | 아직 번역 안 된 청크 이름 출력 |
 | `tools/wave.sh` | 유휴 에이전트 pane 회수 + 다음 청크 N개 출력 |
 | `tools/font-charset.js` | 데이터·UI에 실제 등장하는 글자만 폰트별로 추출 → `tools/charset/*.txt` |
@@ -276,6 +304,10 @@ PY
 - **かな 글꼴 6종에 한자는 없다.** 일부러 그렇다 — 한자까지 담으면 글꼴당 300KB가 넘는다. 단어 모드에서 かな 글꼴을 고르면 かな 만 그 글꼴로, 한자는 스택 뒤쪽(Klee One)으로 **글리프 단위 폴백**된다. 버그로 보고 "고치지" 말 것.
 - **`display:none` 으로 숨긴 그리드 아이템은 열 자리를 비워 주지 않는다.** 도크가 `1fr auto 1fr` 인데 かな 모드에서 `.transport` 를 숨기면 카운터가 1열로 밀려 왼쪽에 붙는다. `.dockrow.is-drill` 이 `grid-column` 을 명시하는 이유다.
 - **かな 카드는 카드가 뜰 때 발음하지 않는다.** 자동 읽기(`S.ttsAuto`)를 그대로 타면 정답을 먼저 알려준다. `speak()`·`paintChrome()` 에 `drillShown || drillDone` 가드가 있고, 발음 버튼도 그때까지 비활성이다. 정답 확인 뒤에만 `speakOne(w.c)` 로 읽는다.
+- **후리가나는 형태소 분석기 읽기를 그대로 믿으면 안 된다.** kuromoji 는 뉴스에서 하필 날짜·고유명사·조수사를 틀린다(`8月`→つき, `原木中山`→げんぼくちゅうざん, `〜の間`→ま). 아라비아 숫자에는 읽기를 아예 안 준다. `furigana.js` 는 분석기 읽기를 **힌트로만** 쓰고 정답 かな 는 문장 전체 읽기에서 잘라 온다 — 그래서 힌트가 틀려도 루비는 안 틀린다. 이 구조를 뒤집어 분석기 읽기를 직접 쓰지 말 것.
+- **숫자와 조수사는 함께 읽어야 한다.** `10日`=とおか 인데 따로 읽으면 じゅう+とおか, `9時`=くじ 인데 きゅう+くじ 가 된다. 이것 하나로 정렬률이 87%에서 99%로 올라갔다. `build-reading.js` 의 `numCounter()` 가 그 표다.
+- **정렬 성공은 '읽기가 옳다'가 아니라 '읽기가 표기와 앞뒤가 맞는다'는 뜻이다.** 고유명사 읽기가 틀려도 자기들끼리 일관되면 정렬은 통과한다. 사용자는 한자를 못 읽어서 이걸 못 잡는다 — 기사를 늘릴 때 `reading-draft.tsv` 검수를 건너뛰지 말 것.
+- **`explaintext` 는 소제목을 `==` 없이 맨 줄로 내놓는다.** 그래서 `==` 로만 자르면 참고문헌(`『…』 — 読売新聞, 2006年8月10日`)이 본문 문장으로 섞여 들어온다. 실제로 그렇게 만들어서 문장의 3분의 1이 서지 정보였다. `fetch-wikinews.js` 의 `clean()` 이 줄 단위로도 자른다.
 - **`cleared` 는 '한 번에 맞힌 글자'가 아니라 '떼어낸 글자'다.** 틀린 글자는 덱 뒤로 다시 들어가고, 다시 나왔을 때 바로 맞히면 그때 `cleared` 에 들어간다. 그래서 도크 카운터로는 맞지만 정리 화면의 "몇 자를 틀렸나"에는 쓸 수 없다 — 거기서는 `roundMiss` 를 센다. 한 번 이 둘을 섞어서 "5자 중 5자를 한 번에 맞혔습니다 · 정답률 71%" 같은 자기모순 문장을 냈다.
 - **かな 모드에서는 입력칸이 키보드를 독점한다.** 전역 단축키(`s`·`v`·`f`·`h`)는 `INPUT` 타깃에서 빠져나가므로 동작하지 않는다. 의도한 동작이다 — 안 그러면 `f` 를 칠 때 전체화면이 된다. `Esc` 로 포커스를 빼야 단축키가 살아난다(도움말에 적어 뒀다).
 - **헤드리스로 localStorage 를 조작할 때는 저장 타이머를 이긴 다음에 새로고침해야 한다.** `save()` 는 250ms 디바운스이고 `visibilitychange`(hidden)에서 `lsSet(K_SET, S)` 를 한 번 더 쓴다. `localStorage.clear(); location.reload()` 를 붙여 쓰면 언로드 직전에 **옛 설정이 다시 써진다** — 실제로 한 번 속았다(테마를 light 로 심었는데 dark 로 떴다). 지운 뒤 600ms 쉬거나, UI 를 클릭해서 상태를 만들 것.
@@ -332,6 +364,8 @@ localStorage 키 — 스키마를 바꾸려면 키 이름의 버전을 올린다
 | `jlpt.batch.v1` | 현재 배치의 uid 목록 |
 | `jlpt.kana.v1` | かな 연습에서 선택한 열 목록 (`["hb:0", ...]`) |
 | `jlpt.kanastat.v1` | かな 글자별 `[정답, 오답]` |
+
+읽기 모드는 따로 저장하는 게 없다. 후리가나 표시·크기·번역 기본값은 `jlpt.settings.v1` 안에 있다(`furi`·`rt`·`koAll`).
 
 `file://` 과 GitHub Pages 는 origin 이 달라 **저장소가 분리된다.** 한쪽에서 채점한 게 다른 쪽에 안 보이는 건 버그가 아니다.
 

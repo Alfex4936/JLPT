@@ -16,9 +16,12 @@ const KF = path.join(ROOT, 'data', 'kanji.js');
 if (fs.existsSync(KF)) require(KF);
 const KNF = path.join(ROOT, 'data', 'kana.js');
 if (fs.existsSync(KNF)) require(KNF);
+const RDF = path.join(ROOT, 'data', 'reading.js');
+if (fs.existsSync(RDF)) require(RDF);
 const W = global.window.JLPT;
 const KJ = global.window.JLPT_KANJI;
 const KN = global.window.JLPT_KANA;
+const RD = global.window.JLPT_READING;
 
 // UI 문자 (마크업·스크립트 안의 한국어·기호 전부)
 // style.css 도 읽는다 — content: "음"/"훈" 처럼 CSS 안에만 있는 글자가 서브셋에서 빠지면 안 된다
@@ -87,6 +90,18 @@ for (const c in (KN ? KN.i : {})) {
   add(kr, KN.i[c].h);
 }
 for (const g of (KN ? KN.g : [])) add(kr, g.n);
+
+/* 읽기 기사: 본문 한자·かな 는 JP 가 그리고(루비도 JP), 번역은 KR 이 그린다.
+   기사 한자는 덱에 없는 글자가 섞여 있다 — 여기서 안 담으면 그 글자만 시스템 폰트로 튄다. */
+for (const a of (RD ? RD.a : [])) {
+  const parts = a.t.concat(...a.s.map((x) => x.r));
+  for (const [t, r] of parts) { add(jp, t); add(word, t); if (r) { add(jp, r); add(kana, r); } }
+  add(kr, a.to);
+  for (const x of a.s) add(kr, x.o);
+  add(jp, a.tk);
+  for (const x of a.s) add(jp, x.k);
+}
+if (RD && RD.src) { add(kr, RD.src.name); add(jp, RD.src.name); }
 
 // かな 글꼴은 데이터에 등장하는 かな 전부를 담는다 — 단어·한자 모드에서도 고를 수 있기 때문이다
 const isKana = (c) => { const n = c.codePointAt(0); return (n >= 0x3040 && n <= 0x30ff) || n === 0xff70; };
