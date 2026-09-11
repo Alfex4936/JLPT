@@ -25,7 +25,7 @@
     set: 'words', // set: words(기본) | kanji | kana — 단어 외의 카드는 전부 옵션이다
     font: '', // 일본어 글꼴 키. ''=지금까지의 스택, 'random'=かな 카드마다 바꿈
     kanaTries: 3, kanaShowH: true,
-    furi: true, koAll: false, rt: 0.58   // 읽기: 후리가나 표시 · 번역 처음부터 · 후리가나 크기(em)
+    furi: true, koAll: false, rt: 0.62, rtFont: 'kosugi'   // 읽기: 후리가나 표시·번역 기본값·크기(em)·글꼴
   };
   var S = (function () {
     var saved = lsGet(K_SET, {}) || {}, o = {};
@@ -1703,11 +1703,30 @@
   };
 
   /* ---------------- 읽기 토글 ---------------- */
+  // 루비는 전부 かな 라 かな 전용 서브셋 글꼴을 그대로 쓸 수 있다 (한자가 없어도 상관없다)
+  var RT_FONTS = {
+    kosugi: '"Kosugi Maru","Noto Sans JP"',
+    noto: '"Noto Sans JP"',
+    yusei: '"Yusei Magic","Noto Sans JP"',
+    dela: '"Dela Gothic One","Noto Sans JP"'
+  };
   function applyFuri() {
     document.documentElement.dataset.furi = S.furi ? '1' : '0';
     document.documentElement.style.setProperty('--rt', S.rt + 'em');
+    var f = RT_FONTS[S.rtFont] || RT_FONTS.kosugi;
+    document.documentElement.style.setProperty('--f-rt', f + ',"Hiragino Maru Gothic ProN",system-ui,sans-serif');
     paintChrome();
   }
+  function drawRtFontChips() {
+    Array.prototype.forEach.call($('rtFontChips').children, function (b) {
+      var on = b.dataset.rtf === S.rtFont;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+  Array.prototype.forEach.call($('rtFontChips').children, function (b) {
+    b.onclick = function () { S.rtFont = b.dataset.rtf; save(); applyFuri(); drawRtFontChips(); };
+  });
   function drawRtChips() {
     Array.prototype.forEach.call($('rtChips').children, function (b) {
       var on = Math.abs(Number(b.dataset.rt) - S.rt) < 0.001;
@@ -1784,7 +1803,7 @@
   /* ---------------- 부트 ----------------
      항상 시작 화면에서 출발한다 (사용자 요구). 덱은 미리 세워 두므로 모드를 고르면 바로 뜬다. */
   applyTheme(); drawThemeChips(); drawDeckChips(); drawLv(); paintStats();
-  applyFont(); drawFonts(); applyFuri(); drawRtChips();
+  applyFont(); drawFonts(); applyFuri(); drawRtChips(); drawRtFontChips();
   screen = 'home';
   buildDeck(lsGet(K_POS, null));
   setPlaying(false);

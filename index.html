@@ -17,7 +17,7 @@ try{
 </script>
 
 <!-- ?v= 는 캐시 무효화용. CSS/JS 고칠 때 숫자만 올리면 새로고침에서 확실히 반영된다 -->
-<link rel="stylesheet" href="assets/style.css?v=26">
+<link rel="stylesheet" href="assets/style.css?v=27">
 
 <!-- 데이터: 없는 파일은 조용히 무시된다 (fetch 없음, script 태그만) -->
 <script>window.JLPT = window.JLPT || [];</script>
@@ -273,12 +273,21 @@ try{
         <button class="sw" id="swFuri" type="button" role="switch" aria-checked="true" aria-labelledby="lbFuri"></button>
       </div>
       <div class="row">
+        <span class="lbl">후리가나 글꼴 <small>濁点 ゛과 半濁点 ゜이 갈리는 글꼴로</small></span>
+        <div class="chips" id="rtFontChips">
+          <button class="btn" data-rtf="kosugi" type="button">둥근</button>
+          <button class="btn" data-rtf="noto" type="button">고딕</button>
+          <button class="btn" data-rtf="yusei" type="button">매직펜</button>
+          <button class="btn" data-rtf="dela" type="button">굵게</button>
+        </div>
+      </div>
+      <div class="row">
         <span class="lbl">후리가나 크기 <small>ば 와 ぱ 가 구별되는 크기로</small></span>
         <div class="chips" id="rtChips">
-          <button class="btn" data-rt="0.5" type="button">작게</button>
-          <button class="btn" data-rt="0.58" type="button">보통</button>
-          <button class="btn" data-rt="0.68" type="button">크게</button>
-          <button class="btn" data-rt="0.8" type="button">아주 크게</button>
+          <button class="btn" data-rt="0.52" type="button">작게</button>
+          <button class="btn" data-rt="0.62" type="button">보통</button>
+          <button class="btn" data-rt="0.74" type="button">크게</button>
+          <button class="btn" data-rt="0.88" type="button">아주 크게</button>
         </div>
       </div>
       <div class="row">
@@ -491,6 +500,6 @@ try{
   </div>
 </div>
 
-<script src="assets/app.js?v=26"></script>
+<script src="assets/app.js?v=27"></script>
 </body>
 </html>

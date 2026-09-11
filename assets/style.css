@@ -59,8 +59,11 @@
   --f-word:var(--f-sel,) "Klee One","Hiragino Mincho ProN","Noto Sans JP","Hiragino Kaku Gothic ProN","Apple SD Gothic Neo",system-ui,sans-serif;
   --f-jp:var(--f-sel,) "Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
   --f-kana:var(--f-sel,) "Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
-  /* 후리가나 크기. 濁点(゛)과 半濁点(゜)은 작으면 구별이 안 된다 — ば/ぱ 를 못 가린다. */
-  --rt:.58em;
+  /* 후리가나 크기·글꼴. 濁点(゛)과 半濁点(゜)은 작으면 구별이 안 된다 — ば/ぱ 를 못 가린다.
+     루비는 100% かな 라서 かな 전용 글꼴을 그대로 쓸 수 있다. 13px 에서 재보니 Noto Sans JP 는
+     획이 제일 가늘어 마크가 뭉갰고, Kosugi Maru 가 半濁点 동그라미를 또렷하게 그렸다. */
+  --rt:.62em;
+  --f-rt:"Kosugi Maru","Noto Sans JP","Hiragino Maru Gothic ProN",system-ui,sans-serif;
   --f-kr:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
   --f-ui:"Noto Sans KR","Noto Sans JP","Apple SD Gothic Neo",system-ui,-apple-system,sans-serif;
   color-scheme:dark;
@@ -743,7 +746,7 @@ body.idle .art-jp{cursor:none}
 }
 .art-jp ruby{ruby-align:center}
 .art-jp rt{
-  font-family:var(--f-jp);color:var(--fg-2);
+  font-family:var(--f-rt);color:var(--fg-2);
   font-size:var(--rt);line-height:1.1;letter-spacing:.02em;
   /* 작은 글자에서 획이 뭉개지지 않게. ば 와 ぱ 가 같아 보이면 루비가 제 일을 못 한다 */
   -webkit-font-smoothing:subpixel-antialiased;
