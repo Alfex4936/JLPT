@@ -17,17 +17,17 @@ try{
 </script>
 
 <!-- ?v= 는 캐시 무효화용. CSS/JS 고칠 때 숫자만 올리면 새로고침에서 확실히 반영된다 -->
-<link rel="stylesheet" href="assets/style.css?v=24">
+<link rel="stylesheet" href="assets/style.css?v=25">
 
 <!-- 데이터: 없는 파일은 조용히 무시된다 (fetch 없음, script 태그만) -->
 <script>window.JLPT = window.JLPT || [];</script>
-<script src="data/words-n5.js?v=24"></script>
-<script src="data/words-n4.js?v=24"></script>
-<script src="data/words-n3.js?v=24"></script>
-<script src="data/words-n2.js?v=24"></script>
-<script src="data/words-n1.js?v=24"></script>
-<script src="data/kanji.js?v=24"></script>
-<script src="data/kana.js?v=24"></script>
+<script src="data/words-n5.js?v=25"></script>
+<script src="data/words-n4.js?v=25"></script>
+<script src="data/words-n3.js?v=25"></script>
+<script src="data/words-n2.js?v=25"></script>
+<script src="data/words-n1.js?v=25"></script>
+<script src="data/kanji.js?v=25"></script>
+<script src="data/kana.js?v=25"></script>
 </head>
 <body>
 
@@ -123,6 +123,17 @@ try{
 
       <p class="en" id="cEn" hidden></p>
     </article>
+
+    <!-- 한 바퀴 끝. 틀린 글자가 있을 때만 뜬다 — 보여줄 게 없으면 멈출 이유도 없다 -->
+    <section class="summary" id="summary" hidden>
+      <h2 class="sum-h">한 바퀴 완료</h2>
+      <p class="sum-line" id="sumLine"></p>
+      <div class="sum-grid" id="sumGrid"></div>
+      <div class="sum-acts">
+        <button class="btn btn-go" id="btnRetryMiss" type="button">틀린 글자만 다시 <kbd>↵</kbd></button>
+        <button class="btn" id="btnNextRound" type="button">새 바퀴</button>
+      </div>
+    </section>
 
     <output class="toast" id="toast" data-on="0" aria-live="polite"></output>
 
@@ -432,6 +443,6 @@ try{
   </div>
 </div>
 
-<script src="assets/app.js?v=24"></script>
+<script src="assets/app.js?v=25"></script>
 </body>
 </html>

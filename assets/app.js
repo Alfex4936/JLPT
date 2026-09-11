@@ -199,9 +199,15 @@
 
     // かな 는 배치·복습 스케줄을 쓰지 않는다 — 한 바퀴 안에서 틀린 글자가 다시 나오는 게 스케줄이다.
     if (S.set === 'kana') {
+      retryRound = !!(retryList && retryList.length);
+      if (retryRound) {
+        var want = {}; retryList.forEach(function (c) { want[c] = 1; });
+        pool = ALL_N.filter(function (w) { return want[w.c]; });
+        retryList = null;
+      }
       deck = S.shuffle ? shuffled(pool, S.seed) : pool.slice();
       idx = 0; elapsed = 0;
-      roundN = deck.length; cleared = {}; roundOk = 0; roundNg = 0;
+      roundN = deck.length; cleared = {}; roundOk = 0; roundNg = 0; roundMiss = {};
       resetDrill(); paint(); focusDrill();
       return;
     }
@@ -236,7 +242,7 @@
       bar = $('bar'), counter = $('counter'), deckinfo = $('deckinfo'),
       panel = $('panel'), help = $('help'), icPlay = $('icPlay'),
       starGlyph = $('starGlyph'), btnFav = $('btnFav'),
-      home = $('home'), dock = document.querySelector('.dock'),
+      home = $('home'), summary = $('summary'), dock = document.querySelector('.dock'),
       transport = document.querySelector('.transport'), progress = document.querySelector('.progress'),
       cDrill = $('cDrill'), kanaIn = $('kanaIn'), kanaTip = $('kanaTip'),
       kanaAns = $('kanaAns'), kanaAnsR = $('kanaAnsR'), kanaAnsH = $('kanaAnsH'), kanaAnsA = $('kanaAnsA'),
@@ -433,6 +439,8 @@
      읽기를 확인하는 유일한 방법이 '쓰게 하는 것'이라 이 카드만 입력칸을 품는다.
      맞으면 바로 다음 글자로 넘어가고, S.kanaTries 번 틀리면 정답을 보여준 뒤 그걸 그대로 치게 한다. */
   var roundN = 0, cleared = {}, roundOk = 0, roundNg = 0;
+  // roundMiss: 이번 바퀴에 틀린 글자 -> 틀린 횟수. retryList 가 있으면 다음 덱은 그 글자들만으로 만든다.
+  var roundMiss = {}, retryList = null, retryRound = false;
   var drillWrong = 0, drillShown = false, drillDone = false, fbT = 0;
 
   function pct(a, b) { return b ? Math.round((a / b) * 100) + '%' : '-'; }
@@ -521,6 +529,7 @@
       st[1]++; KSTAT[w.c] = st; lsSet(K_KSTAT, KSTAT); roundNg++;
       deck.push(w);   // 틀린 글자는 이번 바퀴가 끝나기 전에 다시 나온다
     }
+    roundMiss[w.c] = (roundMiss[w.c] || 0) + 1;
     drillWrong++;
     kanaIn.value = '';
     card.classList.remove('ok'); void card.offsetWidth; card.classList.add('ng');
@@ -541,6 +550,7 @@
       var st = KSTAT[w.c] || [0, 0];
       st[1]++; KSTAT[w.c] = st; lsSet(K_KSTAT, KSTAT); roundNg++;
       drillWrong = 1; deck.push(w);
+      roundMiss[w.c] = (roundMiss[w.c] || 0) + 1;
     }
     drillShown = true;
     drawAnswerLine(true);
@@ -553,14 +563,52 @@
     clearTimeout(fbT);
     if (!deck.length) { paint(); return; }
     idx++;
-    if (idx >= deck.length) {           // 한 바퀴 끝 — 다시 섞고 계속
+    if (idx >= deck.length) {           // 한 바퀴 끝
+      if (missList().length) { screen = 'done'; stopSpeak(); kanaIn.blur(); paint(); return; }
+      // 다 맞혔으면 보여줄 게 없다. 멈추지 않고 다음 바퀴로 — 지금까지의 동작 그대로.
       toast('한 바퀴 완료 · 정답률 ' + pct(roundOk, roundOk + roundNg));
-      if (S.shuffle) { S.seed = (S.seed * 1103515245 + 12345) >>> 0 || 1; save(); }
-      buildDeck();
+      nextRound();
       return;
     }
     markSeen(); resetDrill(); paint(); focusDrill();
   }
+
+  // 많이 틀린 순서. 같은 횟수면 표에 나온 순서를 지켜 히라가나가 먼저 오게 한다.
+  function missList() {
+    var order = {};
+    for (var i = 0; i < ALL_N.length; i++) order[ALL_N[i].c] = i;
+    var out = [];
+    for (var c in roundMiss) out.push(c);
+    return out.sort(function (a, b) { return roundMiss[b] - roundMiss[a] || order[a] - order[b]; });
+  }
+  function nextRound() {
+    if (S.shuffle) { S.seed = (S.seed * 1103515245 + 12345) >>> 0 || 1; save(); }
+    screen = 'study';
+    buildDeck();
+  }
+  function paintSummary() {
+    var miss = missList(), box = $('sumGrid');
+    var total = roundN || 1;
+    // clearedN() 은 '떼어낸 글자'라 틀린 뒤 다시 맞힌 것도 들어간다. 여기서는 틀린 글자 수를 쓴다.
+    $('sumLine').textContent = total + '자 중 ' + miss.length + '자를 틀렸습니다 · 정답률 '
+      + pct(roundOk, roundOk + roundNg);
+    box.textContent = '';
+    for (var i = 0; i < miss.length; i++) {
+      var c = miss[i], meta = KANA.i[c];
+      var el = document.createElement('div'); el.className = 'miss';
+      var b = document.createElement('b'); b.textContent = c;
+      var r = document.createElement('i'); r.textContent = meta.r + ' · ' + meta.h;
+      var n = document.createElement('em'); n.textContent = roundMiss[c] + '번';
+      el.appendChild(b); el.appendChild(r); el.appendChild(n);
+      box.appendChild(el);
+    }
+    $('btnRetryMiss').textContent = '틀린 ' + miss.length + '자만 다시';
+    var kb = document.createElement('kbd'); kb.textContent = '↵';
+    $('btnRetryMiss').appendChild(document.createTextNode(' '));
+    $('btnRetryMiss').appendChild(kb);
+  }
+  $('btnRetryMiss').onclick = function () { retryList = missList(); nextRound(); };
+  $('btnNextRound').onclick = function () { nextRound(); };
 
   function drillSkip() {
     var w = current();
@@ -570,10 +618,14 @@
 
   function paint() {
     if (screen === 'home') {
-      home.hidden = false; card.hidden = true; empty.hidden = true;
+      home.hidden = false; card.hidden = true; empty.hidden = true; summary.hidden = true;
       paintHome(); paintChrome(); return;
     }
-    home.hidden = true;
+    if (screen === 'done') {
+      summary.hidden = false; home.hidden = true; card.hidden = true; empty.hidden = true;
+      paintSummary(); paintChrome(); return;
+    }
+    home.hidden = true; summary.hidden = true;
     var w = current();
     var has = !!w;
     card.hidden = !has;
@@ -695,11 +747,11 @@
 
   function paintChrome() {
     var w = current(), kana = S.set === 'kana';
-    var atHome = screen === 'home';
-    dock.hidden = atHome;
+    var atHome = screen === 'home', atDone = screen === 'done';
+    dock.hidden = atHome || atDone;       // 정리 화면에는 조작할 카드가 없다
     $('btnHome').hidden = atHome;
     $('btnKanaPick').hidden = atHome || !kana;
-    if (atHome) { deckinfo.textContent = ''; return; }
+    if (atHome || atDone) { deckinfo.textContent = ''; return; }
 
     // かな 는 카드 위치가 아니라 '이번 바퀴에 뗀 글자 수'가 진척이다 — 틀린 글자가 덱에 다시 들어오므로.
     counter.textContent = kana
@@ -720,7 +772,8 @@
     deckinfo.textContent = '';
     var parts = [];
     if (kana) {
-      parts = ['かな 타자', KCOLS.length + '열 · ' + (roundN || deck.length) + '자'];
+      parts = ['かな 타자', retryRound ? '틀린 글자 ' + (roundN || deck.length) + '자 다시'
+                                        : KCOLS.length + '열 · ' + (roundN || deck.length) + '자'];
       if (roundOk + roundNg) parts.push('정답률 ' + pct(roundOk, roundOk + roundNg));
     } else if (ALL.length) {
       var modeTxt = S.study === 'batch' ? '배치 루프' : S.study === 'srs' ? '복습' : (S.deck === 'fav' ? '즐겨찾기' : '전체');
@@ -1099,6 +1152,13 @@
     var digit = /^[0-9]$/.test(raw) ? raw
       : (/^(Digit|Numpad)[0-9]$/.test(e.code || '') ? e.code.slice(-1) : '');
 
+    if (screen === 'done') {
+      if (raw === 'Enter') { e.preventDefault(); $('btnRetryMiss').click(); }
+      else if (letter === 'h') { e.preventDefault(); goHome(); }
+      else if (letter === 'f') { e.preventDefault(); toggleFs(); }
+      else if (raw === '?') openHelp(help.dataset.open !== '1');
+      return;
+    }
     // 시작 화면에서는 카드 조작 키가 가리키는 카드가 없다
     if (screen === 'home') {
       if (letter === 'h' || raw === 'Enter') { e.preventDefault(); enterMode(S.set); }

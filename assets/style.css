@@ -678,3 +678,39 @@ select:disabled{opacity:.4;cursor:not-allowed}
   .kcell{width:2.6rem;height:2.5rem}
   .fonts{grid-template-columns:repeat(3,1fr)}
 }
+
+/* ============================================================
+   한 바퀴 정리 (틀린 글자)
+   ============================================================ */
+.summary{
+  width:100%;max-width:min(54ch,100%);
+  display:flex;flex-direction:column;gap:clamp(.8rem,2.2vh,1.5rem);
+}
+.sum-h{
+  font-family:var(--f-kr);font-weight:700;letter-spacing:-.01em;
+  font-size:calc(clamp(1.3rem,2.1vmin + .8rem,2rem) * var(--scale));
+  color:var(--fg);line-height:1.25;
+}
+.sum-line{font-size:.86rem;color:var(--fg-2);line-height:1.6;word-break:keep-all}
+/* 글자 고르기 표와 같은 셀 어휘를 쓴다 — 같은 것을 보고 있다는 신호 */
+.sum-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(6.2rem,1fr));gap:.4rem;
+  max-height:46vh;overflow-y:auto;
+}
+.miss{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.12em;
+  padding:.5rem .3rem;
+  border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+  border-radius:var(--r);background:var(--accent-sunk);
+}
+.miss b{font-family:var(--f-jp);font-weight:400;font-size:1.7rem;line-height:1.1;color:var(--fg)}
+.miss i{font-style:normal;font-size:.68rem;color:var(--fg-2);letter-spacing:.01em}
+.miss em{font-style:normal;font-size:.62rem;color:var(--accent);font-variant-numeric:tabular-nums}
+.sum-acts{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+
+@media (max-width:640px){
+  .summary{max-width:100%}
+  .sum-grid{grid-template-columns:repeat(auto-fill,minmax(5rem,1fr));max-height:52vh}
+  .miss b{font-size:1.5rem}
+  .sum-acts .btn{flex:1}
+}
