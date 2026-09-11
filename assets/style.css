@@ -24,6 +24,21 @@
 @font-face{font-family:"Noto Sans KR";font-style:normal;font-weight:700;font-display:swap;
   src:url("fonts/noto-sans-kr-korean-700-normal.woff2") format("woff2")}
 
+/* かな 글꼴 6종. かな 만 담은 서브셋(각 20~36KB)이라 한자는 이 폰트에 없고 스택 뒤쪽으로 폴백된다.
+   글꼴이 바뀌어도 같은 글자를 읽어낼 수 있어야 진짜로 읽는 것이다 — 그게 이 6종이 있는 이유다. */
+@font-face{font-family:"Kosugi Maru";font-style:normal;font-weight:400;font-display:swap;
+  src:url("fonts/kosugi-maru-japanese-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Shippori Mincho";font-style:normal;font-weight:400;font-display:swap;
+  src:url("fonts/shippori-mincho-japanese-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Zen Kurenaido";font-style:normal;font-weight:400;font-display:swap;
+  src:url("fonts/zen-kurenaido-japanese-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Yusei Magic";font-style:normal;font-weight:400;font-display:swap;
+  src:url("fonts/yusei-magic-japanese-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Hachi Maru Pop";font-style:normal;font-weight:400;font-display:swap;
+  src:url("fonts/hachi-maru-pop-japanese-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Dela Gothic One";font-style:normal;font-weight:400;font-display:swap;
+  src:url("fonts/dela-gothic-one-japanese-400-normal.woff2") format("woff2")}
+
 /* ---------- 토큰 ---------- */
 :root{
   --bg:#0d0f11;
@@ -38,8 +53,12 @@
   --accent-sunk:rgba(240,106,76,.14);
   --r:3px;
   --scale:1;
-  --f-word:"Klee One","Hiragino Mincho ProN","Noto Sans JP","Hiragino Kaku Gothic ProN","Apple SD Gothic Neo",system-ui,sans-serif;
-  --f-jp:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+  /* --f-sel 은 글꼴 설정이 고른 일본어 글꼴(쉼표까지 포함한 조각)이다. 비어 있으면 지금까지의 스택 그대로다.
+     var(--f-sel,) 의 빈 폴백이 핵심 — 정의 안 된 변수를 쓰면 font-family 선언 전체가 무효가 된다. */
+  --f-sel:;
+  --f-word:var(--f-sel,) "Klee One","Hiragino Mincho ProN","Noto Sans JP","Hiragino Kaku Gothic ProN","Apple SD Gothic Neo",system-ui,sans-serif;
+  --f-jp:var(--f-sel,) "Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+  --f-kana:var(--f-sel,) "Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
   --f-kr:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
   --f-ui:"Noto Sans KR","Noto Sans JP","Apple SD Gothic Neo",system-ui,-apple-system,sans-serif;
   color-scheme:dark;
@@ -173,7 +192,7 @@ body.idle .chrome{opacity:0;pointer-events:none}
   padding-bottom:.06em;
   transition:color .15s ease;
 }
-.word:hover{color:var(--accent)}
+.card:not(.is-drill) .word:hover{color:var(--accent)}
 :root[data-fontfallback="1"] .word{font-weight:400;letter-spacing:.02em}
 
 .read{
@@ -351,7 +370,7 @@ body.idle .kex-row{cursor:none}
 .row:last-child{margin-bottom:0}
 .row label,.row .lbl{font-size:.85rem;color:var(--fg);flex:1}
 .row .val{font-size:.8rem;color:var(--fg-2);font-variant-numeric:tabular-nums;min-width:3.2rem;text-align:right}
-.hint{font-size:.75rem;color:var(--fg-3);line-height:1.6;margin-top:.5rem}
+.hint{font-size:.75rem;color:var(--fg-3);line-height:1.6;margin-top:.5rem;word-break:keep-all}
 .chips{display:flex;flex-wrap:wrap;gap:.4rem}
 
 /* 스위치 */
@@ -457,3 +476,205 @@ select:disabled{opacity:.4;cursor:not-allowed}
 }
 .toast[data-on="1"]{opacity:1;transform:translateX(-50%) translateY(0)}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
+
+/* ============================================================
+   시작 화면 (학습 선택)
+   ============================================================ */
+.home{width:100%;max-width:min(58ch,100%);display:flex;flex-direction:column;gap:clamp(1rem,3vh,2rem)}
+.home-h{
+  font-family:var(--f-kr);font-weight:700;letter-spacing:-.01em;
+  font-size:calc(clamp(1.35rem,2.2vmin + .8rem,2.1rem) * var(--scale));
+  color:var(--fg);line-height:1.25;
+}
+.pickrows{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+/* 카드 상자 대신 헤어라인. hover 는 예문 줄과 같은 왼쪽 액센트 띠 idiom */
+.pickrow{
+  display:flex;align-items:center;gap:clamp(.9rem,2vw,1.5rem);
+  width:100%;text-align:left;font:inherit;cursor:pointer;
+  background:transparent;border:0;border-bottom:1px solid var(--line);
+  border-left:2px solid transparent;border-radius:var(--r);
+  padding:clamp(.85rem,1.8vh,1.35rem) clamp(.5rem,1.5vw,1rem);
+  transition:border-color .18s ease,background-color .18s ease;
+}
+.pickrow:hover,.pickrow:focus-visible{border-left-color:var(--accent);background:var(--bg-elev)}
+.pickrow[aria-disabled="true"]{opacity:.4;cursor:not-allowed}
+.pickrow[aria-disabled="true"]:hover{border-left-color:transparent;background:transparent}
+.pick-spec{
+  font-family:var(--f-word);font-weight:400;color:var(--fg-2);
+  font-size:calc(clamp(1.7rem,3.4vmin + .6rem,2.9rem) * var(--scale));
+  line-height:1;flex-shrink:0;min-width:2.2em;
+  transition:color .18s ease;
+}
+.pick-spec-kana{font-family:var(--f-kana);letter-spacing:.02em}
+.pickrow:hover .pick-spec{color:var(--accent)}
+.pick-txt{display:flex;flex-direction:column;gap:.25rem;min-width:0;flex:1}
+.pick-txt b{
+  font-family:var(--f-kr);font-weight:700;color:var(--fg);
+  font-size:calc(clamp(1rem,1.2vmin + .6rem,1.3rem) * var(--scale));letter-spacing:.01em;
+}
+.pickrow[data-go="kana"] .pick-txt b{font-family:var(--f-jp)}
+.pick-txt em{
+  font-style:normal;color:var(--fg-3);line-height:1.5;word-break:keep-all;
+  font-size:calc(clamp(.75rem,.6vmin + .5rem,.92rem) * var(--scale));
+}
+.pick-n{
+  color:var(--fg-3);font-variant-numeric:tabular-nums;white-space:nowrap;flex-shrink:0;
+  font-size:calc(clamp(.72rem,.5vmin + .5rem,.88rem) * var(--scale));
+}
+.home-foot{font-size:.78rem;color:var(--fg-3);line-height:1.6}
+
+/* ============================================================
+   かな 타자 연습
+   ============================================================ */
+/* 한 글자만 크게 놓고 그 아래 답을 치는 화면이라 이 카드만 가운데 정렬이다.
+   다른 카드는 줄이 여러 개라 왼쪽 기준선이 있어야 시선이 고정되지만, 여기는 기준선이 글자 하나다. */
+.card.is-drill{max-width:min(32ch,100%);align-items:center;text-align:center}
+.card.is-drill{gap:clamp(.4rem,1.1vh,.9rem)}
+.card.is-drill .meta,.card.is-drill .rule,.card.is-drill .drill{width:100%}
+.card.is-drill .meta{justify-content:center}
+.card.is-drill .seen{margin-left:0}
+.card.is-drill .word{
+  width:100%;cursor:default;
+  font-size:calc(clamp(4.5rem,14vmax,11rem) * var(--scale));
+}
+.drill{display:flex;flex-direction:column;align-items:center;gap:.4rem}
+.drill-in{
+  font:inherit;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:calc(clamp(1.5rem,2.6vmin + .7rem,2.4rem) * var(--scale));
+  width:6ch;padding:.1em .15em;letter-spacing:.06em;
+  color:var(--fg);background:transparent;caret-color:var(--accent);
+  border:0;border-bottom:2px solid var(--fg-3);border-radius:0;
+  transition:border-color .18s ease,color .18s ease;
+}
+.drill-in::placeholder{color:var(--fg-3);opacity:.45}
+.drill-in:focus{outline:0;border-bottom-color:var(--fg-2)}
+.drill-tip{font-size:.8rem;color:var(--fg-3);line-height:1.5}
+/* 정답 줄은 항상 자리를 차지한다. visibility 토글이라 글자가 밀리지 않는다 */
+.drill-ans{
+  display:flex;align-items:baseline;justify-content:center;gap:.8rem;visibility:hidden;
+  font-size:calc(clamp(1rem,1.5vmin + .5rem,1.7rem) * var(--scale));
+}
+.drill-ans.on{visibility:visible}
+.drill-ans b{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:400;color:var(--accent);letter-spacing:.04em}
+.drill-ans span{font-family:var(--f-kr);color:var(--fg-2)}
+.drill-ans em{font-style:normal;font-size:.6em;color:var(--fg-3);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.word.is-kana{font-family:var(--f-kana);font-weight:400;white-space:nowrap}
+
+/* 채점 피드백. 색 하나로 맞고 틀림을 다 표현할 수 없으니 움직임으로 나눈다 —
+   틀리면 흔들리고, 맞으면 커진다. 색맹·모션 축소 환경에서도 정답 줄이 남는다. */
+.card.ng .word{color:var(--accent);animation:shake .32s cubic-bezier(.36,.07,.19,.97) both}
+.card.ng .drill-in{border-bottom-color:var(--accent);color:var(--accent)}
+.card.ok .word{animation:pop .26s cubic-bezier(.16,1,.3,1) both}
+@keyframes shake{
+  10%,90%{transform:translateX(-2px)}
+  20%,80%{transform:translateX(4px)}
+  30%,50%,70%{transform:translateX(-7px)}
+  40%,60%{transform:translateX(7px)}
+}
+@keyframes pop{from{transform:scale(1)}55%{transform:scale(1.07)}to{transform:scale(1)}}
+
+.dockrow.is-drill .drillacts{grid-column:1;grid-row:1;justify-self:start}
+.dockrow.is-drill .counter{grid-column:2;grid-row:1}
+.dockrow.is-drill .dockacts{grid-column:3;grid-row:1}
+.drillacts{display:flex;gap:.35rem;flex-wrap:wrap}
+.drillacts .btn{font-size:.74rem;padding:.42rem .55rem;display:inline-flex;align-items:center;gap:.35rem}
+
+/* ============================================================
+   글자 고르기 시트 (열 단위 선택)
+   ============================================================ */
+.overlay-wide{padding:clamp(.6rem,3vh,2rem)}
+.sheet-wide{
+  width:min(48rem,100%);max-height:min(88vh,100dvh);
+  display:flex;flex-direction:column;padding:0;overflow:hidden;
+}
+.sheet-head,.sheet-foot{
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:1rem 1.25rem;flex-shrink:0;
+}
+.sheet-head{border-bottom:1px solid var(--line)}
+.sheet-foot{border-top:1px solid var(--line)}
+.sheet-head h2{font-size:.95rem;font-weight:700;margin:0}
+.sheet-foot .hint{margin:0;flex:1}
+.sheet-body{overflow-y:auto;padding:.25rem 1.25rem 1.25rem;flex:1}
+.btn-go{color:var(--accent);border-color:var(--accent);background:var(--accent-sunk);padding:.6rem 1rem}
+.btn-go:hover{color:var(--fg);border-color:var(--accent)}
+
+.kgrp{padding:1.1rem 0;border-bottom:1px solid var(--line-soft)}
+.kgrp:last-child{border-bottom:0}
+.kgrp-head{display:flex;align-items:baseline;gap:.7rem;margin-bottom:.6rem}
+.kgrp-head h3{font-size:.8rem;font-weight:700;letter-spacing:.02em;color:var(--fg)}
+.kgrp-head .kgrp-n{font-size:.72rem;color:var(--fg-3);font-variant-numeric:tabular-nums}
+.kgrp-head .btn{margin-left:auto;font-size:.7rem;padding:.3rem .5rem}
+/* 표는 열 하나가 버튼이다. 모바일에서는 가로로 스크롤한다 (realkana 도 같은 구조) */
+.ktable{
+  display:flex;overflow-x:auto;overscroll-behavior-x:contain;
+  border-left:1px solid var(--line);
+  -webkit-overflow-scrolling:touch;
+}
+.kcol{
+  display:flex;flex-direction:column;flex-shrink:0;
+  border:0;border-right:1px solid var(--line);
+  background:transparent;padding:0;cursor:pointer;font:inherit;
+  transition:background-color .15s ease;
+}
+.kcol:hover{background:var(--bg-sunk)}
+.kcol.on{background:var(--accent-sunk);border-right-color:color-mix(in srgb,var(--accent) 26%,transparent)}
+.kcol.on:hover{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+.kcell{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.05em;
+  width:2.9rem;height:2.7rem;
+}
+.kcell b{font-family:var(--f-jp);font-weight:400;font-size:1.02rem;line-height:1.1;color:var(--fg-3)}
+.kcell i{font-style:normal;font-size:.6rem;line-height:1;color:var(--fg-3);opacity:.6;letter-spacing:.01em}
+.kcol.on .kcell b{color:var(--fg)}
+.kcol.on .kcell i{color:var(--fg-2);opacity:1}
+
+/* ============================================================
+   글꼴 고르기 타일
+   ============================================================ */
+.fonts{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem}
+.ftile{
+  display:flex;flex-direction:column;align-items:center;gap:.2rem;
+  font:inherit;cursor:pointer;padding:.5rem .3rem;
+  color:var(--fg-2);background:transparent;
+  border:1px solid var(--line);border-radius:var(--r);
+  transition:color .15s ease,border-color .15s ease,background-color .15s ease;
+}
+.ftile:hover{border-color:var(--fg-3)}
+.ftile.on{color:var(--accent);border-color:var(--accent);background:var(--accent-sunk)}
+.ftile b{font-weight:400;font-size:1.6rem;line-height:1.15;color:var(--fg)}
+.ftile.on b{color:var(--accent)}
+.ftile span{font-size:.62rem;line-height:1.25;color:var(--fg-3);text-align:center;letter-spacing:.01em}
+.ftile.on span{color:var(--fg-2)}
+
+/* 좁은 화면에서 상단 바가 넘치면 버튼이 화면 밖으로 밀린다. 라벨을 짧은 쪽으로 바꿔 끼운다 */
+.narrow{display:none}
+.keys-h{font-size:.8rem;font-weight:700;color:var(--fg-3);margin:1.4rem 0 .8rem;letter-spacing:.06em}
+
+/* ---------- 모바일 ---------- */
+@media (max-width:640px){
+  .wide{display:none}
+  .narrow{display:inline}
+  .mark span{display:none}
+  .topacts{gap:.2rem}
+  .home{max-width:100%;gap:1rem}
+  .pickrow{gap:.8rem;padding:.9rem .4rem}
+  .pick-spec{min-width:1.9em}
+  /* iOS 는 16px 미만 입력칸에 포커스하면 화면을 확대한다 */
+  .drill-in{font-size:max(1.6rem,16px);width:5ch}
+  .drill-tip{font-size:.74rem}
+  /* 한 줄에 다 넣는다. 키보드가 올라오면 도크가 두 줄을 쓸 여유가 없다 */
+  .dockrow.is-drill{grid-template-columns:auto 1fr auto;gap:.4rem}
+  .dockrow.is-drill .drillacts{grid-column:1;justify-self:start}
+  .dockrow.is-drill .counter{grid-column:2;justify-self:center}
+  .dockrow.is-drill .dockacts{grid-column:3;justify-self:end}
+  .dockrow.is-drill .drillacts kbd{display:none}
+  .dockrow.is-drill .drillacts .btn{padding:.42rem .45rem}
+  .sheet-wide{max-height:94dvh}
+  .sheet-head,.sheet-foot{padding:.8rem 1rem}
+  .sheet-body{padding:.25rem 1rem 1rem}
+  .sheet-foot{flex-wrap:wrap}
+  .sheet-foot .btn-go{flex:1}
+  .kcell{width:2.6rem;height:2.5rem}
+  .fonts{grid-template-columns:repeat(3,1fr)}
+}

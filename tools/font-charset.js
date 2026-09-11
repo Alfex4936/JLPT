@@ -14,8 +14,11 @@ for (const lv of [5, 4, 3, 2, 1]) {
 }
 const KF = path.join(ROOT, 'data', 'kanji.js');
 if (fs.existsSync(KF)) require(KF);
+const KNF = path.join(ROOT, 'data', 'kana.js');
+if (fs.existsSync(KNF)) require(KNF);
 const W = global.window.JLPT;
 const KJ = global.window.JLPT_KANJI;
+const KN = global.window.JLPT_KANA;
 
 // UI 문자 (마크업·스크립트 안의 한국어·기호 전부)
 // style.css 도 읽는다 — content: "음"/"훈" 처럼 CSS 안에만 있는 글자가 서브셋에서 빠지면 안 된다
@@ -32,6 +35,7 @@ const BASE = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_
 const word = new Set();  // Klee One: 표기(headword)만
 const jp = new Set();    // Noto Sans JP: かな 읽기, 예문, 한자별 한자음의 한자
 const kr = new Set();    // Noto Sans KR: 한글 전부 + UI
+const kana = new Set();  // かな 글꼴 6종: かな 만. 한자는 안 담으므로 단어 카드에서는 한자만 폴백된다
 
 const isHangul = (c) => c.codePointAt(0) >= 0xac00 && c.codePointAt(0) <= 0xd7a3;
 const onlyHangul = (s) => [...String(s || '')].filter(isHangul).join('');
@@ -77,6 +81,18 @@ for (const k of KJ) {
   (k.onH || []).concat(k.kunH || []).forEach((v) => add(kr, v));
 }
 
+// かな 카드: 큰 글씨는 かな 한 자, 로마자는 라틴, 한글 표기는 KR 폰트
+for (const c in (KN ? KN.i : {})) {
+  add(word, c); add(jp, c); add(kana, c);
+  add(kr, KN.i[c].h);
+}
+for (const g of (KN ? KN.g : [])) add(kr, g.n);
+
+// かな 글꼴은 데이터에 등장하는 かな 전부를 담는다 — 단어·한자 모드에서도 고를 수 있기 때문이다
+const isKana = (c) => { const n = c.codePointAt(0); return (n >= 0x3040 && n <= 0x30ff) || n === 0xff70; };
+for (const c of jp) if (isKana(c)) kana.add(c);
+add(kana, BASE);
+
 // JP 폰트에서 한글 제거 (한글은 KR 폰트 담당)
 for (const c of [...jp]) if (isHangul(c)) jp.delete(c);
 
@@ -101,3 +117,4 @@ const stat = (set) => {
 console.log('word (Klee One)   ', write('word', word), '자 |', stat(word));
 console.log('jp   (Noto Sans JP)', write('jp', jp), '자 |', stat(jp));
 console.log('kr   (Noto Sans KR)', write('kr', kr), '자 |', stat(kr));
+console.log('kana (かな 글꼴 6종) ', write('kana', kana), '자 |', stat(kana));

@@ -18,6 +18,13 @@ sets=(
   "noto-sans-jp-latin-400-normal:jp"
   "noto-sans-kr-korean-400-normal:kr"
   "noto-sans-kr-korean-700-normal:kr"
+  # かな 글꼴 6종 — 한자를 안 담아서 1.3MB 원본이 10KB대로 떨어진다
+  "kosugi-maru-japanese-400-normal:kana"
+  "shippori-mincho-japanese-400-normal:kana"
+  "zen-kurenaido-japanese-400-normal:kana"
+  "yusei-magic-japanese-400-normal:kana"
+  "hachi-maru-pop-japanese-400-normal:kana"
+  "dela-gothic-one-japanese-400-normal:kana"
 )
 
 total_before=0

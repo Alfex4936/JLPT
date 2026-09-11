@@ -35,20 +35,37 @@ ShareAlike 이므로 이 필드를 포함한 데이터를 재배포할 때는 **
 `h`·`hL`·`eh`·`ehL` 은 `tools/kana2hangul.js` 와 `tools/example-hangul.js` 가 계산한다.
 국립국어원 일본어 한글 표기법을 근거로 구현했다.
 
-## 5. 폰트 — SIL Open Font License 1.1
+## 5. かな 로마자 표기 — 이 저장소에서 생성
 
-`assets/fonts/` 에 woff2 파일을 함께 담고 있다. OFL 은 재배포를 허용하되 라이선스 사본 포함을 요구한다.
+`data/kana.js` 의 `r`(대표 romaji)·인정 입력 목록은 헵번식을 기준으로 손으로 적었고,
+`h`(한글 표기)는 위 4번과 같은 `tools/kana2hangul.js` 가 계산한다. 표 배치(열 구성)는
+[realkana.com](https://realkana.com) 의 오십음도·확장표 구성을 참고했다 — 배치는 오십음도 그 자체이고
+저작물성이 있는 자료를 옮겨오지는 않았다.
 
-| 폰트 | 저작권 | 라이선스 파일 |
-|---|---|---|
-| Klee One | The Klee Project Authors (Fontworks) | `assets/fonts/LICENSE-klee-one.txt` |
-| Noto Sans JP | Google Inc. | `assets/fonts/LICENSE-noto-sans-jp.txt` |
-| Noto Sans KR | Google Inc. | `assets/fonts/LICENSE-noto-sans-kr.txt` |
+## 6. 폰트 — SIL OFL 1.1 + Apache-2.0
+
+`assets/fonts/` 에 woff2 파일을 함께 담고 있다. 두 라이선스 모두 재배포를 허용하되 라이선스 사본 포함을 요구한다.
+かな 글꼴 6종은 かな 만 남기고 서브셋했다(각 18~36KB).
+
+| 폰트 | 쓰임 | 저작권 | 라이선스 | 파일 |
+|---|---|---|---|---|
+| Klee One | 표기(한자) | The Klee Project Authors (Fontworks) | OFL 1.1 | `assets/fonts/LICENSE-klee-one.txt` |
+| Noto Sans JP | かな·예문 | Google Inc. | OFL 1.1 | `assets/fonts/LICENSE-noto-sans-jp.txt` |
+| Noto Sans KR | 한국어 | Google Inc. | OFL 1.1 | `assets/fonts/LICENSE-noto-sans-kr.txt` |
+| Kosugi Maru | かな 글꼴 | MOTOYA / Google Inc. | **Apache-2.0** | `assets/fonts/LICENSE-kosugi-maru.txt` |
+| Shippori Mincho | かな 글꼴 | The Shippori Mincho Project Authors | OFL 1.1 | `assets/fonts/LICENSE-shippori-mincho.txt` |
+| Zen Kurenaido | かな 글꼴 | The Zen Kurenaido Project Authors | OFL 1.1 | `assets/fonts/LICENSE-zen-kurenaido.txt` |
+| Yusei Magic | かな 글꼴 | The Yusei Magic Project Authors | OFL 1.1 | `assets/fonts/LICENSE-yusei-magic.txt` |
+| Hachi Maru Pop | かな 글꼴 | The Hachi Maru Pop Project Authors | OFL 1.1 | `assets/fonts/LICENSE-hachi-maru-pop.txt` |
+| Dela Gothic One | かな 글꼴 | The Dela Gothic Project Authors | OFL 1.1 | `assets/fonts/LICENSE-dela-gothic-one.txt` |
+
+Kosugi Maru 만 Apache-2.0 이다. OFL 로 뭉뚱그리지 말 것.
 
 ## 정리 — 권장 라이선스 구성
 
 | 대상 | 라이선스 |
 |---|---|
 | 코드 (`index.html`, `assets/app.js`, `assets/style.css`, `tools/*`) | 자유 선택 (MIT 등) |
-| 데이터 (`data/words-n*.js`, `tools/cache/base.json`) | **CC BY-SA 4.0** — KANJIDIC2 파생이라 강제됨 |
-| 폰트 (`assets/fonts/*`) | SIL OFL 1.1 (사본 포함, 위 표) |
+| 데이터 (`data/words-n*.js`, `data/kanji.js`, `tools/cache/*.json`) | **CC BY-SA 4.0** — KANJIDIC2 파생이라 강제됨 |
+| `data/kana.js` | KANJIDIC2 파생이 아니다. 코드와 같은 라이선스로 둘 수 있다 |
+| 폰트 (`assets/fonts/*`) | SIL OFL 1.1, Kosugi Maru 는 Apache-2.0 (사본 포함, 위 표) |

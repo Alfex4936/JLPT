@@ -4,7 +4,13 @@
 
 ## 무엇인가
 
-JLPT N5~N1 어휘 9,543개를 자동으로 넘기는 **오프라인 단일 페이지 앱**. 한국인 학습자 한 명을 위해 만들었다.
+**오프라인 단일 페이지 앱.** 한국인 학습자 한 명을 위해 만들었다. 세 가지 덱이 있고 부트하면 학습 선택 화면에서 시작한다.
+
+| 덱 (`S.set`) | 수록 | 방식 |
+|---|---|---|
+| `words` | JLPT N5~N1 어휘 9,543개 | 자동 슬라이드 (기본, 지금까지의 동작) |
+| `kanji` | 한자 2,142자 | 자동 슬라이드 |
+| `kana` | かな 244자 | **타자 드릴** — 글자가 뜨면 로마자를 치고, 맞는 순간 다음 글자로 |
 
 대상 사용자 프로필이 설계의 근거다 — 이걸 모르면 잘못된 판단을 한다:
 
@@ -23,6 +29,7 @@ JLPT N5~N1 어휘 9,543개를 자동으로 넘기는 **오프라인 단일 페�
 4. **데이터 파일은 부분적으로만 있어도 동작해야 한다.** `data/words-n3.js` 가 없어도 앱이 뜨고, 급수 목록은 로드된 데이터에서 런타임에 뽑는다. 선택 필드(`hj`·`hjp`·`e`·`ek`·`eh`·`eo`·`en`·`same`·`hL`·`ehL`·`kAlt`·`wAlt`)는 없을 수 있다.
 5. **UI 텍스트는 한국어.**
 6. **기본 동작을 바꾸지 않는다.** 사용자가 명시적으로 요구했다: 새 기능은 옵션으로 넣고 기본값은 지금까지의 동작(전체 재생 9,543 셔플, 15초, 채점 UI 숨김)을 유지한다.
+   예외가 하나 있다 — **부트 화면은 학습 선택 화면이다.** 사용자가 그걸 요구해서(2026-09-11) 카드로 바로 들어가던 동작을 바꿨다. 되돌리지 말 것.
 
 ## 구조
 
@@ -30,8 +37,10 @@ JLPT N5~N1 어휘 9,543개를 자동으로 넘기는 **오프라인 단일 페�
 index.html            앱 셸 + 설정 패널 + 도움말. 에셋 참조에 ?v=N 캐시 무효화
 assets/app.js         전부. IIFE 하나, 외부 의존 0
 assets/style.css      토큰 + 레이아웃. 다크 기본, 라이트 지원
-assets/fonts/*.woff2  서브셋된 폰트 5종 (원본은 original/, gitignore)
+assets/fonts/*.woff2  서브셋된 폰트 12종 + LICENSE 사본 (원본은 original/, gitignore)
 data/words-n{1..5}.js window.JLPT.push(...) 하는 생성물. 직접 손으로 고치지 말 것
+data/kanji.js         window.JLPT_KANJI.push(...) 하는 생성물
+data/kana.js          window.JLPT_KANA = {...} 생성물. 표 구조까지 여기 들어 있다
 tools/                데이터 파이프라인 (아래)
 start.command         더블클릭용 로컬 http 서버 (file:// 제약 우회 경로)
 ```
@@ -60,6 +69,8 @@ jlpt-vocab-api(어휘) + KANJIDIC2(한자음)
 
 한자 파이프라인이 단어 파이프라인 **뒤**에 온다 — 예시 단어를 `data/words-n*.js` 에서 뽑기 때문이다. 단어를 추가했으면 한자도 다시 만들어야 예시가 갱신된다.
 
+**かな 는 이 파이프라인과 무관하다.** 표가 손으로 적힌 상수라 `node tools/build-kana.js` 한 번으로 끝난다. 원천 데이터도, `SCRATCH` 도, 에이전트도 필요 없다.
+
 | 스크립트 | 역할 |
 |---|---|
 | `tools/build-base.js` | 원천 데이터 병합, 한자음 부착, 청크 TSV 생성. `SCRATCH` 에 원천 파일이 있어야 한다 |
@@ -72,6 +83,7 @@ jlpt-vocab-api(어휘) + KANJIDIC2(한자음)
 | `tools/merge-kanji.js` | 한자 JSONL 병합 → `data/kanji.js`. 훈음 음절이 한자음과 어긋나면 버린다 |
 | `tools/kanji-list.txt` | 덱에 등장하는 고유 한자 2,118자(2,142 로 갱신 필요), 급수별·빈도순. 외부 사이트에 붙여넣을 때 쓴다 |
 | `tools/kanji-ko-fix.js` | KANJIDIC2 에 `korean_h` 가 없는 한자 보정표 + 두음법칙(령수→영수) |
+| `tools/build-kana.js` | かな 244자(히라 71+36 · 가타 71+36+30) → `data/kana.js`. 표 배치·로마자는 이 파일의 상수, 한글은 `kana2hangul.js` |
 | `tools/next-chunks.js` | 아직 번역 안 된 청크 이름 출력 |
 | `tools/wave.sh` | 유휴 에이전트 pane 회수 + 다음 청크 N개 출력 |
 | `tools/font-charset.js` | 데이터·UI에 실제 등장하는 글자만 폰트별로 추출 → `tools/charset/*.txt` |
@@ -153,6 +165,38 @@ console.log("한자",KJ.length,"훈음",KJ.filter(x=>x.hun).length,"한자음",K
 
 그 1건은 `居る(おる)` 로, 예문이 かな 활용형(`部屋におります`)을 쓰는 정상 카드다 — 검사식이 `おる` 를 찾는데 문장에는 `おり` 만 있다. 0을 만들려고 검사식을 느슨하게 하지 말 것.
 
+かな 데이터는 이걸 돌린다 — 기준값 244자 / 68열 / 나머지 0:
+
+```bash
+node -e '
+global.window={};require("./data/kana.js");
+const K=window.JLPT_KANA, {kanaToHangul}=require("./tools/kana2hangul.js");
+const chk=(n,v)=>console.log((v?"FAIL":"ok  ")+" "+n+(v?" = "+v:""));
+chk("romaji 이상", Object.keys(K.i).filter(c=>!/^[a-z]+$/.test(K.i[c].r)).length);
+chk("한글 표기 이상", Object.keys(K.i).filter(c=>!/^[가-힣]+$/.test(K.i[c].h)).length);
+chk("인정 입력 이상", Object.keys(K.i).filter(c=>(K.i[c].a||[]).some(a=>!/^[a-z]+$/.test(a))).length);
+// 2글자 かな 의 한글이 첫 글자만의 한글과 같으면 DIGRAPH 표에 그 조합이 없다는 뜻이다
+chk("digraph 폴백", Object.keys(K.i).filter(c=>[...c].length>1&&K.i[c].h===kanaToHangul(c[0])).length);
+let cells=0, seen={}, dup=0, orphan=0;
+K.g.forEach(g=>g.c.forEach(col=>col.forEach(x=>{if(!x)return;cells++;if(seen[x])dup++;seen[x]=1;if(!K.i[x])orphan++})));
+chk("표 중복", dup); chk("items 누락", orphan);
+chk("표-items 개수 불일치", cells-Object.keys(K.i).length);
+console.log("かな",cells,"열",K.g.reduce((a,g)=>a+g.c.length,0));'
+```
+
+세 덱의 uid 가 겹치지 않는지도 본다 — 겹치면 즐겨찾기·본 횟수가 서로 섞인다. 기준값 0:
+
+```bash
+node -e '
+global.window={JLPT:[],JLPT_KANJI:[]};for(const l of [5,4,3,2,1])require("./data/words-n"+l+".js");
+require("./data/kanji.js");require("./data/kana.js");
+const ids=new Set();let clash=0;
+window.JLPT.forEach(x=>ids.add(x.lv+"-"+x.i));
+window.JLPT_KANJI.forEach(x=>{const k=x.lv+"-"+x.i;if(ids.has(k))clash++;ids.add(k)});
+Object.keys(window.JLPT_KANA.i).forEach(c=>{const k="n-"+c;if(ids.has(k))clash++;ids.add(k)});
+console.log((clash?"FAIL":"ok  ")+" 세 덱 uid 충돌 = "+clash, "| 총 uid", ids.size);'
+```
+
 ### 틀린 읽기 잡는 검사 (원천 데이터 오류 탐지용)
 
 카드의 `k` 가 자기 `ek` 안에 없으면 읽기가 틀렸을 가능성이 높다. 예문은 옳은 읽기로 쓰여 있어서 대조가 된다.
@@ -184,7 +228,10 @@ console.log(sus.length, sus.map(x=>x.w+"("+x.k+")").join(" "));'
 uv run --quiet --with "fonttools[woff]" python - <<'PY'
 from fontTools.ttLib import TTFont; import pathlib
 CS=pathlib.Path("tools/charset")
-for name,cs in {"klee-one-japanese-400-normal":"word","noto-sans-jp-japanese-400-normal":"jp","noto-sans-kr-korean-400-normal":"kr"}.items():
+FONTS={"klee-one-japanese-400-normal":"word","noto-sans-jp-japanese-400-normal":"jp","noto-sans-kr-korean-400-normal":"kr"}
+FONTS.update({f"{n}-japanese-400-normal":"kana" for n in
+  ("kosugi-maru","shippori-mincho","zen-kurenaido","yusei-magic","hachi-maru-pop","dela-gothic-one")})
+for name,cs in FONTS.items():
     for base in ("assets/fonts","assets/fonts/original"):
         p=pathlib.Path(base)/f"{name}.woff2"
         if not p.exists(): continue
@@ -222,6 +269,13 @@ PY
 - **CSS 안에만 있는 글자도 서브셋 대상이다.** 한자 카드의 음·훈 라벨은 `content:"음"` / `content:"훈"` 이라 마크업·JS 에 없다. `font-charset.js` 가 `style.css` 까지 읽는 이유다.
 - **한자 카드는 발음을 한 글자로 읽히지 않는다.** `日` 을 그냥 넘기면 음성이 ニチ/ひ 중 뭘 읽을지 알 수 없다. 대표 예시 단어의 かな 를 읽는다.
 - **Noto Sans JP 700 은 일부러 없다.** 굵은 일본어를 쓰는 자리가 `.mark b` 하나인데 내용이 한국어라 한 글자도 안 그렸다. 되살리지 말 것.
+- **`var(--f-sel,)` 의 빈 폴백을 지우면 글꼴이 전부 무너진다.** 정의 안 된 custom property 를 `font-family` 안에서 쓰면 선언 전체가 계산 시점에 무효가 되고 상속 글꼴로 떨어진다. 쉼표 뒤 빈 폴백(`var(--f-sel,)`)이 그걸 막는다. `--f-sel` 값에는 **쉼표까지** 들어 있다(`"Kosugi Maru",`).
+- **かな 글꼴 6종에 한자는 없다.** 일부러 그렇다 — 한자까지 담으면 글꼴당 300KB가 넘는다. 단어 모드에서 かな 글꼴을 고르면 かな 만 그 글꼴로, 한자는 스택 뒤쪽(Klee One)으로 **글리프 단위 폴백**된다. 버그로 보고 "고치지" 말 것.
+- **`display:none` 으로 숨긴 그리드 아이템은 열 자리를 비워 주지 않는다.** 도크가 `1fr auto 1fr` 인데 かな 모드에서 `.transport` 를 숨기면 카운터가 1열로 밀려 왼쪽에 붙는다. `.dockrow.is-drill` 이 `grid-column` 을 명시하는 이유다.
+- **かな 카드는 카드가 뜰 때 발음하지 않는다.** 자동 읽기(`S.ttsAuto`)를 그대로 타면 정답을 먼저 알려준다. `speak()`·`paintChrome()` 에 `drillShown || drillDone` 가드가 있고, 발음 버튼도 그때까지 비활성이다. 정답 확인 뒤에만 `speakOne(w.c)` 로 읽는다.
+- **かな 모드에서는 입력칸이 키보드를 독점한다.** 전역 단축키(`s`·`v`·`f`·`h`)는 `INPUT` 타깃에서 빠져나가므로 동작하지 않는다. 의도한 동작이다 — 안 그러면 `f` 를 칠 때 전체화면이 된다. `Esc` 로 포커스를 빼야 단축키가 살아난다(도움말에 적어 뒀다).
+- **헤드리스로 localStorage 를 조작할 때는 저장 타이머를 이긴 다음에 새로고침해야 한다.** `save()` 는 250ms 디바운스이고 `visibilitychange`(hidden)에서 `lsSet(K_SET, S)` 를 한 번 더 쓴다. `localStorage.clear(); location.reload()` 를 붙여 쓰면 언로드 직전에 **옛 설정이 다시 써진다** — 실제로 한 번 속았다(테마를 light 로 심었는데 dark 로 떴다). 지운 뒤 600ms 쉬거나, UI 를 클릭해서 상태를 만들 것.
+- **`tools/kana2hangul.js` 의 DIGRAPH 표에 ぢゃ·ぢゅ·ぢょ 가 없었다.** 그러면 `ヂャ` 가 `ぢ`(지)로만 변환돼 `자` 가 아니라 `지` 가 나온다. 조용히 틀리는 종류의 버그라 `build-kana.js` 가 2글자 かな 의 폴백을 검사한다. `いぇ`·`つぃ`·`てゅ`·`でゅ`·`ゔゃ`·`ゔゅ`·`ゔょ` 도 이때 같이 채웠다.
 
 ## UI 검증 방법
 
@@ -244,7 +298,19 @@ node -e 'const fs=require("fs");let h=fs.readFileSync("index.html","utf8");
 rm -f _test.html _driver.js
 ```
 
-기본 동작을 바꾸지 않았는지 항상 함께 확인한다: 전체 재생 모드에서 `1 / 8631`, 채점 버튼 `hidden`, 저장된 `set` 이 `words`.
+기본 동작을 바꾸지 않았는지 항상 함께 확인한다: 학습 선택 화면에서 `단어` 를 누르면 `1 / 9543`, 채점 버튼 `hidden`, `.transport` 보임, 표기 글꼴 `Klee One`, 새 프로필의 저장된 `set` 이 `words`.
+
+かな 모드는 이 경로를 확인한다 (입력 이벤트를 한 글자씩 보내야 접두사 판정이 검증된다):
+
+```js
+const inp = document.getElementById('kanaIn');
+const type = s => { for (const ch of s) { inp.value += ch; inp.dispatchEvent(new Event('input', {bubbles:true})); } };
+type('y');   // 접두사 -> 대기 (아무 일도 안 일어나야 한다)
+type('o');   // よ 정답 -> card.ok, 카운터 +1, 230ms 뒤 다음 글자
+type('zzz'); // 3연속 오답 -> 정답 공개, 그 정답을 그대로 쳐야 넘어간다
+```
+
+`value` 를 한 번에 채우면 정답 문자열이 통째로 들어가 **접두사 대기 로직을 건너뛴다**. 그러면 `si` 를 인정하는지 같은 것도 검증되지 않는다.
 
 TTS 를 검증할 때는 발화 객체까지 가짜로 만들고(아래 함정 참고) `onend` 를 타이머로 흘려 줘야 발화 사슬(단어 → 쉼 → 예문)이 진행된다.
 
@@ -260,6 +326,8 @@ localStorage 키 — 스키마를 바꾸려면 키 이름의 버전을 올린다
 | `jlpt.pos.v1` | 마지막 위치 |
 | `jlpt.srs.v1` | 간격 반복 상자 `{b, d, n}` |
 | `jlpt.batch.v1` | 현재 배치의 uid 목록 |
+| `jlpt.kana.v1` | かな 연습에서 선택한 열 목록 (`["hb:0", ...]`) |
+| `jlpt.kanastat.v1` | かな 글자별 `[정답, 오답]` |
 
 `file://` 과 GitHub Pages 는 origin 이 달라 **저장소가 분리된다.** 한쪽에서 채점한 게 다른 쪽에 안 보이는 건 버그가 아니다.
 
