@@ -630,6 +630,7 @@
     meanWrap.hidden = true; cEx.hidden = true; cKex.hidden = true; cEn.hidden = true;
     cDrill.hidden = true; ruleEx.hidden = true; rule1.hidden = false;
     cArt.hidden = false;
+    card.classList.add('is-read');
 
     koOpen = {};
     if (S.koAll) for (var q = 0; q <= w.s.length; q++) koOpen[q] = 1;
@@ -821,7 +822,7 @@
       card.style.removeProperty('--f-kana');
       cRead.hidden = false; meanWrap.hidden = false;
     }
-    if (w.kind !== 'r') { cArt.hidden = true; cWord.hidden = false; }
+    if (w.kind !== 'r') { cArt.hidden = true; cWord.hidden = false; card.classList.remove('is-read'); }
     if (w.kind === 'r') { paintArticle(w); return; }
     if (w.kind === 'n') { paintKana(w); return; }
     if (w.kind === 'k') { paintKanji(w); return; }
