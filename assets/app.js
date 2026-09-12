@@ -315,7 +315,9 @@
         pool = ALL_N.filter(function (w) { return want[w.c]; });
         retryList = null;
       }
-      deck = S.shuffle ? shuffled(pool, S.seed) : pool.slice();
+      /* 바퀴마다 새로 섞는다. S.seed 는 저장되는 값이라 그걸 쓰면 새로고침할 때마다 같은 순서가 나오고,
+         순서를 외워 버린다. 단어 덱은 이어보기 때문에 S.seed 가 고정이어야 하므로 여기만 따로 뽑는다. */
+      deck = S.shuffle ? shuffled(pool, (Math.random() * 4294967295) >>> 0 || 1) : pool.slice();
       idx = 0; elapsed = 0;
       roundN = deck.length; cleared = {}; roundOk = 0; roundNg = 0; roundMiss = {};
       resetDrill(); paint(); focusDrill();
@@ -865,8 +867,9 @@
     for (var c in roundMiss) out.push(c);
     return out.sort(function (a, b) { return roundMiss[b] - roundMiss[a] || KANA_ORDER[a] - KANA_ORDER[b]; });
   }
+  // かな 전용이다. 예전엔 여기서 S.seed 를 굴렸는데, 그러면 かな 한 바퀴를 끝낼 때마다
+  // 단어 덱 순서까지 바뀐다. かな 는 이제 자기 씨앗을 쓰므로 건드릴 이유가 없다.
   function nextRound() {
-    if (S.shuffle) { S.seed = (S.seed * 1103515245 + 12345) >>> 0 || 1; save(); }
     screen = 'study';
     buildDeck();
   }
