@@ -614,6 +614,9 @@
     kanaAnsH.textContent = S.kanaShowH ? w.h : '';
     kanaAnsA.textContent = (withAlt && w.ans.length > 1) ? w.ans.slice(1).join(' · ') : '';
     kanaAns.classList.add('on');
+    // 자리는 min-height 로 잡아 뒀지만, 그래도 안 맞는 화면이 있으면 정답이 안 보이는 것보다
+    // 카드가 한 번 줄어드는 편이 낫다. 자리가 맞으면 fit() 은 아무것도 안 한다.
+    fit();
   }
 
   /* ---------------- 읽기 ----------------
