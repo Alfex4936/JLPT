@@ -25,7 +25,8 @@
     set: 'words', // set: words(기본) | kanji | kana — 단어 외의 카드는 전부 옵션이다
     font: '', // 일본어 글꼴 키. ''=지금까지의 스택, 'random'=かな 카드마다 바꿈
     kanaTries: 3, kanaShowH: true,
-    furi: true, koAll: false, rt: 0.62, rtFont: 'kosugi'   // 읽기: 후리가나 표시·번역 기본값·크기(em)·글꼴
+    furi: true, koAll: false, rt: 0.62, rtFont: 'kosugi',  // 읽기: 후리가나 표시·번역 기본값·크기(em)·글꼴
+    readOne: true                    // 한 문장씩 크게 (기사 전체를 한 화면에 넣으면 루비가 작아진다)
   };
   var S = (function () {
     var saved = lsGet(K_SET, {}) || {}, o = {};
@@ -239,7 +240,7 @@
 
     if (S.set === 'reading') {
       deck = S.shuffle ? shuffled(pool, S.seed) : pool.slice();
-      idx = 0; elapsed = 0;
+      idx = 0; elapsed = 0; sentIdx = 0;
       if (keepUid) for (var ir = 0; ir < deck.length; ir++) if (uid(deck[ir]) === keepUid) { idx = ir; break; }
       paint();
       return;
@@ -534,6 +535,7 @@
      한자 표기를 그대로 넘기면 음성이 읽기를 틀린다(단어 카드와 같은 이유). */
   var artNodes = [];
   var koOpen = {};        // 이 기사에서 열어 둔 문장 번호
+  var sentIdx = 0;        // 한 문장씩 모드에서 지금 보는 줄 (0 = 제목)
 
   function makeRuby(parts, host) {
     host.textContent = '';
@@ -568,6 +570,7 @@
       var sel = window.getSelection && window.getSelection();
       if (sel && !sel.isCollapsed) return;
       var w = current(); if (!w || w.kind !== 'r') return;
+      if (S.readOne && i !== sentIdx) { sentIdx = i; paint(); return; }   // 미리보기 줄을 누르면 그리로
       var s = i === 0 ? { k: w.tk } : w.s[i - 1];
       if (s && s.k) speakOne(s.k);
     };
@@ -585,6 +588,31 @@
     n.ko.hidden = !on;
     n.eye.classList.toggle('on', on);
     n.eye.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+
+  function artRows(w) { return [{ r: w.t, o: w.to }].concat(w.s); }
+
+  /* 읽기 이동: 한 문장씩 모드에서는 문장 단위로 움직이고, 끝에 닿으면 기사를 넘긴다.
+     전체 보기 모드에서는 기사 단위로만 움직인다. */
+  function readMove(delta) {
+    var w = current();
+    if (!w || w.kind !== 'r') return;
+    if (!S.readOne) { readArticle(delta); return; }
+    var n = artRows(w).length;
+    var next = sentIdx + delta;
+    if (next >= 0 && next < n) { sentIdx = next; paint(); return; }
+    readArticle(delta, delta > 0 ? 'first' : 'last');
+  }
+  function readArticle(delta, at) {
+    if (!deck.length) return;
+    idx += delta;
+    if (idx >= deck.length) idx = 0;
+    if (idx < 0) idx = deck.length - 1;
+    var w = current();
+    sentIdx = (at === 'last' && w) ? artRows(w).length - 1 : 0;
+    elapsed = 0;
+    markSeen();
+    paint();
   }
 
   function paintArticle(w) {
@@ -606,17 +634,32 @@
     koOpen = {};
     if (S.koAll) for (var q = 0; q <= w.s.length; q++) koOpen[q] = 1;
 
-    var rows = [{ r: w.t, o: w.to, title: 1 }].concat(w.s);
+    var rows = artRows(w);
+    if (sentIdx >= rows.length) sentIdx = rows.length - 1;
+    if (sentIdx < 0) sentIdx = 0;
+
+    /* 한 문장씩: 지금 줄만 크게, 뒤따르는 두 줄은 작게 미리 보여 준다.
+       기사를 통째로 한 화면에 넣으면 문장이 작아지고 루비는 그보다 더 작아진다 — 濁点이 안 보인다. */
+    artBody.classList.toggle('one', S.readOne);
     for (var i = 0; i < rows.length; i++) {
       var n = artNode(i);
-      n.el.hidden = false;
+      var rel = i - sentIdx;
+      var show = S.readOne ? (rel >= 0 && rel <= 2) : true;
+      n.el.hidden = !show;
       n.el.classList.toggle('is-title', i === 0);
+      n.el.classList.toggle('is-now', S.readOne && rel === 0);
+      n.el.classList.toggle('is-next', S.readOne && rel > 0);
+      if (!show) continue;
       makeRuby(rows[i].r, n.jp);
       n.ko.textContent = rows[i].o || '';
-      n.eye.hidden = !rows[i].o;
+      n.eye.hidden = !rows[i].o || (S.readOne && rel !== 0);
       drawKo(n);
     }
     for (var j = rows.length; j < artNodes.length; j++) artNodes[j].el.hidden = true;
+
+    // 제목에서 벗어나면 어느 기사를 읽는 중인지 위에 작게 남겨 둔다
+    cKana.textContent = (S.readOne && sentIdx > 0) ? w.t.map(function (p) { return p[0]; }).join('') : '';
+    cKana.hidden = !cKana.textContent;
 
     artSrc.textContent = '';
     var a = document.createElement('a');
@@ -888,7 +931,7 @@
   }
 
   function paintChrome() {
-    var w = current(), kana = S.set === 'kana';
+    var w = current(), kana = S.set === 'kana', reading = S.set === 'reading';
     var atHome = screen === 'home', atDone = screen === 'done';
     dock.hidden = atHome || atDone;       // 정리 화면에는 조작할 카드가 없다
     $('btnHome').hidden = atHome;
@@ -899,13 +942,17 @@
     counter.textContent = kana
       ? clearedN() + ' / ' + (roundN || deck.length)
       : (deck.length ? (idx + 1) + ' / ' + deck.length : '0 / 0');
+    if (reading && w && S.readOne) {
+      counter.textContent = (idx + 1) + ' / ' + deck.length + '  ·  '
+        + (sentIdx === 0 ? '제목' : sentIdx + ' / ' + w.s.length);
+    }
 
-    var reading = S.set === 'reading';
     $('grades').hidden = kana || reading || S.study === 'all';
     drillActs.hidden = !kana;
     readActs.hidden = !reading;
     $('btnAllKo').classList.toggle('on', S.koAll);
     $('btnFuri').classList.toggle('on', S.furi);
+    $('btnOne').classList.toggle('on', S.readOne);
     document.querySelector('.dockrow').classList.toggle('is-drill', kana);
     document.querySelector('.dockrow').classList.toggle('is-read', reading);
     transport.hidden = kana;
@@ -973,6 +1020,10 @@
     card.style.removeProperty('--scale');
     cWord.style.fontSize = '';
     if (card.hidden) return;
+    // 한 문장씩 읽기는 글자를 키우려고 만든 모드다. 넘치면 줄이지 말고 스테이지를 스크롤한다.
+    var one = S.set === 'reading' && S.readOne;
+    document.documentElement.dataset.readone = one ? '1' : '0';
+    if (one) return;
 
     var base = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale')) || 1;
     var sp = getComputedStyle(stage);
@@ -1001,6 +1052,7 @@
   function go(delta, manual) {
     if (!deck.length) return;
     if (S.set === 'kana') { if (delta > 0) drillSkip(); return; }   // かな 는 답을 쳐서 넘긴다
+    if (S.set === 'reading') { readMove(delta); return; }
     idx += delta;
     if (idx >= deck.length) {
       idx = 0;
@@ -1339,6 +1391,7 @@
     else if (letter === 'h') { e.preventDefault(); if (screen === 'home') enterMode(S.set); else goHome(); }
     else if (letter === 'k' && S.set === 'reading') { e.preventDefault(); toggleAllKo(); }
     else if (letter === 'r' && S.set === 'reading') { e.preventDefault(); toggleFuri(); }
+    else if (letter === 'o' && S.set === 'reading') { e.preventDefault(); toggleOne(); }
   });
 
   /* ---------------- 스와이프 ---------------- */
@@ -1758,8 +1811,14 @@
     paintChrome();
   }
   function toggleFuri() { S.furi = !S.furi; save(); applyFuri(); drawReadSw(); }
+  function toggleOne() {
+    S.readOne = !S.readOne; save();
+    drawReadSw(); paint();
+  }
   $('btnAllKo').onclick = toggleAllKo;
   $('btnFuri').onclick = toggleFuri;
+  $('btnOne').onclick = toggleOne;
+  var drawOneSw = sw('swReadOne', 'readOne', paint);
   var drawFuriSw = sw('swFuri', 'furi', applyFuri);
   var drawKoSw = sw('swKoAll', 'koAll', function () {
     var w = current();
@@ -1770,7 +1829,7 @@
     }
     paintChrome();
   });
-  function drawReadSw() { drawFuriSw(); drawKoSw(); }
+  function drawReadSw() { drawFuriSw(); drawKoSw(); drawOneSw(); }
   $('readHint').textContent = READ
     ? '기사는 ' + (READ.src.name || '') + '(' + (READ.src.site || '') + ') 에서 왔고 ' + (READ.src.license || '') + ' 입니다. 문장을 누르면 그 문장만 읽어 줍니다.'
     : 'data/reading.js 가 없어 읽기 모드를 쓸 수 없습니다.';

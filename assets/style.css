@@ -724,6 +724,8 @@ select:disabled{opacity:.4;cursor:not-allowed}
    읽기 (뉴스 기사)
    ============================================================ */
 .art{display:flex;flex-direction:column;gap:clamp(.5rem,1.4vh,1rem)}
+/* 한 문장씩 모드에서 지금 읽는 기사 제목을 위에 작게 남긴다 (.kana 자리를 빌려 쓴다) */
+.card .kana:empty{display:none}
 .art-body{display:flex;flex-direction:column}
 .art-row{padding:.45em 0;border-bottom:1px solid var(--line-soft)}
 .art-row:last-child{border-bottom:0}
@@ -795,4 +797,48 @@ body.idle .art-jp{cursor:none}
   .dockrow.is-read .dockacts{grid-column:1 / -1;grid-row:2;justify-self:center}
   .dockrow.is-read .readacts kbd{display:none}
   .dockrow.is-read .readacts .btn{padding:.42rem .45rem}
+}
+
+/* ---------- 읽기: 한 문장씩 크게 ----------
+   기사 전체를 한 화면에 넣으면 문장이 작아지고 루비는 그 절반이라 濁点·半濁点이 안 보인다.
+   한 문장만 띄우면 같은 화면에서 글자를 두 배 넘게 키울 수 있다. */
+/* safe center: 내용이 스테이지보다 크면 가운데 정렬이 위쪽을 잘라 먹는다. safe 가 그걸 막는다 */
+:root[data-readone="1"] .stage{overflow-y:auto;align-items:safe center}
+.art-body.one{gap:0}
+.art-body.one .art-row{border-bottom:0;padding:0}
+.art-body.one .art-row.is-now{padding:.2em 0 .6em}
+.art-body.one .art-row.is-now .art-jp{
+  font-size:calc(clamp(1.6rem,4.4vmin + .95rem,3.2rem) * var(--scale));
+  line-height:2;
+}
+.art-body.one .art-row.is-title.is-now .art-jp{
+  font-size:calc(clamp(1.7rem,4.8vmin + 1rem,3.4rem) * var(--scale));
+}
+.art-body.one .art-row.is-now .art-ko{
+  font-size:calc(clamp(.95rem,1.3vmin + .55rem,1.3rem) * var(--scale));
+  padding-left:1em;
+}
+/* 다음에 올 문장. 읽는 자리를 잃지 않게 자리만 알려 주고 눈은 끌지 않는다 */
+.art-body.one .art-row.is-next{opacity:.4;border-top:1px solid var(--line-soft)}
+.art-body.one .art-row.is-next .art-jp{
+  font-size:calc(clamp(.85rem,1vmin + .45rem,1.05rem) * var(--scale));
+  line-height:1.9;
+}
+.art-body.one .art-row.is-next + .art-row.is-next{opacity:.22}
+.art-body.one .art-row.is-next .art-ko{display:none}
+.art-body.one .art-row.is-next:hover{opacity:.7}
+.art-body.one .eye{width:2.2rem;height:2.2rem}
+.art-body.one .eye svg{width:1.25rem;height:1.25rem}
+
+@media (max-width:640px){
+  .art-body.one .art-row.is-now .art-jp{
+    font-size:calc(clamp(1.5rem,5.6vmin + .8rem,2.4rem) * var(--scale));
+    line-height:2.05;
+  }
+  .art-body.one .art-row.is-title.is-now .art-jp{
+    font-size:calc(clamp(1.5rem,5.8vmin + .8rem,2.5rem) * var(--scale));
+  }
+  /* 좁은 화면에서는 다음 문장 하나만. 두 줄이면 지금 읽는 문장과 자리를 다툰다 */
+  .art-body.one .art-row.is-next + .art-row.is-next{display:none}
+  .art-body.one .art-row.is-next .art-jp{font-size:calc(clamp(.8rem,.9vmin + .42rem,.95rem) * var(--scale))}
 }
