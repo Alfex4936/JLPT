@@ -1045,6 +1045,8 @@
     dock.hidden = atHome || atDone;       // 정리 화면에는 조작할 카드가 없다
     $('btnHome').hidden = atHome;
     $('btnKanaPick').hidden = atHome || !kana;
+    // 세로가 짧을 때(=키보드가 올라왔을 때) 크롬을 접는 CSS 가 이 값을 본다
+    document.documentElement.dataset.drill = (kana && !atHome && !atDone) ? '1' : '0';
     if (atHome || atDone) { setDeckinfo([]); return; }
 
     // かな 는 카드 위치가 아니라 '이번 바퀴에 뗀 글자 수'가 진척이다 — 틀린 글자가 덱에 다시 들어오므로.
@@ -1134,17 +1136,21 @@
     document.documentElement.dataset.readone = one ? '1' : '0';
     if (one) return;
 
-    /* 넘치는 비율만큼 한 번에 줄이고 한 번만 보정한다. 0.94씩 스물두 번 줄이면 필요한 것보다
-       많이 작아지고(키보드가 올라온 화면에서 0.85면 될 걸 0.65까지 내려갔다) 그때마다 강제 레이아웃이 난다. */
+    /* 카드 높이 = 안 줄어드는 부분(여백·간격·테두리) + 줄어드는 부분 × --scale 이다.
+       두 배율에서 한 번씩 재면 둘 다 풀리므로 필요한 배율을 바로 구한다.
+       넘치는 비율만큼 곱해서 줄이면 안 줄어드는 부분까지 같이 줄이는 셈이라 지나치게 작아진다 —
+       키보드가 올라온 화면에서 0.85면 될 것이 0.64까지 내려갔다. */
     var base = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale')) || 1;
     var sp = getComputedStyle(stage);
     var avail = stage.clientHeight - parseFloat(sp.paddingTop) - parseFloat(sp.paddingBottom);
-    var s = base;
-    for (var pass = 0; pass < 2 && avail > 40; pass++) {
-      var h = card.getBoundingClientRect().height;
-      if (h <= avail || s <= 0.5) break;
-      s = Math.max(0.5, s * (avail / h));
-      card.style.setProperty('--scale', s);
+    var lo = base * 0.5;
+    if (avail > 40 && card.getBoundingClientRect().height > avail) {
+      var h1 = card.getBoundingClientRect().height;
+      card.style.setProperty('--scale', lo);
+      var h2 = card.getBoundingClientRect().height;
+      var slope = (h1 - h2) / (base - lo);           // --scale 1 당 높이
+      var s = slope > 0 ? (avail - (h1 - slope * base)) / slope : lo;
+      card.style.setProperty('--scale', Math.min(base, Math.max(lo, s)));
     }
 
     var box = card.clientWidth;

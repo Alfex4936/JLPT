@@ -461,6 +461,28 @@ select:disabled{opacity:.4;cursor:not-allowed}
   .dockacts .btn span.lbl{display:none}
 }
 
+/* ---------- 키보드가 올라온 타자 화면 ----------
+   안드로이드 키보드는 세로를 절반으로 가져간다. 1000x310 에서 상단 바 70 + 독 67 =
+   137px, 화면의 44% 가 크롬이었고 글자는 59px 까지 쪼그라들었다.
+   타자 중에 눈이 가는 건 글자와 입력칸뿐이라 나머지를 접어 그 높이를 글자에 준다. */
+@media (max-height:560px){
+  :root[data-drill="1"] .topbar{padding:.25rem clamp(1rem,4vw,3.25rem);min-height:0;gap:.6rem}
+  :root[data-drill="1"] .mark,
+  :root[data-drill="1"] .deckinfo{display:none}
+  :root[data-drill="1"] .topbar .btn{font-size:.72rem;padding:.3rem .45rem}
+  :root[data-drill="1"] .dockrow{padding:.3rem clamp(1rem,4vw,3.25rem) .35rem}
+  :root[data-drill="1"] .drillacts .btn,
+  :root[data-drill="1"] .dockacts .btn{font-size:.72rem;padding:.32rem .45rem}
+  /* 메타줄과 안내줄은 키보드를 내리면 다시 보인다. 안내줄은 첫 글자 이후로는 읽지 않는다 */
+  :root[data-drill="1"] .card.is-drill .meta,
+  :root[data-drill="1"] .drill-tip{display:none}
+  /* 스테이지 여백 2rem 은 이 화면에서 글자 한 줄값이다 */
+  :root[data-drill="1"] .stage{padding:.35rem .75rem}
+  :root[data-drill="1"] .card.is-drill{gap:.3rem}
+  :root[data-drill="1"] .drill{gap:.2rem}
+  :root[data-drill="1"] .card.is-drill .word{font-size:calc(min(62vh,46vw) * var(--scale))}
+}
+
 /* ---------- 모션 축소 ---------- */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
