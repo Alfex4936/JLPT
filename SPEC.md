@@ -8,15 +8,26 @@
 - 강점: 한국 한자음. `問題 = 문제`, `無理 = 무리` 처럼 한자음이 한국어 단어와 겹치는 경우가 매우 많음 → `hj` 필드가 최강의 암기 후크다. 눈에 잘 띄게 배치.
 
 ## 데이터 계약
-`window.JLPT` 배열에 각 레벨 파일이 push 한다. index.html 은 5개 파일을 순서대로 script 태그로 로드하고, **없는 파일은 조용히 무시**(404 나도 앱 동작).
+`window.JLPT` 배열에 각 레벨 파일이 push 한다. **없는 파일은 조용히 무시**(404 나도 앱 동작).
+
+덱은 index.html 에 없다. 시작 화면은 개수표만 읽고, 덱은 그 모드에 들어갈 때 `app.js` 가 script 태그를 꽂아 부른다 — fetch 가 아니라 클래식 script 태그라 `file://` 에서도 동작한다.
 
 ```html
+<!-- index.html: 시작 화면이 쓰는 것만 -->
 <script>window.JLPT = window.JLPT || [];</script>
-<script src="data/words-n5.js"></script>
-<script src="data/words-n4.js"></script>
-<script src="data/words-n3.js"></script>
-<script src="data/words-n2.js"></script>
-<script src="data/words-n1.js"></script>
+<script src="data/manifest.js"></script>
+<script src="data/kana.js"></script>
+```
+
+```js
+// app.js: 단어 모드에 들어갈 때
+need('words', function () { /* window.JLPT 가 채워진 뒤 */ });
+```
+
+`data/manifest.js` 는 개수표 하나다. 덱이 온 뒤에는 실제 배열이 이기므로 개수표가 낡아도 화면 안에서 숫자가 어긋나지는 않는다.
+
+```js
+window.JLPT_N = { words: {"5":679, ...}, kanji: {"5":423, ...}, reading: 10 };
 ```
 
 각 데이터 파일: `window.JLPT.push(...[ {...}, {...} ])`
@@ -191,5 +202,7 @@ window.JLPT_READING = {
 ## 비기능
 - 파일 구성: `index.html`, `assets/app.js`, `assets/style.css`, `assets/fonts/*`, `data/*.js`.
 - 빌드 도구 없음. 외부 네트워크 요청 0 (폰트도 로컬). 완전 오프라인.
-- 데이터 8천 개 로드 시에도 첫 페인트 빠르게, 렌더는 현재 카드만.
+- 시작 화면은 덱을 읽지 않는다. 부트에 로드하는 건 개수표(0.3KB)와 かな(16KB)뿐이고, 단어·한자·읽기 덱 4.5MB 는 그 모드를 고를 때 온다.
+- 렌더는 현재 카드만. rAF 루프는 자동 슬라이드가 재생 중일 때만 돈다.
+- 글꼴 미리보기 타일은 설정 패널을 처음 열 때 만든다 — 미리보기 글자 하나가 그 글꼴 파일을 통째로 받아 오기 때문이다.
 - `start.command`(더블클릭용): `python3 -m http.server` 로 로컬 서버 띄우고 브라우저 열기 — `file://` 제약을 확실히 피하는 경로도 제공.

@@ -28,6 +28,7 @@
 깨면 앱이 사용자 환경에서 죽는다.
 
 1. **`file://` 로 `index.html` 을 더블클릭해서 동작해야 한다.** `fetch`·`XHR`·ES 모듈·동적 `import` 금지. 데이터는 `<script src>` 로만 로드한다.
+   덱은 부트에 없다 — `app.js` 의 `need(set, cb)` 가 모드에 들어갈 때 `<script>` 태그를 꽂아 부른다. 클래식 스크립트 태그라 `file://` 에서도 동작한다(동적 `import` 와 달리). 이 방식을 `fetch` 로 바꾸지 말 것.
 2. **네트워크 요청 0.** CDN 금지, 폰트도 로컬(`assets/fonts/`). 완전 오프라인.
 3. **빌드 도구 없음.** 번들러·트랜스파일러 없이 브라우저가 바로 읽는 vanilla JS/CSS. `assets/app.js` 는 ES5 스타일(`var`, 함수 선언)로 일관되게 유지한다.
 4. **데이터 파일은 부분적으로만 있어도 동작해야 한다.** `data/words-n3.js` 가 없어도 앱이 뜨고, 급수 목록은 로드된 데이터에서 런타임에 뽑는다. 선택 필드(`hj`·`hjp`·`e`·`ek`·`eh`·`eo`·`en`·`same`·`hL`·`ehL`·`kAlt`·`wAlt`)는 없을 수 있다.
@@ -46,6 +47,7 @@ data/words-n{1..5}.js window.JLPT.push(...) 하는 생성물. 직접 손으로 �
 data/kanji.js         window.JLPT_KANJI.push(...) 하는 생성물
 data/kana.js          window.JLPT_KANA = {...} 생성물. 표 구조까지 여기 들어 있다
 data/reading.js       window.JLPT_READING = {...} 생성물. 루비 조각이 이미 박혀 있다
+data/manifest.js      window.JLPT_N = {...} 개수표. 이것과 kana.js 만 index.html 에 있다
 tools/                데이터 파이프라인 (아래)
 start.command         더블클릭용 로컬 http 서버 (file:// 제약 우회 경로)
 ```
@@ -92,6 +94,7 @@ node tools/fetch-wikinews.js          # SCAN=4500 WANT=80 로 범위 조절
 KUROMOJI_DICT=<kuromoji 설치 경로>/dict NODE_PATH=<설치 경로> node tools/build-reading.js
 # reading-draft.tsv 의 읽기·번역을 검수해 tools/reading-ko.tsv 를 채운 뒤
 node tools/merge-reading.js
+node tools/build-manifest.js
 node tools/font-charset.js && ./tools/subset-fonts.sh   # 기사 한자가 덱 밖에 있어서 거의 항상 필요
 ```
 
@@ -114,6 +117,7 @@ node tools/font-charset.js && ./tools/subset-fonts.sh   # 기사 한자가 덱 �
 | `tools/furigana.js` | 표기 + 전체 かな 읽기 → 루비 조각. 의존성 0. 단독 실행하면 자체 테스트 |
 | `tools/build-reading.js` | 형태소 분석기로 읽기 초안 + 루비 → `cache/review/reading-draft.{json,tsv}`. **kuromoji 필요** |
 | `tools/merge-reading.js` | 초안 + `tools/reading-ko.tsv`(번역) → `data/reading.js`. 번역 없는 줄은 버린다 |
+| `tools/build-manifest.js` | 덱 파일들을 세어 `data/manifest.js`. **덱을 다시 만들 때마다 같이 돌린다** |
 | `tools/reading-ko.tsv` | 기사 문장별 한국어 번역. 손으로 쓰는 유일한 읽기 데이터 |
 | `tools/next-chunks.js` | 아직 번역 안 된 청크 이름 출력 |
 | `tools/wave.sh` | 유휴 에이전트 pane 회수 + 다음 청크 N개 출력 |
@@ -140,12 +144,13 @@ node tools/font-charset.js && ./tools/subset-fonts.sh
 SCRATCH=<작업디렉터리> CHUNK=101 node tools/add-words.js   # base.json 갱신 + gap-pNN 청크
 # 청크마다 jlpt-translator 에이전트 1대 → out/v2-gap-pNN.jsonl
 SCRATCH=<작업디렉터리> node tools/merge.js
+node tools/build-manifest.js                               # 시작 화면 개수표
 node tools/font-charset.js && ./tools/subset-fonts.sh      # 새 한자가 들어오므로 거의 항상 필요
 ```
 
 `add-words.js` 는 기존 id 를 건드리지 않고 뒤에 붙이며, `SCRATCH/build/base.json` 과 `tools/cache/base.json` 을 함께 쓴다. `kanjidic2.xml` 이 `SCRATCH` 에 있어야 한자음이 붙는다 — 없으면 배지를 전부 잃는다.
 청크는 급수가 섞여 있으므로 에이전트 프롬프트에 그 사실을 알려야 한다(예문 난이도를 파일 단위가 아니라 단어별로 판단하게).
-끝나면 README·AGENTS 의 수록량·배지 수치와 `index.html` 의 `?v=N` 을 같이 올린다.
+끝나면 README·AGENTS 의 수록량·배지 수치와 `index.html` 의 `?v=N`(에셋)·데이터 `?v=N` 및 `app.js` 의 `DATA_V` 를 같이 올린다.
 
 ## 불변조건과 검증
 
@@ -313,6 +318,11 @@ PY
 - **숫자와 조수사는 함께 읽어야 한다.** `10日`=とおか 인데 따로 읽으면 じゅう+とおか, `9時`=くじ 인데 きゅう+くじ 가 된다. 이것 하나로 정렬률이 87%에서 99%로 올라갔다. `build-reading.js` 의 `numCounter()` 가 그 표다.
 - **정렬 성공은 '읽기가 옳다'가 아니라 '읽기가 표기와 앞뒤가 맞는다'는 뜻이다.** 고유명사 읽기가 틀려도 자기들끼리 일관되면 정렬은 통과한다. 사용자는 한자를 못 읽어서 이걸 못 잡는다 — 기사를 늘릴 때 `reading-draft.tsv` 검수를 건너뛰지 말 것.
 - **`explaintext` 는 소제목을 `==` 없이 맨 줄로 내놓는다.** 그래서 `==` 로만 자르면 참고문헌(`『…』 — 読売新聞, 2006年8月10日`)이 본문 문장으로 섞여 들어온다. 실제로 그렇게 만들어서 문장의 3분의 1이 서지 정보였다. `fetch-wikinews.js` 의 `clean()` 이 줄 단위로도 자른다.
+- **덱은 부트에 없다.** 시작 화면은 `data/manifest.js` 의 개수표만 읽는다. 부트에 4.5MB(gzip 1.5MB)를 파싱하던 걸 걷어낸 결과라 되돌리지 말 것 — 로컬 LCP 153ms → 66ms 였고, 휴대폰 첫 방문에서는 차이가 훨씬 크다. 새 코드가 `ALL_W`·`ALL_K`·`ALL_R` 을 부트 시점에 읽으면 빈 배열을 본다. 개수는 `nWords()`·`nKanji()`·`nRead()` 를 쓰고, 덱이 필요하면 `need(set, cb)` 안에서 해라.
+- **덱을 다시 만들면 `tools/build-manifest.js` 도 돌려야 한다.** 안 돌리면 시작 화면 숫자만 낡는다. 개수표가 틀려도 덱이 온 뒤에는 실제 배열이 이기므로(`nWords()` 등) 화면 안에서 숫자가 어긋나지는 않는다 — 그래서 조용히 틀린 채로 남는다.
+- **`app.js` 의 `DATA_V` 와 `index.html` 의 데이터 `?v=` 는 같은 값이어야 한다.** 덱을 다시 만들면 둘 다 올린다. 하나만 올리면 캐시된 옛 덱과 새 개수표가 섞인다.
+- **글꼴 타일은 설정 패널을 처음 열 때 만든다.** 미리보기 글자 `あ` 하나가 그 글꼴 파일을 통째로 받아 온다 — 부트에 만들면 아무도 안 연 패널 때문에 かな 글꼴 6종 155KB 를 받는다. `drawFonts()` 를 부트로 다시 옮기지 말 것.
+- **rAF 루프는 재생 중일 때만 돈다.** `setPlaying()` 이 `startTick`·`stopTick` 을 부른다. 예전엔 `tick` 이 조건 없이 자기를 다시 걸어서 시작 화면·かな·읽기·일시정지에서도 1초에 60번 깨어났다. 루프 안에서 조건부로 `return` 하는 형태로 되돌리지 말 것.
 - **`cleared` 는 '한 번에 맞힌 글자'가 아니라 '떼어낸 글자'다.** 틀린 글자는 덱 뒤로 다시 들어가고, 다시 나왔을 때 바로 맞히면 그때 `cleared` 에 들어간다. 그래서 도크 카운터로는 맞지만 정리 화면의 "몇 자를 틀렸나"에는 쓸 수 없다 — 거기서는 `roundMiss` 를 센다. 한 번 이 둘을 섞어서 "5자 중 5자를 한 번에 맞혔습니다 · 정답률 71%" 같은 자기모순 문장을 냈다.
 - **かな 모드에서는 입력칸이 키보드를 독점한다.** 전역 단축키(`s`·`v`·`f`·`h`)는 `INPUT` 타깃에서 빠져나가므로 동작하지 않는다. 의도한 동작이다 — 안 그러면 `f` 를 칠 때 전체화면이 된다. `Esc` 로 포커스를 빼야 단축키가 살아난다(도움말에 적어 뒀다).
 - **헤드리스로 localStorage 를 조작할 때는 저장 타이머를 이긴 다음에 새로고침해야 한다.** `save()` 는 250ms 디바운스이고 `visibilitychange`(hidden)에서 `lsSet(K_SET, S)` 를 한 번 더 쓴다. `localStorage.clear(); location.reload()` 를 붙여 쓰면 언로드 직전에 **옛 설정이 다시 써진다** — 실제로 한 번 속았다(테마를 light 로 심었는데 dark 로 떴다). 지운 뒤 600ms 쉬거나, UI 를 클릭해서 상태를 만들 것.
@@ -340,6 +350,8 @@ rm -f _test.html _driver.js
 ```
 
 기본 동작을 바꾸지 않았는지 항상 함께 확인한다: 학습 선택 화면에서 `단어` 를 누르면 `1 / 9543`, 채점 버튼 `hidden`, `.transport` 보임, 표기 글꼴 `Klee One`, 새 프로필의 저장된 `set` 이 `words`.
+
+덱이 지연 로드라 **모드를 누른 직후가 아니라 덱이 온 뒤에** 재야 한다. `document.documentElement.dataset.busy` 가 `'0'` 이 될 때까지 기다리거나 넉넉히 재운다. 부트 직후 `window.JLPT.length` 는 0 이 정상이다 — 그걸로 데이터 유무를 판정하면 전부 "데이터 없음"으로 읽는다.
 
 かな 모드는 이 경로를 확인한다 (입력 이벤트를 한 글자씩 보내야 접두사 판정이 검증된다):
 

@@ -17,18 +17,14 @@ try{
 </script>
 
 <!-- ?v= 는 캐시 무효화용. CSS/JS 고칠 때 숫자만 올리면 새로고침에서 확실히 반영된다 -->
-<link rel="stylesheet" href="assets/style.css?v=31">
+<link rel="stylesheet" href="assets/style.css?v=32">
 
-<!-- 데이터: 없는 파일은 조용히 무시된다 (fetch 없음, script 태그만) -->
+<!-- 데이터: 없는 파일은 조용히 무시된다 (fetch 없음, script 태그만).
+     여기 있는 건 시작 화면이 쓰는 것뿐이다 — 개수표와 かな(3KB).
+     단어·한자·읽기 덱(4.5MB)은 그 모드에 들어갈 때 app.js 가 script 태그로 불러온다. -->
 <script>window.JLPT = window.JLPT || [];</script>
-<script src="data/words-n5.js?v=26"></script>
-<script src="data/words-n4.js?v=26"></script>
-<script src="data/words-n3.js?v=26"></script>
-<script src="data/words-n2.js?v=26"></script>
-<script src="data/words-n1.js?v=26"></script>
-<script src="data/kanji.js?v=26"></script>
+<script src="data/manifest.js?v=26"></script>
 <script src="data/kana.js?v=26"></script>
-<script src="data/reading.js?v=26"></script>
 </head>
 <body>
 
@@ -506,6 +502,6 @@ try{
   </div>
 </div>
 
-<script src="assets/app.js?v=31"></script>
+<script src="assets/app.js?v=32"></script>
 </body>
 </html>

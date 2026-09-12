@@ -215,6 +215,7 @@ N5  6획
 SCRATCH=<작업디렉터리> node tools/build-base.js   # base.json + 번역용 청크 TSV
 # 청크별 번역 결과를 $SCRATCH/build/out/*.jsonl 로 채운 뒤
 SCRATCH=<작업디렉터리> node tools/merge.js        # data/words-n*.js 생성 + 품질 리포트
+node tools/build-manifest.js                     # 시작 화면 개수표 (덱을 다시 만들면 항상)
 ```
 
 데이터 스키마와 UI 요구사항은 [SPEC.md](SPEC.md).

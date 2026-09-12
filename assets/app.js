@@ -12,6 +12,8 @@
       K_KSTAT = 'jlpt.kanastat.v1';
 
   function $(id) { return document.getElementById(id); }
+  // HTMLCollection·NodeList 는 배열이 아니다. 칩 묶음을 도는 코드가 스무 군데라 한 번만 쓴다.
+  function each(list, fn) { for (var i = 0; i < list.length; i++) fn(list[i], i); }
   function lsGet(k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
   function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
@@ -71,30 +73,44 @@
 
   /* ---------------- 데이터 ----------------
      단어 덱과 한자 덱은 별개 배열이고, 설정(S.set)이 지금 어느 쪽을 쓸지 고른다.
-     한자 데이터 파일이 없어도 앱은 그대로 뜬다 (절대 규칙 4). */
-  var RAW = Array.isArray(window.JLPT) ? window.JLPT : [];
-  var ALL_W = [];
-  for (var r = 0; r < RAW.length; r++) {
-    var it = RAW[r];
-    if (!it || typeof it !== 'object') continue;
-    if (!it.w || !it.k) continue;
-    var lvn = Number(it.lv);
-    if (!(lvn >= 1 && lvn <= 5)) continue;
-    it.lv = lvn;
-    ALL_W.push(it);
+     데이터 파일이 없어도 앱은 그대로 뜬다 (절대 규칙 4).
+
+     덱 파일은 부트에 없다. 시작 화면 한 장을 띄우려고 4.5MB 를 파싱할 이유가 없어서,
+     index.html 에는 개수표(manifest)와 かな 만 있고 나머지는 모드에 들어갈 때 온다. */
+  var MAN = window.JLPT_N || {};
+  var ALL_W = [], ALL_K = [], ALL_R = [], READ = null;
+
+  function ingest() {
+    var raw = Array.isArray(window.JLPT) ? window.JLPT : [];
+    ALL_W = [];
+    for (var r = 0; r < raw.length; r++) {
+      var it = raw[r];
+      if (!it || typeof it !== 'object' || !it.w || !it.k) continue;
+      var lvn = Number(it.lv);
+      if (!(lvn >= 1 && lvn <= 5)) continue;
+      it.lv = lvn;
+      ALL_W.push(it);
+    }
+    var rawk = Array.isArray(window.JLPT_KANJI) ? window.JLPT_KANJI : [];
+    ALL_K = [];
+    for (var rk = 0; rk < rawk.length; rk++) {
+      var kt = rawk[rk];
+      if (!kt || typeof kt !== 'object' || !kt.c) continue;
+      var klv = Number(kt.lv);
+      if (!(klv >= 1 && klv <= 5)) continue;
+      kt.lv = klv; kt.kind = 'k'; kt.w = kt.c;
+      ALL_K.push(kt);
+    }
+    /* 읽기: 기사 한 편이 카드 하나다. 루비는 빌드 때 만들어져 있고 앱은 그리기만 한다. */
+    READ = (window.JLPT_READING && Array.isArray(window.JLPT_READING.a)) ? window.JLPT_READING : null;
+    ALL_R = READ ? READ.a.slice() : [];
+    for (var ir = 0; ir < ALL_R.length; ir++) { ALL_R[ir].kind = 'r'; ALL_R[ir].w = ''; }
   }
-  var RAWK = Array.isArray(window.JLPT_KANJI) ? window.JLPT_KANJI : [];
-  var ALL_K = [];
-  for (var rk = 0; rk < RAWK.length; rk++) {
-    var kt = RAWK[rk];
-    if (!kt || typeof kt !== 'object' || !kt.c) continue;
-    var klv = Number(kt.lv);
-    if (!(klv >= 1 && klv <= 5)) continue;
-    kt.lv = klv; kt.kind = 'k'; kt.w = kt.c;
-    ALL_K.push(kt);
-  }
+  ingest();
+
   /* かな: 오십음도 표를 열(列) 단위로 켜고 끈다. 한 글자씩 68번 누르게 하지 않는다.
-     급수(lv)가 없는 카드라 급수 필터를 타지 않고, 자동 슬라이드 대신 타자 입력으로 넘어간다. */
+     급수(lv)가 없는 카드라 급수 필터를 타지 않고, 자동 슬라이드 대신 타자 입력으로 넘어간다.
+     3KB 뿐이고 시작 화면·글자 고르기 양쪽이 바로 쓰므로 유일하게 부트에 남긴 덱이다. */
   var KANA = (window.JLPT_KANA && window.JLPT_KANA.i && window.JLPT_KANA.g) ? window.JLPT_KANA : null;
   var ALL_N = [];
   if (KANA) {
@@ -112,13 +128,73 @@
       }
     }
   }
-  /* 읽기: 기사 한 편이 카드 하나다. 루비는 빌드 때 만들어져 있고 앱은 그리기만 한다. */
-  var READ = (window.JLPT_READING && Array.isArray(window.JLPT_READING.a)) ? window.JLPT_READING : null;
-  var ALL_R = READ ? READ.a.slice() : [];
-  for (var ri2 = 0; ri2 < ALL_R.length; ri2++) { ALL_R[ri2].kind = 'r'; ALL_R[ri2].w = ''; }
 
-  if (!ALL_K.length && S.set === 'kanji') S.set = 'words';
-  if (!ALL_R.length && S.set === 'reading') S.set = 'words';
+  /* かな 표에서 파생되는 상수. ALL_N 은 부트 이후 변하지 않으므로 한 번만 센다.
+     KCOL_N 은 열 하나에 든 글자 수, KGRP_N 은 그룹 전체 글자 수, KANA_ORDER 는 표에 나온 순서다. */
+  var KCOL_N = {}, KGRP_N = {}, KANA_ORDER = {};
+  for (var ni = 0; ni < ALL_N.length; ni++) {
+    var kn0 = ALL_N[ni];
+    KCOL_N[kn0.col] = (KCOL_N[kn0.col] || 0) + 1;
+    KGRP_N[kn0.g] = (KGRP_N[kn0.g] || 0) + 1;
+    KANA_ORDER[kn0.c] = ni;
+  }
+
+  /* 개수: 덱이 오기 전에는 개수표를 읽는다. 온 뒤에는 실제 배열이 진실이다 —
+     개수표가 낡아도 화면에 보이는 숫자는 덱과 어긋나지 않는다. */
+  function sum(o) { var n = 0; for (var k in o) n += o[k]; return n; }
+  function nWords() { return ALL_W.length || sum(MAN.words); }
+  function nKanji() { return ALL_K.length || sum(MAN.kanji); }
+  function nRead() { return ALL_R.length || (MAN.reading || 0); }
+
+  /* ---------------- 덱 불러오기 ----------------
+     클래식 script 태그다 — file:// 에서도 동작하고 fetch 를 쓰지 않는다 (절대 규칙 1).
+     ?v= 는 index.html 의 데이터 태그와 같은 값이어야 한다. 데이터를 다시 만들면 둘 다 올린다. */
+  var DATA_V = '?v=26';
+  var WORD_FILES = ['data/words-n5.js', 'data/words-n4.js', 'data/words-n3.js',
+                    'data/words-n2.js', 'data/words-n1.js'];
+  var got = {}, waiting = {};
+
+  function filesFor(set) {
+    if (set === 'kanji') return ['data/kanji.js'];
+    if (set === 'reading') return ['data/reading.js'];
+    if (set === 'kana') return [];              // 부트에 이미 있다
+    return WORD_FILES;
+  }
+  function loadFiles(files, cb) {
+    var pend = [];
+    for (var i = 0; i < files.length; i++) if (!got[files[i]]) pend.push(files[i]);
+    if (!pend.length) { cb(); return; }
+    var left = pend.length;
+    function one() { if (--left === 0) cb(); }
+    pend.forEach(function (f) {
+      if (waiting[f]) { waiting[f].push(one); return; }
+      waiting[f] = [one];
+      var s = document.createElement('script');
+      s.src = f + DATA_V;
+      // 없는 파일은 조용히 넘어간다 — 파일 하나만 있어도 앱은 돈다 (절대 규칙 4)
+      s.onload = s.onerror = function () {
+        got[f] = 1;
+        var q = waiting[f]; delete waiting[f];
+        q.forEach(function (fn) { fn(); });
+      };
+      document.head.appendChild(s);
+    });
+  }
+  // 이 모드에 필요한 덱이 다 온 뒤에 cb. 이미 있으면 그 자리에서 부른다(비동기 지연 없음).
+  function need(set, cb) {
+    var files = filesFor(set), have = true;
+    for (var i = 0; i < files.length; i++) if (!got[files[i]]) { have = false; break; }
+    if (have) { cb(); return; }
+    document.documentElement.dataset.busy = '1';
+    loadFiles(files, function () {
+      ingest();
+      document.documentElement.dataset.busy = '0';
+      cb();
+    });
+  }
+
+  if (!nKanji() && S.set === 'kanji') S.set = 'words';
+  if (!nRead() && S.set === 'reading') S.set = 'words';
   if (!ALL_N.length && S.set === 'kana') S.set = 'words';
   function activeSet() {
     return S.set === 'kanji' ? ALL_K : S.set === 'kana' ? ALL_N : S.set === 'reading' ? ALL_R : ALL_W;
@@ -138,12 +214,20 @@
   }
   syncKcols();
   var KSTAT = lsGet(K_KSTAT, {}) || {};   // かな -> [정답, 오답]
-  function levelsOf(list) {
-    var seen = {}, out = [];
-    for (var i = 0; i < list.length; i++) if (!seen[list[i].lv]) { seen[list[i].lv] = 1; out.push(list[i].lv); }
+  // 급수별 개수. 덱이 오기 전에는 개수표를 읽으므로 시작 화면에서도 급수 칩이 제대로 나온다.
+  function lvCounts() {
+    if (S.set === 'kana' || S.set === 'reading') return {};   // 급수가 없는 덱이다
+    if (!ALL.length) return (S.set === 'kanji' ? MAN.kanji : MAN.words) || {};
+    var c = {};
+    for (var i = 0; i < ALL.length; i++) c[ALL[i].lv] = (c[ALL[i].lv] || 0) + 1;
+    return c;
+  }
+  function levelsOf(counts) {
+    var out = [];
+    for (var k in counts) if (counts[k]) out.push(Number(k));
     return out.sort(function (a, b) { return b - a; }); // N5 먼저
   }
-  var LEVELS = levelsOf(ALL);
+  var LEVELS = levelsOf(lvCounts());
   // 한자 카드 uid 는 i 가 'k12' 라서 단어 uid('5-12')와 절대 겹치지 않는다 — 즐겨찾기·채점이 섞이면 안 된다.
   // かな 는 급수가 없어 'n-き' 로 키잉한다. 세 덱의 키가 서로 겹치면 안 된다.
   function uid(w) {
@@ -152,10 +236,10 @@
     return w.lv + '-' + (w.i != null ? w.i : w.w);
   }
   function useSet(name) {
-    S.set = (ALL_K.length && name === 'kanji') ? 'kanji'
+    S.set = (nKanji() && name === 'kanji') ? 'kanji'
       : (ALL_N.length && name === 'kana') ? 'kana'
-      : (ALL_R.length && name === 'reading') ? 'reading' : 'words';
-    ALL = activeSet(); LEVELS = levelsOf(ALL);
+      : (nRead() && name === 'reading') ? 'reading' : 'words';
+    ALL = activeSet(); LEVELS = levelsOf(lvCounts());
     save();
   }
 
@@ -277,6 +361,7 @@
       panel = $('panel'), help = $('help'), icPlay = $('icPlay'),
       starGlyph = $('starGlyph'), btnFav = $('btnFav'),
       home = $('home'), summary = $('summary'), dock = document.querySelector('.dock'),
+      dockrow = document.querySelector('.dockrow'),
       transport = document.querySelector('.transport'), progress = document.querySelector('.progress'),
       cDrill = $('cDrill'), kanaIn = $('kanaIn'), kanaTip = $('kanaTip'),
       kanaAns = $('kanaAns'), kanaAnsR = $('kanaAnsR'), kanaAnsH = $('kanaAnsH'), kanaAnsA = $('kanaAnsA'),
@@ -381,14 +466,15 @@
   }
 
   function paintHome() {
-    $('pickNWords').textContent = ALL_W.length ? ALL_W.length.toLocaleString('ko-KR') + '개' : '없음';
-    $('pickNKanji').textContent = ALL_K.length ? ALL_K.length.toLocaleString('ko-KR') + '자' : '없음';
-    $('pickNRead').textContent = ALL_R.length ? ALL_R.length + '편' : '없음';
+    var nw = nWords(), nk = nKanji(), nr = nRead();
+    $('pickNWords').textContent = nw ? nw.toLocaleString('ko-KR') + '개' : '없음';
+    $('pickNKanji').textContent = nk ? nk.toLocaleString('ko-KR') + '자' : '없음';
+    $('pickNRead').textContent = nr ? nr + '편' : '없음';
     var kn = ALL_N.length ? kanaSelN() : 0;
     $('pickNKana').textContent = ALL_N.length ? (kn ? kn + '자 선택' : '글자 미선택') : '없음';
-    Array.prototype.forEach.call($('pickRows').children, function (b) {
-      var n = b.dataset.go === 'kanji' ? ALL_K.length : b.dataset.go === 'kana' ? ALL_N.length
-        : b.dataset.go === 'reading' ? ALL_R.length : ALL_W.length;
+    each($('pickRows').children, function (b) {
+      var n = b.dataset.go === 'kanji' ? nk : b.dataset.go === 'kana' ? ALL_N.length
+        : b.dataset.go === 'reading' ? nr : nw;
       b.setAttribute('aria-disabled', n ? 'false' : 'true');
       b.disabled = !n;
     });
@@ -583,6 +669,20 @@
     return n;
   }
 
+  // 번역 전체 열기는 '이 기사의 모든 문장 번호'를 다시 세우는 일이다 (제목이 0번이라 <= 로 돈다)
+  function syncKoAll(w) {
+    koOpen = {};
+    if (S.koAll && w) for (var i = 0; i <= w.s.length; i++) koOpen[i] = 1;
+  }
+  function applyKoAll() {
+    var w = current();
+    if (w && w.kind === 'r') {
+      syncKoAll(w);
+      each(artNodes, function (n) { if (!n.el.hidden) drawKo(n); });
+    }
+    paintChrome();
+  }
+
   function drawKo(n) {
     var on = !!koOpen[n.i];
     n.ko.hidden = !on;
@@ -632,8 +732,7 @@
     cArt.hidden = false;
     card.classList.add('is-read');
 
-    koOpen = {};
-    if (S.koAll) for (var q = 0; q <= w.s.length; q++) koOpen[q] = 1;
+    syncKoAll(w);
 
     var rows = artRows(w);
     if (sentIdx >= rows.length) sentIdx = rows.length - 1;
@@ -759,11 +858,9 @@
 
   // 많이 틀린 순서. 같은 횟수면 표에 나온 순서를 지켜 히라가나가 먼저 오게 한다.
   function missList() {
-    var order = {};
-    for (var i = 0; i < ALL_N.length; i++) order[ALL_N[i].c] = i;
     var out = [];
     for (var c in roundMiss) out.push(c);
-    return out.sort(function (a, b) { return roundMiss[b] - roundMiss[a] || order[a] - order[b]; });
+    return out.sort(function (a, b) { return roundMiss[b] - roundMiss[a] || KANA_ORDER[a] - KANA_ORDER[b]; });
   }
   function nextRound() {
     if (S.shuffle) { S.seed = (S.seed * 1103515245 + 12345) >>> 0 || 1; save(); }
@@ -931,13 +1028,24 @@
     }
   }
 
+  var deckinfoKey = null;
+  function setDeckinfo(parts) {
+    var key = parts.join('\n');
+    if (key === deckinfoKey) return;
+    deckinfoKey = key;
+    deckinfo.textContent = '';
+    parts.forEach(function (s) {
+      var el = document.createElement('span'); el.textContent = s; deckinfo.appendChild(el);
+    });
+  }
+
   function paintChrome() {
     var w = current(), kana = S.set === 'kana', reading = S.set === 'reading';
     var atHome = screen === 'home', atDone = screen === 'done';
     dock.hidden = atHome || atDone;       // 정리 화면에는 조작할 카드가 없다
     $('btnHome').hidden = atHome;
     $('btnKanaPick').hidden = atHome || !kana;
-    if (atHome || atDone) { deckinfo.textContent = ''; return; }
+    if (atHome || atDone) { setDeckinfo([]); return; }
 
     // かな 는 카드 위치가 아니라 '이번 바퀴에 뗀 글자 수'가 진척이다 — 틀린 글자가 덱에 다시 들어오므로.
     counter.textContent = kana
@@ -954,8 +1062,8 @@
     $('btnAllKo').classList.toggle('on', S.koAll);
     $('btnFuri').classList.toggle('on', S.furi);
     $('btnOne').classList.toggle('on', S.readOne);
-    document.querySelector('.dockrow').classList.toggle('is-drill', kana);
-    document.querySelector('.dockrow').classList.toggle('is-read', reading);
+    dockrow.classList.toggle('is-drill', kana);
+    dockrow.classList.toggle('is-read', reading);
     transport.hidden = kana;
     // 읽기는 스스로 넘긴다 — 남은 시간 바나 재생 버튼이 있으면 쫓기게 된다. 기사 이동만 남긴다.
     $('btnPlay').hidden = reading;
@@ -966,8 +1074,6 @@
       $('btnKanaSkip').disabled = !w;
     }
 
-    var lvTxt = activeLevels().map(function (n) { return LV_LABEL[n]; }).join(' ');
-    deckinfo.textContent = '';
     var parts = [];
     if (kana) {
       parts = ['かな 타자', retryRound ? '틀린 글자 ' + (roundN || deck.length) + '자 다시'
@@ -976,6 +1082,7 @@
     } else if (reading) {
       parts = ['읽기', (READ && READ.src ? READ.src.name : '뉴스') + ' ' + deck.length + '편'];
     } else if (ALL.length) {
+      var lvTxt = activeLevels().map(function (n) { return LV_LABEL[n]; }).join(' ');
       var modeTxt = S.study === 'batch' ? '배치 루프' : S.study === 'srs' ? '복습' : (S.deck === 'fav' ? '즐겨찾기' : '전체');
       if (S.set === 'kanji') modeTxt = '한자 · ' + modeTxt;
       else if (S.tier !== 'all') modeTxt += ' · ' + TIER_LABEL[S.tier];
@@ -983,9 +1090,8 @@
                modeTxt + ' ' + deck.length + (S.set === 'kanji' ? '자' : '단어'),
                S.study === 'srs' ? '복습 대상 ' + dueCount() + '개' : (S.shuffle ? '셔플' : '순서대로')];
     }
-    parts.forEach(function (s) {
-      var el = document.createElement('span'); el.textContent = s; deckinfo.appendChild(el);
-    });
+    // paintChrome 은 かな 타자 한 글자마다 돈다. 같은 문구면 span 을 새로 만들지 않는다.
+    setDeckinfo(parts);
 
     var fav = w ? !!FAV[uid(w)] : false;
     btnFav.setAttribute('aria-pressed', fav ? 'true' : 'false');
@@ -1004,15 +1110,17 @@
     paint();
   }
   function enterMode(name) {
-    useSet(name);
-    screen = 'study';
-    drawSet(); drawStudy(); drawLevels(); drawTier();
-    buildDeck(lsGet(K_POS, null));
-    setPlaying(S.set !== 'kana' && S.set !== 'reading' && deck.length > 0);
-    markSeen();
-    paint();
-    focusDrill();
-    wake();
+    need(name, function () {
+      useSet(name);
+      screen = 'study';
+      drawSet(); drawStudy(); drawLevels(); drawTier();
+      buildDeck(lsGet(K_POS, null));
+      setPlaying(S.set !== 'kana' && S.set !== 'reading' && deck.length > 0);
+      markSeen();
+      paint();
+      focusDrill();
+      wake();
+    });
   }
 
   // 카드가 화면을 넘지 않게 맞춘다. 세로(전체 스케일) 먼저, 그다음 표기 가로 폭.
@@ -1098,13 +1206,18 @@
     playing = v;
     icPlay.firstElementChild.setAttribute('d', v ? ICON_PAUSE : ICON_PLAY);
     $('btnPlay').setAttribute('aria-label', v ? '일시정지' : '재생');
-    if (v) { wake(); lockScreen(); } else { document.body.classList.remove('idle'); releaseScreen(); }
+    if (v) { startTick(); wake(); lockScreen(); }
+    else { stopTick(); document.body.classList.remove('idle'); releaseScreen(); }
   }
 
-  /* ---------------- 타이머 (rAF 단일 루프) ---------------- */
-  var last = 0;
+  /* ---------------- 타이머 (rAF 단일 루프) ----------------
+     재생 중일 때만 돈다. 시작 화면·かな·읽기·일시정지에서도 계속 깨우면
+     하는 일 없이 1초에 60번 메인 스레드를 건드린다 (휴대폰 배터리). */
+  var last = 0, raf = 0;
+  function startTick() { if (!raf) { last = 0; raf = requestAnimationFrame(tick); } }
+  function stopTick() { if (raf) { cancelAnimationFrame(raf); raf = 0; } }
   function tick(t) {
-    requestAnimationFrame(tick);
+    raf = requestAnimationFrame(tick);
     var dt = last ? Math.min(t - last, 250) : 0;
     last = t;
     // かな·읽기는 시간이 아니라 사용자가 넘긴다
@@ -1117,7 +1230,6 @@
     if (!revealed && elapsed >= S.hideDelay * 1000) reveal();
     if (elapsed >= dur) go(1);
   }
-  requestAnimationFrame(tick);
 
   function reveal() { revealed = true; meanWrap.classList.remove('masked'); }
 
@@ -1321,7 +1433,12 @@
   function openPanel(v) {
     panel.dataset.open = v ? '1' : '0';
     $('btnSet').setAttribute('aria-expanded', v ? 'true' : 'false');
-    if (v) { document.body.classList.remove('idle'); kanaIn.blur(); } else { wake(); focusDrill(); }
+    if (!v) { wake(); focusDrill(); return; }
+    document.body.classList.remove('idle'); kanaIn.blur();
+    // 글꼴 타일은 여기서 처음 만든다 — 미리보기 글자 하나가 그 글꼴 파일을 통째로 받아 온다(6종 155KB).
+    drawFonts();
+    // 급수·한자음 개수는 실제 덱을 세어 보여 준다. 시작 화면에서 열었으면 여기서 덱이 온다.
+    need(S.set, function () { drawSet(); drawLevels(); drawTier(); drawStudy(); });
   }
   $('btnSet').onclick = function () { openPanel(panel.dataset.open !== '1'); };
   $('btnSetClose').onclick = function () { openPanel(false); };
@@ -1467,39 +1584,45 @@
   rng('rTries', 'vTries', 'kanaTries', function (v) { return v + '번 틀리면'; }, 1);
 
   function drawSet() {
-    Array.prototype.forEach.call($('setChips').children, function (b) {
+    var nk = nKanji(), nr = nRead(), nw = nWords();
+    each($('setChips').children, function (b) {
       b.classList.toggle('on', b.dataset.set === S.set);
       b.setAttribute('aria-pressed', b.dataset.set === S.set ? 'true' : 'false');
-      b.disabled = (b.dataset.set === 'kanji' && !ALL_K.length) || (b.dataset.set === 'kana' && !ALL_N.length)
-        || (b.dataset.set === 'reading' && !ALL_R.length);
+      b.disabled = (b.dataset.set === 'kanji' && !nk) || (b.dataset.set === 'kana' && !ALL_N.length)
+        || (b.dataset.set === 'reading' && !nr);
     });
     // 한자음 필터·급수·학습 모드·재생 간격은 단어 덱 전용이다
     $('tierChips').parentNode.hidden = S.set !== 'words';
     $('lvChips').parentNode.hidden = S.set === 'kana' || S.set === 'reading';
     $('studyChips').parentNode.hidden = S.set === 'kana' || S.set === 'reading';
     $('grpKana').hidden = !ALL_N.length;
-    $('grpRead').hidden = !ALL_R.length;
+    $('grpRead').hidden = !nr;
+    $('readHint').textContent = nr
+      ? '기사는 ウィキニュース(ja.wikinews.org) 에서 왔고 CC BY 4.0 입니다. 문장을 누르면 그 문장만 읽어 줍니다.'
+      : 'data/reading.js 가 없어 읽기 모드를 쓸 수 없습니다.';
     $('setHint').textContent =
-      S.set === 'reading' ? (READ ? 'ウィキニュース 기사 ' + ALL_R.length + '편. 한자 위에 かな 가 붙고, 문장마다 번역과 발음이 있습니다.' : '')
+      S.set === 'reading' ? 'ウィキニュース 기사 ' + nr + '편. 한자 위에 かな 가 붙고, 문장마다 번역과 발음이 있습니다.'
       : S.set === 'kana' ? 'かな ' + ALL_N.length + '자. 글자가 뜨면 로마자로 칩니다. 맞는 순간 다음 글자로 넘어갑니다.'
       : S.set === 'kanji'
-        ? (ALL_K.length ? '한자 ' + ALL_K.length + '자. 한 글자마다 한국 한자음·훈음·음독·훈독과 그 한자를 쓰는 단어를 보여줍니다. 단어 덱에 실제로 등장하는 한자만 있습니다.'
-                        : 'data/kanji.js 가 없어 한자 카드를 쓸 수 없습니다.')
-        : '단어 ' + ALL_W.length + '개. 지금까지의 동작 그대로입니다.';
+        ? (nk ? '한자 ' + nk + '자. 한 글자마다 한국 한자음·훈음·음독·훈독과 그 한자를 쓰는 단어를 보여줍니다. 단어 덱에 실제로 등장하는 한자만 있습니다.'
+              : 'data/kanji.js 가 없어 한자 카드를 쓸 수 없습니다.')
+        : '단어 ' + nw + '개. 지금까지의 동작 그대로입니다.';
   }
-  Array.prototype.forEach.call($('setChips').children, function (b) {
+  each($('setChips').children, function (b) {
     b.onclick = function () {
       if (b.dataset.set === S.set) return;
       stopSpeak();
-      useSet(b.dataset.set);
-      screen = 'study';
-      drawSet(); drawStudy(); drawLevels(); drawTier(); buildDeck();
-      setPlaying(S.set !== 'kana' && S.set !== 'reading' && deck.length > 0);
+      need(b.dataset.set, function () {
+        useSet(b.dataset.set);
+        screen = 'study';
+        drawSet(); drawStudy(); drawLevels(); drawTier(); buildDeck();
+        setPlaying(S.set !== 'kana' && S.set !== 'reading' && deck.length > 0);
+      });
     };
   });
 
   function drawStudy() {
-    Array.prototype.forEach.call($('studyChips').children, function (b) {
+    each($('studyChips').children, function (b) {
       b.classList.toggle('on', b.dataset.study === S.study);
       b.setAttribute('aria-pressed', b.dataset.study === S.study ? 'true' : 'false');
     });
@@ -1511,7 +1634,7 @@
       : S.study === 'batch' ? '적은 수의 단어만 돌려서 노출 간격을 좁힙니다. ' + S.batchSize + '단어 × ' + S.sec + '초 = 한 바퀴 ' + Math.round(S.batchSize * S.sec / 60) + '분. 작업 중 틀어두기에 이 모드가 실제로 남습니다.'
       : '채점한 카드를 복습 시점에 맞춰 다시 꺼냅니다. 채점 ' + graded + '개, 지금 복습 대상 ' + due + '개. 1·2·3 으로 채점하세요.';
   }
-  Array.prototype.forEach.call($('studyChips').children, function (b) {
+  each($('studyChips').children, function (b) {
     b.onclick = function () {
       S.study = b.dataset.study; save();
       var w = current(); drawStudy(); buildDeck(w && uid(w));
@@ -1523,19 +1646,23 @@
     buildDeck(); drawStudy(); toast('새 배치 ' + BATCH.ids.length + '단어');
   };
   function drawTier() {
-    Array.prototype.forEach.call($('tierChips').children, function (b) {
+    each($('tierChips').children, function (b) {
       b.classList.toggle('on', b.dataset.tier === S.tier);
       b.setAttribute('aria-pressed', b.dataset.tier === S.tier ? 'true' : 'false');
     });
+    if (S.set !== 'words') return;                 // 한자음 필터는 단어 덱 전용이다 (칩 묶음도 숨겨져 있다)
+    if (!ALL_W.length) { $('tierHint').textContent = '단어 덱을 불러오면 개수가 나옵니다.'; return; }
     var set = {}; activeLevels().forEach(function (n) { set[n] = 1; });
-    var pool = ALL.filter(function (w) { return set[w.lv]; });
     var same = 0, diff = 0, kana = 0;
-    pool.forEach(function (w) { if (!w.hj) kana++; else if (w.same) same++; else diff++; });
+    each(ALL_W, function (w) {
+      if (!set[w.lv]) return;
+      if (!w.hj) kana++; else if (w.same) same++; else diff++;
+    });
     $('tierHint').textContent =
       '선택 급수 기준 — 한자음=한국어 ' + same + ' · 한자음 다름 ' + diff + ' · かな ' + kana + '개. '
       + '한자음이 한국어와 같은 단어는 외울 게 없으니 빨리 훑고, 어긋나는 단어와 かな 단어에 시간을 쓰는 게 낫습니다.';
   }
-  Array.prototype.forEach.call($('tierChips').children, function (b) {
+  each($('tierChips').children, function (b) {
     b.onclick = function () {
       S.tier = b.dataset.tier; save();
       var w = current(); drawTier(); buildDeck(w && uid(w));
@@ -1558,14 +1685,14 @@
 
   // 급수 칩 - 런타임 데이터에서 유도. 학습 대상을 바꾸면 개수가 달라지므로 다시 그린다.
   function drawLevels() {
+    if (S.set === 'kana' || S.set === 'reading') return;   // 급수 칩 묶음 자체가 숨겨져 있다
     var box = $('lvChips'), hint = $('lvHint');
     box.textContent = '';
     if (!LEVELS.length) {
       hint.textContent = '로드된 데이터가 없습니다. data 폴더에 words-n5.js 같은 파일을 넣으세요.';
       return;
     }
-    var counts = {};
-    ALL.forEach(function (w) { counts[w.lv] = (counts[w.lv] || 0) + 1; });
+    var counts = lvCounts();
     LEVELS.forEach(function (n) {
       var b = document.createElement('button');
       b.type = 'button'; b.className = 'btn'; b.dataset.lv = String(n);
@@ -1575,7 +1702,7 @@
         var i = cur.indexOf(n);
         if (i >= 0) { if (cur.length === 1) return; cur.splice(i, 1); } else cur.push(n);
         S.levels = cur.sort(function (a, b2) { return b2 - a; });
-        save(); drawLv(); buildDeck();
+        save(); drawLv(); drawTier(); buildDeck();   // 한자음 개수는 '선택 급수 기준'이라 같이 다시 센다
       };
       box.appendChild(b);
     });
@@ -1589,23 +1716,23 @@
   drawSet();
   function drawLv() {
     var cur = activeLevels();
-    Array.prototype.forEach.call($('lvChips').children, function (b) {
+    each($('lvChips').children, function (b) {
       b.classList.toggle('on', cur.indexOf(Number(b.dataset.lv)) >= 0);
     });
   }
 
   // 덱 칩
-  Array.prototype.forEach.call(document.querySelectorAll('[data-deck]'), function (b) {
+  each(document.querySelectorAll('[data-deck]'), function (b) {
     b.onclick = function () { S.deck = b.dataset.deck; save(); drawDeckChips(); buildDeck(); };
   });
   function drawDeckChips() {
-    Array.prototype.forEach.call(document.querySelectorAll('[data-deck]'), function (b) {
+    each(document.querySelectorAll('[data-deck]'), function (b) {
       b.classList.toggle('on', b.dataset.deck === S.deck);
     });
   }
 
   // 테마 칩
-  Array.prototype.forEach.call(document.querySelectorAll('[data-theme]'), function (b) {
+  each(document.querySelectorAll('[data-theme]'), function (b) {
     b.onclick = function () { S.theme = b.dataset.theme; save(); applyTheme(); drawThemeChips(); };
   });
   var mqLight = window.matchMedia ? matchMedia('(prefers-color-scheme: light)') : null;
@@ -1615,7 +1742,7 @@
   }
   if (mqLight && mqLight.addEventListener) mqLight.addEventListener('change', function () { if (S.theme === 'auto') applyTheme(); });
   function drawThemeChips() {
-    Array.prototype.forEach.call(document.querySelectorAll('[data-theme]'), function (b) {
+    each(document.querySelectorAll('[data-theme]'), function (b) {
       b.classList.toggle('on', b.dataset.theme === S.theme);
     });
   }
@@ -1634,18 +1761,18 @@
   }
 
   /* ---------------- 시작 화면 ---------------- */
-  Array.prototype.forEach.call($('pickRows').children, function (b) {
+  each($('pickRows').children, function (b) {
     b.onclick = function () { if (!b.disabled) enterMode(b.dataset.go); };
   });
   $('btnHome').onclick = goHome;
 
   /* ---------------- かな 글자 고르기 ----------------
      열 하나가 버튼 하나다. 오십음도는 원래 행으로 외우고, 68열을 한 글자씩 켜게 하면 아무도 안 쓴다. */
-  var kcolNodes = [];
+  var kcolNodes = [], kgrpNodes = [];
   function buildKanaGrids() {
     var box = $('kanaGrids');
     box.textContent = '';
-    kcolNodes = [];
+    kcolNodes = []; kgrpNodes = [];
     if (!KANA) return;
     KANA.g.forEach(function (g) {
       var sec = document.createElement('section'); sec.className = 'kgrp';
@@ -1684,9 +1811,8 @@
         toggleCols(ids, !allOn);
       };
       sec.appendChild(head); sec.appendChild(tbl);
-      sec.dataset.g = g.k;
       box.appendChild(sec);
-      sec._cnt = cnt;
+      kgrpNodes.push({ cnt: cnt, ids: ids, total: KGRP_N[g.k] || 0 });
     });
   }
   function toggleCols(ids, force) {
@@ -1701,7 +1827,7 @@
   }
   function kanaSelN() {
     var n = 0;
-    for (var i = 0; i < ALL_N.length; i++) if (KCOLSET[ALL_N[i].col]) n++;
+    for (var i = 0; i < KCOLS.length; i++) n += KCOL_N[KCOLS[i]] || 0;
     return n;
   }
   function drawKanaGrids() {
@@ -1710,11 +1836,10 @@
       n.el.classList.toggle('on', on);
       n.el.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
-    Array.prototype.forEach.call($('kanaGrids').children, function (sec) {
-      if (!sec._cnt) return;
-      var k = sec.dataset.g, tot = 0, on = 0;
-      for (var i = 0; i < ALL_N.length; i++) if (ALL_N[i].g === k) { tot++; if (KCOLSET[ALL_N[i].col]) on++; }
-      sec._cnt.textContent = on + ' / ' + tot + '자';
+    kgrpNodes.forEach(function (g) {
+      var on = 0;
+      for (var i = 0; i < g.ids.length; i++) if (KCOLSET[g.ids[i]]) on += KCOL_N[g.ids[i]] || 0;
+      g.cnt.textContent = on + ' / ' + g.total + '자';
     });
     var sel = kanaSelN();
     $('kanaPickHint').textContent = sel
@@ -1781,36 +1906,26 @@
     paintChrome();
   }
   function drawRtFontChips() {
-    Array.prototype.forEach.call($('rtFontChips').children, function (b) {
+    each($('rtFontChips').children, function (b) {
       var on = b.dataset.rtf === S.rtFont;
       b.classList.toggle('on', on);
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
   }
-  Array.prototype.forEach.call($('rtFontChips').children, function (b) {
+  each($('rtFontChips').children, function (b) {
     b.onclick = function () { S.rtFont = b.dataset.rtf; save(); applyFuri(); drawRtFontChips(); };
   });
   function drawRtChips() {
-    Array.prototype.forEach.call($('rtChips').children, function (b) {
+    each($('rtChips').children, function (b) {
       var on = Math.abs(Number(b.dataset.rt) - S.rt) < 0.001;
       b.classList.toggle('on', on);
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
   }
-  Array.prototype.forEach.call($('rtChips').children, function (b) {
+  each($('rtChips').children, function (b) {
     b.onclick = function () { S.rt = Number(b.dataset.rt); save(); applyFuri(); drawRtChips(); };
   });
-  function toggleAllKo() {
-    S.koAll = !S.koAll; save();
-    var w = current();
-    if (w && w.kind === 'r') {
-      koOpen = {};
-      if (S.koAll) for (var i = 0; i <= w.s.length; i++) koOpen[i] = 1;
-      for (var j = 0; j < artNodes.length; j++) if (!artNodes[j].el.hidden) drawKo(artNodes[j]);
-    }
-    drawReadSw();
-    paintChrome();
-  }
+  function toggleAllKo() { S.koAll = !S.koAll; save(); applyKoAll(); drawReadSw(); }
   function toggleFuri() { S.furi = !S.furi; save(); applyFuri(); drawReadSw(); }
   function toggleOne() {
     S.readOne = !S.readOne; save();
@@ -1821,19 +1936,8 @@
   $('btnOne').onclick = toggleOne;
   var drawOneSw = sw('swReadOne', 'readOne', paint);
   var drawFuriSw = sw('swFuri', 'furi', applyFuri);
-  var drawKoSw = sw('swKoAll', 'koAll', function () {
-    var w = current();
-    if (w && w.kind === 'r') {
-      koOpen = {};
-      if (S.koAll) for (var i = 0; i <= w.s.length; i++) koOpen[i] = 1;
-      for (var j = 0; j < artNodes.length; j++) if (!artNodes[j].el.hidden) drawKo(artNodes[j]);
-    }
-    paintChrome();
-  });
+  var drawKoSw = sw('swKoAll', 'koAll', applyKoAll);
   function drawReadSw() { drawFuriSw(); drawKoSw(); drawOneSw(); }
-  $('readHint').textContent = READ
-    ? '기사는 ' + (READ.src.name || '') + '(' + (READ.src.site || '') + ') 에서 왔고 ' + (READ.src.license || '') + ' 입니다. 문장을 누르면 그 문장만 읽어 줍니다.'
-    : 'data/reading.js 가 없어 읽기 모드를 쓸 수 없습니다.';
 
   /* ---------------- 글꼴 타일 ---------------- */
   function drawFonts() {
@@ -1863,18 +1967,18 @@
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(function () {
       try {
-        if (ALL.length && !document.fonts.check('1em "Klee One"')) document.documentElement.dataset.fontfallback = '1';
+        if (!document.fonts.check('1em "Klee One"')) document.documentElement.dataset.fontfallback = '1';
       } catch (e) {}
       fit();
     })['catch'](function () {});
   }
 
   /* ---------------- 부트 ----------------
-     항상 시작 화면에서 출발한다 (사용자 요구). 덱은 미리 세워 두므로 모드를 고르면 바로 뜬다. */
+     항상 시작 화면에서 출발한다 (사용자 요구). 덱도 글꼴 타일도 여기서는 안 만든다 —
+     시작 화면은 개수표와 かな 만 있으면 그려지고, 나머지는 모드를 고를 때 온다. */
   applyTheme(); drawThemeChips(); drawDeckChips(); drawLv(); paintStats();
-  applyFont(); drawFonts(); applyFuri(); drawRtChips(); drawRtFontChips();
+  applyFont(); applyFuri(); drawRtChips(); drawRtFontChips();
   screen = 'home';
-  buildDeck(lsGet(K_POS, null));
   setPlaying(false);
   paint();
   wake();

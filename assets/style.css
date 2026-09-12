@@ -528,6 +528,13 @@ select:disabled{opacity:.4;cursor:not-allowed}
 }
 .home-foot{font-size:.78rem;color:var(--fg-3);line-height:1.6}
 
+/* 덱을 불러오는 동안. 모드마다 처음 한 번만 지나가는 상태다 —
+   덱은 부트가 아니라 모드에 들어갈 때 온다. */
+:root[data-busy="1"] .pickrow{opacity:.45;pointer-events:none}
+:root[data-busy="1"] .home-foot::after{
+  content:"덱을 불러오는 중…";display:block;color:var(--accent);
+}
+
 /* ============================================================
    かな 타자 연습
    ============================================================ */
