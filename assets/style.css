@@ -123,9 +123,12 @@ body.idle .chrome{opacity:0;pointer-events:none}
 }
 .mark{
   display:flex;align-items:baseline;gap:.5rem;
-  font-size:.82rem;letter-spacing:.02em;color:var(--fg-2);white-space:nowrap;
+  font:inherit;font-size:.82rem;letter-spacing:.02em;color:var(--fg-2);white-space:nowrap;
+  background:none;border:0;padding:0;cursor:pointer;text-align:left;
 }
-.mark b{font-family:var(--f-jp);font-weight:700;color:var(--fg);letter-spacing:.06em}
+.mark:disabled{cursor:default}            /* 시작 화면에서는 갈 곳이 없다 */
+.mark:not(:disabled):hover b,.mark:not(:disabled):focus-visible b{color:var(--accent)}
+.mark b{font-family:var(--f-jp);font-weight:700;color:var(--fg);letter-spacing:.06em;transition:color .15s ease}
 .deckinfo{
   margin-left:auto;display:flex;align-items:center;gap:.9rem;
   font-size:.78rem;color:var(--fg-3);white-space:nowrap;

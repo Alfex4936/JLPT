@@ -1050,6 +1050,7 @@
     var atHome = screen === 'home', atDone = screen === 'done';
     dock.hidden = atHome || atDone;       // 정리 화면에는 조작할 카드가 없다
     $('btnHome').hidden = atHome;
+    $('btnMark').disabled = atHome;       // 제목 줄도 학습 선택으로 가는 문이다
     $('btnKanaPick').hidden = atHome || !kana;
     // 세로가 짧을 때(=키보드가 올라왔을 때) 크롬을 접는 CSS 가 이 값을 본다
     document.documentElement.dataset.drill = (kana && !atHome && !atDone) ? '1' : '0';
@@ -1785,6 +1786,7 @@
     b.onclick = function () { if (!b.disabled) enterMode(b.dataset.go); };
   });
   $('btnHome').onclick = goHome;
+  $('btnMark').onclick = goHome;
 
   /* ---------------- かな 글자 고르기 ----------------
      열 하나가 버튼 하나다. 오십음도는 원래 행으로 외우고, 68열을 한 글자씩 켜게 하면 아무도 안 쓴다. */
