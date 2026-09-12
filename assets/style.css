@@ -588,9 +588,12 @@ select:disabled{opacity:.4;cursor:not-allowed}
 .drill-in::placeholder{color:var(--fg-3);opacity:.45}
 .drill-in:focus{outline:0;border-bottom-color:var(--fg-2)}
 .drill-tip{font-size:.8rem;color:var(--fg-3);line-height:1.5}
-/* 정답 줄은 항상 자리를 차지한다. visibility 토글이라 글자가 밀리지 않는다 */
+/* 정답 줄은 항상 자리를 차지한다. visibility 토글이라 글자가 밀리지 않는다 —
+   다만 비어 있는 flex 상자는 높이가 0 이라 min-height 로 한 줄을 잡아 둬야 그 말이 참이 된다.
+   안 잡으면 fit() 이 이 줄 없이 카드를 맞춰 놓고, 정답이 뜨는 순간 카드가 커져서 독에 잘린다. */
 .drill-ans{
   display:flex;align-items:baseline;justify-content:center;gap:.8rem;visibility:hidden;
+  min-height:1.4em;
   font-size:calc(clamp(1rem,1.5vmin + .5rem,1.7rem) * var(--scale));
 }
 .drill-ans.on{visibility:visible}
