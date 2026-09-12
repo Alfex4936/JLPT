@@ -1134,18 +1134,26 @@
     document.documentElement.dataset.readone = one ? '1' : '0';
     if (one) return;
 
+    /* 넘치는 비율만큼 한 번에 줄이고 한 번만 보정한다. 0.94씩 스물두 번 줄이면 필요한 것보다
+       많이 작아지고(키보드가 올라온 화면에서 0.85면 될 걸 0.65까지 내려갔다) 그때마다 강제 레이아웃이 난다. */
     var base = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale')) || 1;
     var sp = getComputedStyle(stage);
     var avail = stage.clientHeight - parseFloat(sp.paddingTop) - parseFloat(sp.paddingBottom);
-    var s = base, guard = 0;
-    while (avail > 40 && card.getBoundingClientRect().height > avail && s > 0.5 && guard++ < 22) {
-      s *= 0.94; card.style.setProperty('--scale', s);
+    var s = base;
+    for (var pass = 0; pass < 2 && avail > 40; pass++) {
+      var h = card.getBoundingClientRect().height;
+      if (h <= avail || s <= 0.5) break;
+      s = Math.max(0.5, s * (avail / h));
+      card.style.setProperty('--scale', s);
     }
 
     var box = card.clientWidth;
-    var size = parseFloat(getComputedStyle(cWord).fontSize) || 48, g2 = 0;
-    while (box && cWord.scrollWidth > box && size > 14 && g2++ < 24) {
-      size *= 0.92; cWord.style.fontSize = size + 'px';
+    var size = parseFloat(getComputedStyle(cWord).fontSize) || 48;
+    for (var p2 = 0; p2 < 2 && box; p2++) {
+      var sw = cWord.scrollWidth;
+      if (sw <= box || size <= 14) break;
+      size = Math.max(14, size * (box / sw));
+      cWord.style.fontSize = size + 'px';
     }
   }
   window.addEventListener('resize', function () { clearTimeout(fitT); fitT = setTimeout(fit, 120); });

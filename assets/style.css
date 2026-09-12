@@ -446,7 +446,9 @@ select:disabled{opacity:.4;cursor:not-allowed}
 @media (max-width:640px){
   .topbar{padding:.7rem 1rem;gap:.6rem}
   .deckinfo{display:none}
-  .stage{padding:1rem;align-items:flex-start;overflow-y:auto}
+  /* safe center: 들어가면 가운데, 넘치면 위에서부터 잘리지 않게. flex-start 로 두면
+     정리 화면처럼 짧은 내용이 위에 붙고 아래 절반이 죽는다 */
+  .stage{padding:1rem;align-items:safe center;overflow-y:auto}
   .card{gap:.6rem}
   .dockrow{grid-template-columns:1fr;justify-items:center;gap:.6rem;padding:.6rem 1rem .8rem}
   .transport,.dockacts{justify-self:center}
@@ -540,14 +542,17 @@ select:disabled{opacity:.4;cursor:not-allowed}
    ============================================================ */
 /* 한 글자만 크게 놓고 그 아래 답을 치는 화면이라 이 카드만 가운데 정렬이다.
    다른 카드는 줄이 여러 개라 왼쪽 기준선이 있어야 시선이 고정되지만, 여기는 기준선이 글자 하나다. */
-.card.is-drill{max-width:min(32ch,100%);align-items:center;text-align:center}
+.card.is-drill{max-width:min(26rem,100%);align-items:center;text-align:center}
 .card.is-drill{gap:clamp(.4rem,1.1vh,.9rem)}
 .card.is-drill .meta,.card.is-drill .rule,.card.is-drill .drill{width:100%}
 .card.is-drill .meta{justify-content:center}
 .card.is-drill .seen{margin-left:0}
+/* 이 글자를 제한하는 건 세로 공간이다 — 입력칸과 안내줄이 같이 들어가야 한다.
+   14vmax 는 가로를 재던 값이라 폴더블 가로 모드에서는 남는 높이를 못 쓰고,
+   키보드가 올라와 화면이 반으로 줄어도 그대로였다. 46vw 는 좁은 화면에서 글자가 카드를 넘지 않게 잡는다. */
 .card.is-drill .word{
   width:100%;cursor:default;
-  font-size:calc(clamp(4.5rem,14vmax,11rem) * var(--scale));
+  font-size:calc(clamp(4.5rem,min(38vh,46vw),18rem) * var(--scale));
 }
 .drill{display:flex;flex-direction:column;align-items:center;gap:.4rem}
 .drill-in{
@@ -694,8 +699,9 @@ select:disabled{opacity:.4;cursor:not-allowed}
 /* ============================================================
    한 바퀴 정리 (틀린 글자)
    ============================================================ */
+/* ch 는 라틴 0 의 폭이라 한글·かな 를 담는 상자의 잣대로는 못 쓴다 (읽기 카드에서 같은 함정을 밟았다) */
 .summary{
-  width:100%;max-width:min(54ch,100%);
+  width:100%;max-width:min(48rem,100%);
   display:flex;flex-direction:column;gap:clamp(.8rem,2.2vh,1.5rem);
 }
 .sum-h{

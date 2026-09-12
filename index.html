@@ -2,7 +2,9 @@
 <html lang="ko" data-theme="dark" data-fs="0">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- interactive-widget: 안드로이드 키보드가 올라오면 레이아웃 뷰포트까지 줄인다.
+     기본값(resizes-visual)이면 かな 드릴의 입력칸이 키보드에 가려도 앱은 화면이 줄어든 걸 모른다. -->
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="color-scheme" content="dark light">
 <meta name="description" content="JLPT N5~N1 낱말 자동 슬라이드. 완전 오프라인.">
 <title>JLPT 낱말 셔플</title>
@@ -17,7 +19,7 @@ try{
 </script>
 
 <!-- ?v= 는 캐시 무효화용. CSS/JS 고칠 때 숫자만 올리면 새로고침에서 확실히 반영된다 -->
-<link rel="stylesheet" href="assets/style.css?v=32">
+<link rel="stylesheet" href="assets/style.css?v=33">
 
 <!-- 데이터: 없는 파일은 조용히 무시된다 (fetch 없음, script 태그만).
      여기 있는 건 시작 화면이 쓰는 것뿐이다 — 개수표와 かな(3KB).
@@ -502,6 +504,6 @@ try{
   </div>
 </div>
 
-<script src="assets/app.js?v=32"></script>
+<script src="assets/app.js?v=33"></script>
 </body>
 </html>
