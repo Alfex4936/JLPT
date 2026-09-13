@@ -1061,9 +1061,10 @@
     counter.textContent = kana
       ? clearedN() + ' / ' + (roundN || deck.length)
       : (deck.length ? (idx + 1) + ' / ' + deck.length : '0 / 0');
-    if (reading && w && S.readOne) {
-      counter.textContent = (idx + 1) + ' / ' + deck.length + '  ·  '
-        + (sentIdx === 0 ? '제목' : sentIdx + ' / ' + w.s.length);
+    // 분수가 둘 붙으면 어느 쪽이 기사인지 알 수 없다 — 이름표를 붙여 둔다
+    if (reading && w) {
+      counter.textContent = '기사 ' + (idx + 1) + '/' + deck.length
+        + (S.readOne ? '  ·  ' + (sentIdx === 0 ? '제목' : '문장 ' + sentIdx + '/' + w.s.length) : '');
     }
 
     $('grades').hidden = kana || reading || S.study === 'all';
