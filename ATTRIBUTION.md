@@ -60,9 +60,13 @@ Google Gemini TTS(`gemini-3.1-flash-tts-preview`, 음성 `Zephyr`)로 생성했�
   You're responsible for your use of generated content, and for the use of that content by anyone you share it with."
   즉 구글이 소유권을 주장하지 않고, 공유를 전제로 쓰인 조항이다.
 - **CC 표기를 붙이지 말 것.** 구글이 CC 라이선스를 준 게 아니다. 3번 항목(Claude 생성물)과 같이 출처만 밝힌다.
-- 재생성할 때는 **유료 할당량**으로 돌릴 것. 무료 할당량은 사람이 입출력을 검토하고 학습에 쓴다(약관 Unpaid Services).
+- **지금 실린 かな 음원은 무료 등급(Unpaid Services)에서 생성됐다.** 재배포는 문제없지만(Use of Generated Content),
+  무료 등급은 구글이 입출력을 제품 개선에 쓰고 사람이 검토할 수 있다. 앞으로 다시 만들 때는 결제를 붙여 유료
+  할당량으로 돌리는 게 맞다 — 무료 등급은 요청 한도가 10이라(`generate_content_free_tier_requests`)
+  기사 음원은 한 편도 끝내지 못한다.
 - 기기 TTS 를 대체하는 게 아니라 앞에 둔다. 음원이 없으면 `speechSynthesis` 로 떨어진다.
-  기사 **본문**은 음원이 없다 — 문장 350개를 실으면 8~12MB 라 기기 TTS 를 그대로 쓴다.
+- 기사 음원은 `data/audio.js` 에 등재된 기사만 쓴다. **기사 하나가 단위다** — 제목과 모든 문장을 다 만들거나
+  아예 안 만든다. 반쪽 기사를 쓰면 한 기사 안에서 줄마다 화자가 바뀐다. 아직 등재된 기사는 0편이다.
 
 ## 8. 폰트 — SIL OFL 1.1 + Apache-2.0
 

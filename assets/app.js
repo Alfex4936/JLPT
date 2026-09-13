@@ -113,6 +113,8 @@
      급수(lv)가 없는 카드라 급수 필터를 타지 않고, 자동 슬라이드 대신 타자 입력으로 넘어간다.
      3KB 뿐이고 시작 화면·글자 고르기 양쪽이 바로 쓰므로 유일하게 부트에 남긴 덱이다. */
   var KANA = (window.JLPT_KANA && window.JLPT_KANA.i && window.JLPT_KANA.g) ? window.JLPT_KANA : null;
+  // 음원이 전부 있는 기사 목록. 반쪽 기사를 쓰면 한 기사 안에서 줄마다 화자가 바뀐다.
+  var AUD = (window.JLPT_AUDIO && window.JLPT_AUDIO.read) ? window.JLPT_AUDIO.read : {};
   var ALL_N = [];
   if (KANA) {
     for (var gi = 0; gi < KANA.g.length; gi++) {
@@ -667,7 +669,10 @@
       var w = current(); if (!w || w.kind !== 'r') return;
       if (S.readOne && i !== sentIdx) { sentIdx = i; paint(); return; }   // 미리보기 줄을 누르면 그리로
       var s = i === 0 ? { k: w.tk } : w.s[i - 1];
-      if (s && s.k) speakOne(s.k);
+      if (!s || !s.k) return;
+      var rc = readClip(w, i);
+      if (rc) { stopSpeak(); playClip(rc, s.k); return; }
+      speakOne(s.k);
     };
     eye.onclick = function (e) {
       e.stopPropagation();
@@ -847,7 +852,8 @@
     }
     drillShown = true;
     drawAnswerLine(true);
-    kanaTip.textContent = '정답을 그대로 입력하면 넘어갑니다';
+    // 건너뛰는 게 아니라는 걸 말해 줘야 한다 — 틀린 글자는 deck 뒤에 다시 꽂혀 있다
+    kanaTip.textContent = '정답을 그대로 입력하면 넘어갑니다 · 이 글자는 이번 바퀴에 다시 나옵니다';
     speakOne(w.c);
     paintChrome();
   }
@@ -1426,10 +1432,13 @@
     var m = KANA.i[text];                       // 한 글자만 — 문장(기사 제목)은 걸리지 않는다
     return m && m.r ? 'assets/audio/' + encodeURIComponent(m.r) + '.opus' + DATA_V : null;
   }
-  /* 기사 제목 음원. 제목만 있다 — 카드를 넘길 때 자동으로 나는 게 제목이고, 본문은 눌렀을 때만
-     난다. 본문 350문장을 다 실으면 8~12MB 다. 본문은 기기 TTS 로 남겨 둔다. */
-  function readClip(w) {
-    return (w && w.kind === 'r' && w.i) ? 'assets/audio/read/' + encodeURIComponent(w.i) + '.opus' + DATA_V : null;
+  /* 기사 줄 음원. i = 0 이 제목, 1부터 문장 (artRows 와 같은 순서).
+     매니페스트에 없는 기사는 null — 그 기사는 제목도 문장도 전부 기기 TTS 로 읽는다. */
+  function readClip(w, i) {
+    if (!w || w.kind !== 'r' || !w.i) return null;
+    var n = AUD[w.i];
+    if (!n || i == null || i < 0 || i >= n) return null;
+    return 'assets/audio/read/' + encodeURIComponent(w.i) + '-' + i + '.opus' + DATA_V;
   }
   function playClip(url, text) {
     var a = new Audio(url);
@@ -1458,8 +1467,8 @@
     var w = current(); if (!w) return;
     // かな 카드는 답하기 전에 읽어주면 정답을 알려주는 셈이다
     if (w.kind === 'n') { if (drillShown || drillDone) speakOne(w.c); return; }
-    if (w.kind === 'r') {                             // 기사는 제목만. 본문은 문장을 눌러서 듣는다
-      var rc = readClip(w);
+    if (w.kind === 'r') {                             // 카드를 넘기면 제목. 본문은 문장을 눌러서 듣는다
+      var rc = readClip(w, 0);
       if (rc) { stopSpeak(); playClip(rc, w.tk); return; }
       speakOne(w.tk);
       return;

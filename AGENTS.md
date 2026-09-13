@@ -119,6 +119,8 @@ node tools/font-charset.js && ./tools/subset-fonts.sh   # 기사 한자가 덱 �
 | `tools/build-reading.js` | 형태소 분석기로 읽기 초안 + 루비 → `cache/review/reading-draft.{json,tsv}`. **kuromoji 필요**. 검수에서 잡은 고유명사 읽기는 이 파일의 `WORDS` 표에 적는다 |
 | `tools/merge-reading.js` | 초안 + `tools/reading-ko.tsv`(번역) → `data/reading.js`. 번역 없는 줄은 버린다 |
 | `tools/check-reading.js` | `data/reading.js` 검사기. 의존성 0, 문제가 있으면 종료 코드 1. **덱을 다시 만들면 반드시 돌린다** |
+| `tools/build-kana-audio.js` | Gemini TTS → `assets/audio/*.opus` (かな 131음). 덩어리로 읽혀 무음으로 자르고, 개수가 안 맞으면 버린다 |
+| `tools/build-reading-audio.js` | Gemini TTS → `assets/audio/read/*.opus` + `data/audio.js`. **기사 단위** — 실패하면 그 기사 파일을 되돌린다 |
 | `tools/build-manifest.js` | 덱 파일들을 세어 `data/manifest.js`. **덱을 다시 만들 때마다 같이 돌린다** |
 | `tools/reading-ko.tsv` | 기사 문장별 한국어 번역. 손으로 쓰는 유일한 읽기 데이터 |
 | `tools/next-chunks.js` | 아직 번역 안 된 청크 이름 출력 |
