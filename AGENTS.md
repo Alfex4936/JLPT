@@ -398,6 +398,7 @@ localStorage 키 — 스키마를 바꾸려면 키 이름의 버전을 올린다
 | `jlpt.batch.v1` | 현재 배치의 uid 목록 |
 | `jlpt.kana.v1` | かな 연습에서 선택한 열 목록 (`["hb:0", ...]`) |
 | `jlpt.kanastat.v1` | かな 글자별 `[정답, 오답]` |
+| `jlpt.kanarec.v1` | かな 바퀴 기록 `{n, ok, ng, perfect, streak, bestStreak, best, bestN}`. `retryRound` 는 안 센다 |
 
 읽기 모드는 따로 저장하는 게 없다. 후리가나 표시·크기·번역 기본값은 `jlpt.settings.v1` 안에 있다(`furi`·`rt`·`koAll`).
 

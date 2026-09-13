@@ -380,7 +380,7 @@ body.idle .kex-row{cursor:none}
 .row:last-child{margin-bottom:0}
 .row label,.row .lbl{font-size:.85rem;color:var(--fg);flex:1}
 .row .val{font-size:.8rem;color:var(--fg-2);font-variant-numeric:tabular-nums;min-width:3.2rem;text-align:right}
-.hint{font-size:.75rem;color:var(--fg-3);line-height:1.6;margin-top:.5rem;word-break:keep-all}
+.hint{font-size:.75rem;color:var(--fg-3);line-height:1.6;margin-top:.5rem;word-break:keep-all;white-space:pre-line}
 .chips{display:flex;flex-wrap:wrap;gap:.4rem}
 
 /* 스위치 */
@@ -743,6 +743,10 @@ select:disabled{opacity:.4;cursor:not-allowed}
   color:var(--fg);line-height:1.25;
 }
 .sum-line{font-size:.86rem;color:var(--fg-2);line-height:1.6;word-break:keep-all}
+/* 바퀴 기록. 이번 바퀴 결과(.sum-line)보다 약하게 — 참고지 결과가 아니다 */
+.sum-rec{font-size:.78rem;color:var(--fg-3);line-height:1.6;margin:.25rem 0 0;
+  font-variant-numeric:tabular-nums;word-break:keep-all}
+.sum-rec:empty{display:none}
 /* 글자 고르기 표와 같은 셀 어휘를 쓴다 — 같은 것을 보고 있다는 신호 */
 .sum-grid{
   display:grid;grid-template-columns:repeat(auto-fill,minmax(6.2rem,1fr));gap:.4rem;

@@ -9,7 +9,8 @@
       K_VIEW = 'jlpt.views.v1',
       K_POS = 'jlpt.pos.v1',
       K_KCOL = 'jlpt.kana.v1',
-      K_KSTAT = 'jlpt.kanastat.v1';
+      K_KSTAT = 'jlpt.kanastat.v1',
+      K_KREC = 'jlpt.kanarec.v1';
 
   function $(id) { return document.getElementById(id); }
   // HTMLCollection·NodeList 는 배열이 아니다. 칩 묶음을 도는 코드가 스무 군데라 한 번만 쓴다.
@@ -214,6 +215,9 @@
   }
   syncKcols();
   var KSTAT = lsGet(K_KSTAT, {}) || {};   // かな -> [정답, 오답]
+  /* 바퀴 단위 기록. KSTAT 은 글자별 누적이라 '이번 바퀴를 얼마나 잘했나'가 안 남는다 —
+     다 맞힌 바퀴는 토스트 한 번 뜨고 사라졌다. 연속 기록이 드릴을 붙잡아 두는 힘이다. */
+  var KREC = lsGet(K_KREC, null) || { n: 0, ok: 0, ng: 0, perfect: 0, streak: 0, bestStreak: 0, best: -1, bestN: 0 };
   // 급수별 개수. 덱이 오기 전에는 개수표를 읽으므로 시작 화면에서도 급수 칩이 제대로 나온다.
   function lvCounts() {
     if (S.set === 'kana' || S.set === 'reading') return {};   // 급수가 없는 덱이다
@@ -853,13 +857,40 @@
     if (!deck.length) { paint(); return; }
     idx++;
     if (idx >= deck.length) {           // 한 바퀴 끝
+      recordRound();
       if (missList().length) { screen = 'done'; stopSpeak(); kanaIn.blur(); paint(); return; }
       // 다 맞혔으면 보여줄 게 없다. 멈추지 않고 다음 바퀴로 — 지금까지의 동작 그대로.
-      toast('한 바퀴 완료 · 정답률 ' + pct(roundOk, roundOk + roundNg));
+      toast('한 바퀴 완료 · 정답률 ' + pct(roundOk, roundOk + roundNg)
+        + (KREC.streak > 1 ? ' · 만점 ' + KREC.streak + '연속' : ''));
       nextRound();
       return;
     }
     markSeen(); resetDrill(); paint(); focusDrill();
+  }
+
+  /* 한 바퀴가 끝날 때 기록을 남긴다. '틀린 글자만 다시' 바퀴는 세지 않는다 —
+     5자짜리 바퀴가 정답률과 최고 기록을 흐려 놓는다. */
+  function recordRound() {
+    if (retryRound) return;
+    var tot = roundOk + roundNg;
+    if (!tot) return;
+    var acc = Math.round((roundOk / tot) * 100);
+    KREC.n++; KREC.ok += roundOk; KREC.ng += roundNg;
+    if (!roundNg) { KREC.perfect++; KREC.streak++; if (KREC.streak > KREC.bestStreak) KREC.bestStreak = KREC.streak; }
+    else KREC.streak = 0;
+    // 같은 정답률이면 글자 수가 많은 바퀴가 더 어려운 바퀴다
+    if (acc > KREC.best || (acc === KREC.best && roundN > KREC.bestN)) { KREC.best = acc; KREC.bestN = roundN; }
+    lsSet(K_KREC, KREC);
+  }
+  // 기록 한 줄. 아직 한 바퀴도 안 끝냈으면 빈 문자열.
+  function recLine() {
+    if (!KREC.n) return '';
+    var out = '최고 ' + (KREC.best < 0 ? '-' : KREC.best + '%');
+    if (KREC.bestN) out += '(' + KREC.bestN + '자)';
+    out += ' · 누적 정답률 ' + pct(KREC.ok, KREC.ok + KREC.ng) + ' · ' + KREC.n + '바퀴';
+    if (KREC.perfect) out += ' · 만점 ' + KREC.perfect + '번';
+    if (KREC.bestStreak > 1) out += ' · 최고 연속 ' + KREC.bestStreak;
+    return out;
   }
 
   // 많이 틀린 순서. 같은 횟수면 표에 나온 순서를 지켜 히라가나가 먼저 오게 한다.
@@ -880,6 +911,7 @@
     // clearedN() 은 '떼어낸 글자'라 틀린 뒤 다시 맞힌 것도 들어간다. 여기서는 틀린 글자 수를 쓴다.
     $('sumLine').textContent = total + '자 중 ' + miss.length + '자를 틀렸습니다 · 정답률 '
       + pct(roundOk, roundOk + roundNg);
+    $('sumRec').textContent = recLine();
     box.textContent = '';
     for (var i = 0; i < miss.length; i++) {
       var c = miss[i], meta = KANA.i[c];
@@ -1492,6 +1524,7 @@
     document.body.classList.remove('idle'); kanaIn.blur();
     // 글꼴 타일은 여기서 처음 만든다 — 미리보기 글자 하나가 그 글꼴 파일을 통째로 받아 온다(6종 155KB).
     drawFonts();
+    drawKanaHint();
     // 급수·한자음 개수는 실제 덱을 세어 보여 준다. 시작 화면에서 열었으면 여기서 덱이 온다.
     need(S.set, function () { drawSet(); drawLevels(); drawTier(); drawStudy(); });
   }
@@ -1886,6 +1919,14 @@
     for (var i = 0; i < KCOLS.length; i++) n += KCOL_N[KCOLS[i]] || 0;
     return n;
   }
+  /* 설정 시트의 かな 힌트 한 줄. 기록이 바뀔 때마다 갱신해야 하는데 표를 다시 그릴 이유는 없다 —
+     그래서 표 그리기(drawKanaGrids)와 떼어 뒀다. */
+  function drawKanaHint(sel) {
+    if (sel == null) sel = kanaSelN();
+    var rec = recLine();
+    $('kanaHint').textContent = '선택 ' + sel + '자 · ' + KCOLS.length + '열. 히라가나 기본만 켠 상태가 기본값입니다.'
+      + (rec ? '\n' + rec : '');
+  }
   function drawKanaGrids() {
     kcolNodes.forEach(function (n) {
       var on = !!KCOLSET[n.id];
@@ -1902,7 +1943,7 @@
       ? '선택 ' + sel + '자. 열을 눌러 켜고 끕니다.'
       : '열을 하나 이상 골라야 연습을 시작할 수 있습니다.';
     $('btnKanaStart').disabled = !sel;
-    $('kanaHint').textContent = '선택 ' + sel + '자 · ' + KCOLS.length + '열. 히라가나 기본만 켠 상태가 기본값입니다.';
+    drawKanaHint(sel);
   }
   function openKanaPick(v) {
     kanaPick.dataset.open = v ? '1' : '0';
@@ -1941,8 +1982,11 @@
   $('btnKanaReset').onclick = function () {
     if (!confirm('かな 정답률 기록을 지울까요?')) return;
     KSTAT = {}; lsSet(K_KSTAT, KSTAT);
+    KREC = { n: 0, ok: 0, ng: 0, perfect: 0, streak: 0, bestStreak: 0, best: -1, bestN: 0 };
+    lsSet(K_KREC, KREC);
     roundOk = 0; roundNg = 0;
-    toast('정답률 기록을 지웠습니다');
+    toast('정답률과 바퀴 기록을 지웠습니다');
+    drawKanaHint();
     paint();
   };
 

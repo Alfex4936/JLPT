@@ -19,7 +19,7 @@ try{
 </script>
 
 <!-- ?v= 는 캐시 무효화용. CSS/JS 고칠 때 숫자만 올리면 새로고침에서 확실히 반영된다 -->
-<link rel="stylesheet" href="assets/style.css?v=41">
+<link rel="stylesheet" href="assets/style.css?v=42">
 
 <!-- 데이터: 없는 파일은 조용히 무시된다 (fetch 없음, script 태그만).
      여기 있는 건 시작 화면이 쓰는 것뿐이다 — 개수표와 かな(3KB).
@@ -141,6 +141,7 @@ try{
     <section class="summary" id="summary" hidden>
       <h2 class="sum-h">한 바퀴 완료</h2>
       <p class="sum-line" id="sumLine"></p>
+      <p class="sum-rec" id="sumRec"></p>
       <div class="sum-grid" id="sumGrid"></div>
       <div class="sum-acts">
         <button class="btn btn-go" id="btnRetryMiss" type="button">틀린 글자만 다시 <kbd>↵</kbd></button>
@@ -507,6 +508,6 @@ try{
   </div>
 </div>
 
-<script src="assets/app.js?v=43"></script>
+<script src="assets/app.js?v=44"></script>
 </body>
 </html>
