@@ -197,9 +197,11 @@ function checkAudio(all) {
       await sleep(500);
     }
     if (!ok) {
-      // 기사 단위로 되돌린다. 반쪽 기사는 남기지 않는다.
-      for (const f of written) { try { fs.unlinkSync(f); } catch (e) {} }
-      console.log('  ✗ 중단 — 이 기사가 만든 ' + written.length + '개를 지웠다');
+      /* 만든 줄은 남긴다. 반쪽 기사가 노출될 걱정은 없다 — data/audio.js 가 모든 줄이 있는 기사만
+         등재하고 앱은 그 목록만 믿는다. 예전에는 여기서 되돌렸는데, 할당량이 빡빡한 상황에서는
+         다음 시도가 같은 줄을 다시 만들게 되어 손해였다(실측: 4줄을 만들고 되돌려 4요청을 버렸다).
+         이미 있는 파일은 건너뛰므로 재실행하면 없는 줄만 채운다. */
+      console.log('  ✗ 중단 — 만든 ' + written.length + '개는 남긴다 (재실행하면 이어서 채운다)');
       stopped = true;
       break;
     }
