@@ -149,7 +149,7 @@
   /* ---------------- 덱 불러오기 ----------------
      클래식 script 태그다 — file:// 에서도 동작하고 fetch 를 쓰지 않는다 (절대 규칙 1).
      ?v= 는 index.html 의 데이터 태그와 같은 값이어야 한다. 데이터를 다시 만들면 둘 다 올린다. */
-  var DATA_V = '?v=26';
+  var DATA_V = '?v=29';
   var WORD_FILES = ['data/words-n5.js', 'data/words-n4.js', 'data/words-n3.js',
                     'data/words-n2.js', 'data/words-n1.js'];
   var got = {}, waiting = {};

@@ -27,7 +27,7 @@ need('words', function () { /* window.JLPT 가 채워진 뒤 */ });
 `data/manifest.js` 는 개수표 하나다. 덱이 온 뒤에는 실제 배열이 이기므로 개수표가 낡아도 화면 안에서 숫자가 어긋나지는 않는다.
 
 ```js
-window.JLPT_N = { words: {"5":679, ...}, kanji: {"5":423, ...}, reading: 10 };
+window.JLPT_N = { words: {"5":679, ...}, kanji: {"5":423, ...}, reading: 46 };
 ```
 
 각 데이터 파일: `window.JLPT.push(...[ {...}, {...} ])`

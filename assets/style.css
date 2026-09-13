@@ -5,39 +5,41 @@
    ============================================================ */
 
 /* ---------- 폰트 (전부 로컬, 시스템 폴백 필수) ---------- */
+/* 폰트 URL 의 ?v= 는 캐시 무효화용. 서브셋을 다시 뜨면(tools/subset-fonts.sh) 이 숫자를 data 버전과 같이 올린다.
+   안 올리면 브라우저가 옛 woff2 를 써서 새로 들어온 한자가 두부(□)로 보인다. */
 @font-face{font-family:"Klee One";font-style:normal;font-weight:400;font-display:swap;
-  src:url("fonts/klee-one-japanese-400-normal.woff2") format("woff2")}
+  src:url("fonts/klee-one-japanese-400-normal.woff2?v=29") format("woff2")}
 @font-face{font-family:"Klee One";font-style:normal;font-weight:600;font-display:swap;
-  src:url("fonts/klee-one-japanese-600-normal.woff2") format("woff2")}
+  src:url("fonts/klee-one-japanese-600-normal.woff2?v=29") format("woff2")}
 
 @font-face{font-family:"Noto Sans JP";font-style:normal;font-weight:400;font-display:swap;
-  src:url("fonts/noto-sans-jp-japanese-400-normal.woff2") format("woff2")}
+  src:url("fonts/noto-sans-jp-japanese-400-normal.woff2?v=29") format("woff2")}
 /* JP 굵은 자체는 담지 않는다 — 굵게 쓰는 자리(.mark b)가 한국어라 KR 폰트가 그린다.
    혹시 일본어에 700이 걸리면 브라우저 합성 볼드로 처리된다. 330KB 절약. */
 /* 라틴 서브셋은 unicode-range 로 좁혀야 일본어 선언을 덮어쓰지 않는다 */
 @font-face{font-family:"Noto Sans JP";font-style:normal;font-weight:400;font-display:swap;
-  src:url("fonts/noto-sans-jp-latin-400-normal.woff2") format("woff2");
+  src:url("fonts/noto-sans-jp-latin-400-normal.woff2?v=29") format("woff2");
   unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 
 @font-face{font-family:"Noto Sans KR";font-style:normal;font-weight:400;font-display:swap;
-  src:url("fonts/noto-sans-kr-korean-400-normal.woff2") format("woff2")}
+  src:url("fonts/noto-sans-kr-korean-400-normal.woff2?v=29") format("woff2")}
 @font-face{font-family:"Noto Sans KR";font-style:normal;font-weight:700;font-display:swap;
-  src:url("fonts/noto-sans-kr-korean-700-normal.woff2") format("woff2")}
+  src:url("fonts/noto-sans-kr-korean-700-normal.woff2?v=29") format("woff2")}
 
 /* かな 글꼴 6종. かな 만 담은 서브셋(각 20~36KB)이라 한자는 이 폰트에 없고 스택 뒤쪽으로 폴백된다.
    글꼴이 바뀌어도 같은 글자를 읽어낼 수 있어야 진짜로 읽는 것이다 — 그게 이 6종이 있는 이유다. */
 @font-face{font-family:"Kosugi Maru";font-style:normal;font-weight:400;font-display:swap;
-  src:url("fonts/kosugi-maru-japanese-400-normal.woff2") format("woff2")}
+  src:url("fonts/kosugi-maru-japanese-400-normal.woff2?v=29") format("woff2")}
 @font-face{font-family:"Shippori Mincho";font-style:normal;font-weight:400;font-display:swap;
-  src:url("fonts/shippori-mincho-japanese-400-normal.woff2") format("woff2")}
+  src:url("fonts/shippori-mincho-japanese-400-normal.woff2?v=29") format("woff2")}
 @font-face{font-family:"Zen Kurenaido";font-style:normal;font-weight:400;font-display:swap;
-  src:url("fonts/zen-kurenaido-japanese-400-normal.woff2") format("woff2")}
+  src:url("fonts/zen-kurenaido-japanese-400-normal.woff2?v=29") format("woff2")}
 @font-face{font-family:"Yusei Magic";font-style:normal;font-weight:400;font-display:swap;
-  src:url("fonts/yusei-magic-japanese-400-normal.woff2") format("woff2")}
+  src:url("fonts/yusei-magic-japanese-400-normal.woff2?v=29") format("woff2")}
 @font-face{font-family:"Hachi Maru Pop";font-style:normal;font-weight:400;font-display:swap;
-  src:url("fonts/hachi-maru-pop-japanese-400-normal.woff2") format("woff2")}
+  src:url("fonts/hachi-maru-pop-japanese-400-normal.woff2?v=29") format("woff2")}
 @font-face{font-family:"Dela Gothic One";font-style:normal;font-weight:400;font-display:swap;
-  src:url("fonts/dela-gothic-one-japanese-400-normal.woff2") format("woff2")}
+  src:url("fonts/dela-gothic-one-japanese-400-normal.woff2?v=29") format("woff2")}
 
 /* ---------- 토큰 ---------- */
 :root{

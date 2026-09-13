@@ -11,7 +11,7 @@
 | `words` | JLPT N5~N1 어휘 9,543개 | 자동 슬라이드 (기본, 지금까지의 동작) |
 | `kanji` | 한자 2,142자 | 자동 슬라이드 |
 | `kana` | かな 244자 | **타자 드릴** — 글자가 뜨면 로마자를 치고, 맞는 순간 다음 글자로 |
-| `reading` | ウィキニュース 기사 10편 | 후리가나 달린 실제 기사. 문장마다 번역·발음, 자동 넘김 없음 |
+| `reading` | ウィキニュース 기사 46편 | 후리가나 달린 실제 기사. 문장마다 번역·발음, 자동 넘김 없음 |
 
 화면 상태는 `screen` 하나로 관리한다: `home`(학습 선택) · `study`(카드/드릴) · `done`(한 바퀴 정리).
 `done` 은 かな 에서 **틀린 글자가 있을 때만** 나온다 — 다 맞힌 바퀴를 멈춰 세울 이유가 없다.
@@ -94,6 +94,7 @@ node tools/fetch-wikinews.js          # SCAN=4500 WANT=80 로 범위 조절
 KUROMOJI_DICT=<kuromoji 설치 경로>/dict NODE_PATH=<설치 경로> node tools/build-reading.js
 # reading-draft.tsv 의 읽기·번역을 검수해 tools/reading-ko.tsv 를 채운 뒤
 node tools/merge-reading.js
+node tools/check-reading.js                   # 읽기에 한자·숫자가 남았는지, 번역이 빠졌는지
 node tools/build-manifest.js
 node tools/font-charset.js && ./tools/subset-fonts.sh   # 기사 한자가 덱 밖에 있어서 거의 항상 필요
 ```
@@ -115,14 +116,17 @@ node tools/font-charset.js && ./tools/subset-fonts.sh   # 기사 한자가 덱 �
 | `tools/build-kana.js` | かな 244자(히라 71+36 · 가타 71+36+30) → `data/kana.js`. 표 배치·로마자는 이 파일의 상수, 한글은 `kana2hangul.js` |
 | `tools/fetch-wikinews.js` | ja.wikinews 기사 수집 → `tools/cache/wikinews.json`. 덱과 겹치는 정도로 난이도를 매겨 쉬운 순으로 고른다 |
 | `tools/furigana.js` | 표기 + 전체 かな 읽기 → 루비 조각. 의존성 0. 단독 실행하면 자체 테스트 |
-| `tools/build-reading.js` | 형태소 분석기로 읽기 초안 + 루비 → `cache/review/reading-draft.{json,tsv}`. **kuromoji 필요** |
+| `tools/build-reading.js` | 형태소 분석기로 읽기 초안 + 루비 → `cache/review/reading-draft.{json,tsv}`. **kuromoji 필요**. 검수에서 잡은 고유명사 읽기는 이 파일의 `WORDS` 표에 적는다 |
 | `tools/merge-reading.js` | 초안 + `tools/reading-ko.tsv`(번역) → `data/reading.js`. 번역 없는 줄은 버린다 |
+| `tools/check-reading.js` | `data/reading.js` 검사기. 의존성 0, 문제가 있으면 종료 코드 1. **덱을 다시 만들면 반드시 돌린다** |
 | `tools/build-manifest.js` | 덱 파일들을 세어 `data/manifest.js`. **덱을 다시 만들 때마다 같이 돌린다** |
 | `tools/reading-ko.tsv` | 기사 문장별 한국어 번역. 손으로 쓰는 유일한 읽기 데이터 |
 | `tools/next-chunks.js` | 아직 번역 안 된 청크 이름 출력 |
 | `tools/wave.sh` | 유휴 에이전트 pane 회수 + 다음 청크 N개 출력 |
 | `tools/font-charset.js` | 데이터·UI에 실제 등장하는 글자만 폰트별로 추출 → `tools/charset/*.txt` |
 | `tools/subset-fonts.sh` | 그 문자집합으로 폰트 서브셋 (원본은 `assets/fonts/original/` 로 보관) |
+
+폰트를 다시 서브셋하면 `assets/style.css` 의 폰트 URL `?v=` 도 올린다. 안 올리면 브라우저가 옛 woff2 를 써서 새로 들어온 한자가 두부(□)로 보인다.
 
 ### 재생성
 
@@ -315,6 +319,10 @@ PY
 - **루비 글꼴은 본문 글꼴과 따로 둔다(`--f-rt`).** 루비는 전부 かな 라 かな 전용 서브셋 6종을 그대로 쓸 수 있다(한자가 없어도 상관없다). 13px 에서 재 보면 Noto Sans JP 가 획이 제일 가늘어 濁点·半濁点이 뭉개지고 ば/ぱ 가 안 갈린다 — 기본을 Kosugi Maru 로 둔 이유다. 본문까지 같이 바꾸지 말 것.
 - **칩으로 고르는 수치는 `DEFAULTS` 값과 같아야 한다.** 후리가나 크기 기본을 0.62 로 올리면서 칩은 0.58 인 채로 둬서, 기본 상태에서 아무 칩도 안 켜지고 되돌아갈 방법이 없었다.
 - **후리가나는 형태소 분석기 읽기를 그대로 믿으면 안 된다.** kuromoji 는 뉴스에서 하필 날짜·고유명사·조수사를 틀린다(`8月`→つき, `原木中山`→げんぼくちゅうざん, `〜の間`→ま). 아라비아 숫자에는 읽기를 아예 안 준다. `furigana.js` 는 분석기 읽기를 **힌트로만** 쓰고 정답 かな 는 문장 전체 읽기에서 잘라 온다 — 그래서 힌트가 틀려도 루비는 안 틀린다. 이 구조를 뒤집어 분석기 읽기를 직접 쓰지 말 것.
+- **표기의 가타카나는 읽기에서도 가타카나여야 한다.** furigana 가 かな 구간을 앵커로 쓰기 때문이다. 토큰 전체가 가타카나일 때만 되돌리면 `アメリカ合衆国` 이 あめりかがっしゅうこく 가 되어 정렬이 깨진다 — 정렬 실패의 38%가 이것 하나였다. `build-reading.js` 의 `keepKata()` 가 글자 단위로 되돌린다.
+- **읽기를 만들 수 없는 라틴 낱말은 버리지 말고 루비 없이 내보낸다.** `Durian` 을 ドリアン 이라고 맞힐 수는 없으므로 추측하지 않는다. `furigana.js` 가 그런 런을 앵커로 통과시켜 `[표기, null]` 로 내놓는다 — 한자는 예외다(읽기가 없으면 그 문장을 버리는 게 맞다).
+- **검수는 기계가 잡을 수 있는 것부터 기계가 잡는다.** `tools/check-reading.js` 가 かな 읽기에 남은 한자·숫자, 붙은 하이픈, 루비 재조립 불일치, 번역 누락을 걸러낸다. 사람이 800문장을 매번 다시 읽을 수는 없다 — 이 검사가 없던 동안 `やくろく,ゼロにん` 같은 읽기가 배포된 덱에 4개 있었다.
+- **자릿점·소수점·`%` 도 읽기를 받아야 한다.** `furigana.js` 의 `NEEDS` 에 `.`·`,`·`:`·`+`·`%` 가 들어 있는 이유다. 앵커로 두면 그 글자가 かな 읽기에 그대로 박힌다(`35.83%`→さんじゅうご.はちじゅうさん%, `1,000人`→いち,ゼロにん). `build-reading.js` 의 `numRun()` 이 끊긴 숫자 토큰을 한 덩어리로 합치고, 소수점 아래는 한 자씩 읽는다(`5.614`→ごてんろくいちよん).
 - **숫자와 조수사는 함께 읽어야 한다.** `10日`=とおか 인데 따로 읽으면 じゅう+とおか, `9時`=くじ 인데 きゅう+くじ 가 된다. 이것 하나로 정렬률이 87%에서 99%로 올라갔다. `build-reading.js` 의 `numCounter()` 가 그 표다.
 - **정렬 성공은 '읽기가 옳다'가 아니라 '읽기가 표기와 앞뒤가 맞는다'는 뜻이다.** 고유명사 읽기가 틀려도 자기들끼리 일관되면 정렬은 통과한다. 사용자는 한자를 못 읽어서 이걸 못 잡는다 — 기사를 늘릴 때 `reading-draft.tsv` 검수를 건너뛰지 말 것.
 - **`explaintext` 는 소제목을 `==` 없이 맨 줄로 내놓는다.** 그래서 `==` 로만 자르면 참고문헌(`『…』 — 読売新聞, 2006年8月10日`)이 본문 문장으로 섞여 들어온다. 실제로 그렇게 만들어서 문장의 3분의 1이 서지 정보였다. `fetch-wikinews.js` 의 `clean()` 이 줄 단위로도 자른다.
