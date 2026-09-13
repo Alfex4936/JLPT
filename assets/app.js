@@ -1141,7 +1141,8 @@
     starGlyph.textContent = fav ? '★' : '☆';
     btnFav.disabled = !w;
     // かな 카드에서 답하기 전에 발음을 들려주면 정답을 알려주는 셈이다
-    $('btnSpeak').disabled = !w || !S.tts || !voices.length || (kana && !drillShown && !drillDone);
+    var canSay = voices.length || (w && w.kind === 'n' && kanaClip(w.c));
+    $('btnSpeak').disabled = !w || !S.tts || !canSay || (kana && !drillShown && !drillDone);
   }
 
   /* ---------------- 화면 전환 ---------------- */
@@ -1402,6 +1403,7 @@
   }
   function stopSpeak() {
     dropPending();
+    if (clipA) { try { clipA.pause(); } catch (e) {} clipA = null; }
     if (SS) { try { SS.cancel(); } catch (e) {} }
   }
   function speakChain(items, seq) {
@@ -1413,8 +1415,41 @@
     };
     try { SS.speak(u); } catch (e) {}
   }
+  /* ---------------- かな 번들 음원 ----------------
+     Gemini TTS 로 미리 뜬 131음이 assets/audio/ 에 있다. 기기 TTS 보다 나은 이유가 두 가지다:
+     목소리가 한 결이고(요청마다 튀지 않는다), 낱 음절이 잘리지 않는다 — macOS Kyoko 는 あ 를 0.12초로
+     끊어 낸다. 음원이 없으면 기존 TTS 로 떨어진다.
+     fetch 는 file:// 에서 막히므로(절대 규칙 1) 반드시 new Audio() 로 읽는다. */
+  var clipA = null;
+  function kanaClip(text) {
+    if (!KANA || !text) return null;
+    var m = KANA.i[text];                       // 한 글자만 — 문장(기사 제목)은 걸리지 않는다
+    return m && m.r ? 'assets/audio/' + encodeURIComponent(m.r) + '.opus' + DATA_V : null;
+  }
+  /* 기사 제목 음원. 제목만 있다 — 카드를 넘길 때 자동으로 나는 게 제목이고, 본문은 눌렀을 때만
+     난다. 본문 350문장을 다 실으면 8~12MB 다. 본문은 기기 TTS 로 남겨 둔다. */
+  function readClip(w) {
+    return (w && w.kind === 'r' && w.i) ? 'assets/audio/read/' + encodeURIComponent(w.i) + '.opus' + DATA_V : null;
+  }
+  function playClip(url, text) {
+    var a = new Audio(url);
+    clipA = a;
+    a.volume = S.vol;
+    a.playbackRate = S.rate;
+    // 파일이 없거나 코덱을 못 읽으면 조용히 죽지 말고 기기 TTS 로 넘긴다
+    a.onerror = function () {
+      if (clipA !== a) return;
+      clipA = null;
+      if (SS && voices.length) speakChain([text], speakSeq);
+    };
+    a.onended = function () { if (clipA === a) clipA = null; };
+    try { a.play()['catch'](function () {}); } catch (e) {}
+  }
   function speakOne(text) {
-    if (!SS || !S.tts || !voices.length || !text) return;
+    if (!S.tts || !text) return;
+    var clip = kanaClip(text);
+    if (clip) { stopSpeak(); playClip(clip, text); return; }
+    if (!SS || !voices.length) return;
     stopSpeak();
     speakChain([text], speakSeq);
   }
@@ -1423,7 +1458,12 @@
     var w = current(); if (!w) return;
     // かな 카드는 답하기 전에 읽어주면 정답을 알려주는 셈이다
     if (w.kind === 'n') { if (drillShown || drillDone) speakOne(w.c); return; }
-    if (w.kind === 'r') { speakOne(w.tk); return; }   // 기사는 제목만. 본문은 문장을 눌러서 듣는다
+    if (w.kind === 'r') {                             // 기사는 제목만. 본문은 문장을 눌러서 듣는다
+      var rc = readClip(w);
+      if (rc) { stopSpeak(); playClip(rc, w.tk); return; }
+      speakOne(w.tk);
+      return;
+    }
     stopSpeak();
     // 한자 한 글자는 음성이 읽기를 고를 수 없다 (日 = ニチ? ひ?). 대표 단어를 읽어 준다.
     if (w.kind === 'k') {

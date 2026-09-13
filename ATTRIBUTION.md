@@ -50,7 +50,21 @@ ShareAlike 이므로 이 필드를 포함한 데이터를 재배포할 때는 **
 - 기사마다 `u` 에 원문 주소가 있고, 앱이 카드 하단에 원문 링크·날짜·라이선스를 표시한다. 이 표시를 지우지 말 것 — CC BY 의 요구사항이다.
 - 후리가나(`r`)와 문장 かな 읽기(`k`)는 이 저장소에서 만든 파생물이고, 한국어 번역(`o`)도 이 저장소 생성물이다. 사람이 전수 검수하지 않았다.
 
-## 7. 폰트 — SIL OFL 1.1 + Apache-2.0
+## 7. かな·기사 제목 음성 — Gemini TTS 로 생성
+
+`assets/audio/*.opus` (かな 131음) 와 `assets/audio/read/*.opus` (기사 제목 46개) 는
+Google Gemini TTS(`gemini-3.1-flash-tts-preview`, 음성 `Zephyr`)로 생성했다. `tools/build-kana-audio.js`
+와 `tools/build-reading-audio.js` 가 만든다.
+
+- Gemini API 약관의 **Use of Generated Content**: "Google won't claim ownership over that content. ...
+  You're responsible for your use of generated content, and for the use of that content by anyone you share it with."
+  즉 구글이 소유권을 주장하지 않고, 공유를 전제로 쓰인 조항이다.
+- **CC 표기를 붙이지 말 것.** 구글이 CC 라이선스를 준 게 아니다. 3번 항목(Claude 생성물)과 같이 출처만 밝힌다.
+- 재생성할 때는 **유료 할당량**으로 돌릴 것. 무료 할당량은 사람이 입출력을 검토하고 학습에 쓴다(약관 Unpaid Services).
+- 기기 TTS 를 대체하는 게 아니라 앞에 둔다. 음원이 없으면 `speechSynthesis` 로 떨어진다.
+  기사 **본문**은 음원이 없다 — 문장 350개를 실으면 8~12MB 라 기기 TTS 를 그대로 쓴다.
+
+## 8. 폰트 — SIL OFL 1.1 + Apache-2.0
 
 `assets/fonts/` 에 woff2 파일을 함께 담고 있다. 두 라이선스 모두 재배포를 허용하되 라이선스 사본 포함을 요구한다.
 かな 글꼴 6종은 かな 만 남기고 서브셋했다(각 18~36KB).
@@ -78,3 +92,4 @@ Kosugi Maru 만 Apache-2.0 이다. OFL 로 뭉뚱그리지 말 것.
 | `data/kana.js` | KANJIDIC2 파생이 아니다. 코드와 같은 라이선스로 둘 수 있다 |
 | `data/reading.js` | ウィキニュース 파생 — **CC BY 4.0**, 출처 표시 필요 |
 | 폰트 (`assets/fonts/*`) | SIL OFL 1.1, Kosugi Maru 는 Apache-2.0 (사본 포함, 위 표) |
+| 음성 (`assets/audio/*`) | Gemini TTS 생성물. 구글이 소유권을 주장하지 않는다 — CC 표기는 붙이지 말 것 |
