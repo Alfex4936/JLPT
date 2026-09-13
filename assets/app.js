@@ -718,6 +718,7 @@
     elapsed = 0;
     markSeen();
     paint();
+    syncHash();
   }
 
   function paintArticle(w) {
@@ -1117,20 +1118,52 @@
     kanaIn.blur();
     document.body.classList.remove('idle');
     paint();
+    writeHash(null);
   }
-  function enterMode(name) {
+  function enterMode(name, atUid) {
     need(name, function () {
       useSet(name);
       screen = 'study';
       drawSet(); drawStudy(); drawLevels(); drawTier();
-      buildDeck(lsGet(K_POS, null));
+      buildDeck(atUid || lsGet(K_POS, null));
       setPlaying(S.set !== 'kana' && S.set !== 'reading' && deck.length > 0);
       markSeen();
       paint();
+      syncHash();
       focusDrill();
       wake();
     });
   }
+
+  /* ---------------- 기사 직접 링크 ----------------
+     #read=r44444 로 기사 하나를 바로 연다. 공유용이다.
+     history.pushState 는 file:// 에서 origin 이 null 이라 던진다 — 그래서 location.hash 만 쓴다 (절대 규칙 1).
+     슬러그는 data/reading.js 의 기사 id 다. wikinews 문서 번호라 덱을 다시 만들어도 안 바뀐다 —
+     난이도순 정렬이 바뀌는 순번을 쓰면 공유한 링크가 딴 기사를 가리킨다. */
+  var hashLock = false;
+  function hashArticle() {
+    var m = /(?:^|[#&])read=([A-Za-z0-9_-]+)/.exec(location.hash || '');
+    return m ? m[1] : null;
+  }
+  function writeHash(id) {
+    if ((hashArticle() || '') === (id || '')) return;
+    hashLock = true;
+    location.hash = id ? 'read=' + id : '';
+    setTimeout(function () { hashLock = false; }, 0);
+  }
+  // 주소창이 지금 보고 있는 기사를 가리키게 한다. 읽기 모드가 아니면 비운다.
+  function syncHash() {
+    var w = current();
+    writeHash(screen === 'study' && S.set === 'reading' && w && w.kind === 'r' ? w.i : null);
+  }
+  window.addEventListener('hashchange', function () {
+    if (hashLock) return;                       // 우리가 쓴 해시다
+    var id = hashArticle();
+    if (!id) { if (screen === 'study' && S.set === 'reading') goHome(); return; }
+    var w = current();
+    if (screen === 'study' && S.set === 'reading' && w && w.i === id) return;
+    enterMode('reading', 'r-' + id);
+  });
 
   // 카드가 화면을 넘지 않게 맞춘다. 세로(전체 스케일) 먼저, 그다음 표기 가로 폭.
   var fitT = 0;
@@ -2004,4 +2037,7 @@
   setPlaying(false);
   paint();
   wake();
+  // 공유 링크로 들어온 경우만 시작 화면을 건너뛴다. 기본 부트 화면은 그대로 학습 선택이다.
+  var bootRead = hashArticle();
+  if (bootRead && nRead()) enterMode('reading', 'r-' + bootRead);
 })();
