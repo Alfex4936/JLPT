@@ -47,7 +47,10 @@ data/words-n{1..5}.js window.JLPT.push(...) 하는 생성물. 직접 손으로 �
 data/kanji.js         window.JLPT_KANJI.push(...) 하는 생성물
 data/kana.js          window.JLPT_KANA = {...} 생성물. 표 구조까지 여기 들어 있다
 data/reading.js       window.JLPT_READING = {...} 생성물. 루비 조각이 이미 박혀 있다
-data/manifest.js      window.JLPT_N = {...} 개수표. 이것과 kana.js 만 index.html 에 있다
+data/manifest.js      window.JLPT_N = {...} 개수표
+data/audio.js         window.JLPT_AUDIO = {...} 음원이 전부 있는 기사 목록. 생성물
+                      manifest.js·kana.js·audio.js 만 index.html 에 있다 (덱은 모드 진입 때 온다)
+assets/audio/         かな 131음 opus. read/ 는 기사 줄 음원 <id>-<줄>.opus
 tools/                데이터 파이프라인 (아래)
 start.command         더블클릭용 로컬 http 서버 (file:// 제약 우회 경로)
 ```
