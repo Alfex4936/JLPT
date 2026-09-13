@@ -152,7 +152,7 @@
   /* ---------------- 덱 불러오기 ----------------
      클래식 script 태그다 — file:// 에서도 동작하고 fetch 를 쓰지 않는다 (절대 규칙 1).
      ?v= 는 index.html 의 데이터 태그와 같은 값이어야 한다. 데이터를 다시 만들면 둘 다 올린다. */
-  var DATA_V = '?v=29';
+  var DATA_V = '?v=30';
   var WORD_FILES = ['data/words-n5.js', 'data/words-n4.js', 'data/words-n3.js',
                     'data/words-n2.js', 'data/words-n1.js'];
   var got = {}, waiting = {};
@@ -584,7 +584,12 @@
     kanaAns.classList.remove('on');
     kanaAnsR.textContent = ''; kanaAnsH.textContent = ''; kanaAnsA.textContent = '';
     card.classList.remove('ok'); card.classList.remove('ng');
-    kanaTip.textContent = '로마자로 입력하면 바로 넘어갑니다';
+    /* 아까 틀린 글자가 덱 뒤에 다시 꽂혀 재등장한다(drillMiss 의 deck.push). 그걸 말해 주지 않으면
+       같은 글자가 두세 번 나오는 게 중복 버그처럼 보인다 — 실제로 그렇게 읽힌다는 보고를 받았다. */
+    var rw = current();
+    kanaTip.textContent = (rw && rw.kind === 'n' && roundMiss[rw.c])
+      ? '아까 틀린 글자입니다 · 다시'
+      : '로마자로 입력하면 바로 넘어갑니다';
   }
   // 입력칸에 포커스가 없으면 타자 연습이 성립하지 않는다. 다른 패널이 열려 있을 때는 빼앗지 않는다.
   function focusDrill() {
@@ -1409,7 +1414,8 @@
   }
   function stopSpeak() {
     dropPending();
-    if (clipA) { try { clipA.pause(); } catch (e) {} clipA = null; }
+    for (var i = 0; i < clips.length; i++) { try { clips[i].pause(); } catch (e) {} }
+    clips.length = 0;
     if (SS) { try { SS.cancel(); } catch (e) {} }
   }
   function speakChain(items, seq) {
@@ -1426,11 +1432,22 @@
      목소리가 한 결이고(요청마다 튀지 않는다), 낱 음절이 잘리지 않는다 — macOS Kyoko 는 あ 를 0.12초로
      끊어 낸다. 음원이 없으면 기존 TTS 로 떨어진다.
      fetch 는 file:// 에서 막히므로(절대 규칙 1) 반드시 new Audio() 로 읽는다. */
-  var clipA = null;
+  /* 재생 중인 클립들. 하나만 들고 있으면 안 된다 — かな 드릴은 맞히고 230ms 뒤에 다음 글자로 넘어가는데
+     클립은 0.2~0.5초다. 새 소리를 낼 때 직전 것을 죽이면 230ms 넘는 클립은 잘리고, 로딩이 늦은 클립은
+     소리 한 번 못 내고 죽는다(Pages 처럼 네트워크로 받으면 특히). TTS 는 취소해도 시작한 발화가
+     이어졌고 주석도 그걸 전제로 쓰여 있었다 — 클립으로 바꾸면서 그 전제를 깨뜨렸다.
+     그래서 새 소리는 직전 것을 건드리지 않고, 명시적 정지(홈·음소거·모드 변경)만 전부 끊는다. */
+  var clips = [];
   function kanaClip(text) {
     if (!KANA || !text) return null;
     var m = KANA.i[text];                       // 한 글자만 — 문장(기사 제목)은 걸리지 않는다
     return m && m.r ? 'assets/audio/' + encodeURIComponent(m.r) + '.opus' + DATA_V : null;
+  }
+  /* 단어 음원. 파일명이 읽기(かな) 그 자체라 매니페스트가 없다 — 없으면 onerror 로 기기 TTS 로 떨어진다.
+     기사와 달리 단어는 서로 독립이라 절반만 있어도 된다(한 카드 안에서 화자가 섞이지 않는다).
+     한자 모드도 이걸 쓴다 — 한자는 읽기를 정할 수 없어서 대표 단어를 읽고, 그 읽기가 여기 있다. */
+  function wordClip(text) {
+    return text ? 'assets/audio/word/' + encodeURIComponent(text) + '.opus' + DATA_V : null;
   }
   /* 기사 줄 음원. i = 0 이 제목, 1부터 문장 (artRows 와 같은 순서).
      매니페스트에 없는 기사는 null — 그 기사는 제목도 문장도 전부 기기 TTS 로 읽는다. */
@@ -1442,22 +1459,25 @@
   }
   function playClip(url, text) {
     var a = new Audio(url);
-    clipA = a;
+    clips.push(a);
     a.volume = S.vol;
     a.playbackRate = S.rate;
+    var drop = function () {
+      var i = clips.indexOf(a);
+      if (i >= 0) clips.splice(i, 1);
+    };
     // 파일이 없거나 코덱을 못 읽으면 조용히 죽지 말고 기기 TTS 로 넘긴다
     a.onerror = function () {
-      if (clipA !== a) return;
-      clipA = null;
+      drop();
       if (SS && voices.length) speakChain([text], speakSeq);
     };
-    a.onended = function () { if (clipA === a) clipA = null; };
+    a.onended = drop;
     try { a.play()['catch'](function () {}); } catch (e) {}
   }
   function speakOne(text) {
     if (!S.tts || !text) return;
     var clip = kanaClip(text);
-    if (clip) { stopSpeak(); playClip(clip, text); return; }
+    if (clip) { dropPending(); playClip(clip, text); return; }   // 직전 클립은 끝까지 들리게 둔다
     if (!SS || !voices.length) return;
     stopSpeak();
     speakChain([text], speakSeq);
@@ -1478,12 +1498,18 @@
     if (w.kind === 'k') {
       var q2 = [];
       for (var i = 0; i < w.ex.length && q2.length < (S.ttsEx ? 3 : 1); i++) q2.push(w.ex[i][1]);
-      if (q2.length) speakChain(S.ttsTwice ? [q2[0]].concat(q2) : q2, speakSeq);
+      if (!q2.length) return;
+      // 첫 단어는 음원이 있으면 음원으로. 뒤따르는 것까지 음원으로 이으려면 재생 완료를 물려야 해서
+      // 여기서는 첫 단어만 음원을 쓰고, 여러 개를 읽는 경우는 기기 TTS 에 맡긴다.
+      if (q2.length === 1) { playClip(wordClip(q2[0]), q2[0]); return; }
+      speakChain(S.ttsTwice ? [q2[0]].concat(q2) : q2, speakSeq);
       return;
     }
     var t = w.k || w.w, q = [t];
     if (S.ttsTwice) q.push(t);
     if (S.ttsEx && (w.ek || w.e)) q.push(w.ek || w.e);
+    // 단어 하나만 읽는 기본 설정이면 음원을 쓴다. 두 번 읽기·예문 읽기는 이어 재생이 필요해 TTS 로.
+    if (q.length === 1) { playClip(wordClip(t), t); return; }
     speakChain(q, speakSeq);
   }
   // 예문만 읽기. ek(かな)를 먼저 쓴다 — 한자 표기는 음성이 읽기를 틀릴 수 있다.

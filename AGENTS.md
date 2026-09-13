@@ -50,7 +50,8 @@ data/reading.js       window.JLPT_READING = {...} 생성물. 루비 조각이 �
 data/manifest.js      window.JLPT_N = {...} 개수표
 data/audio.js         window.JLPT_AUDIO = {...} 음원이 전부 있는 기사 목록. 생성물
                       manifest.js·kana.js·audio.js 만 index.html 에 있다 (덱은 모드 진입 때 온다)
-assets/audio/         かな 131음 opus. read/ 는 기사 줄 음원 <id>-<줄>.opus
+assets/audio/         かな 131음 opus. read/ 는 기사 줄 음원 <id>-<줄>.opus,
+                      word/ 는 단어 음원 <かな 읽기>.opus (한자 모드도 이걸 쓴다)
 tools/                데이터 파이프라인 (아래)
 start.command         더블클릭용 로컬 http 서버 (file:// 제약 우회 경로)
 ```
@@ -124,6 +125,7 @@ node tools/font-charset.js && ./tools/subset-fonts.sh   # 기사 한자가 덱 �
 | `tools/check-reading.js` | `data/reading.js` 검사기. 의존성 0, 문제가 있으면 종료 코드 1. **덱을 다시 만들면 반드시 돌린다** |
 | `tools/build-kana-audio.js` | Gemini TTS → `assets/audio/*.opus` (かな 131음). 덩어리로 읽혀 무음으로 자르고, 개수가 안 맞으면 버린다 |
 | `tools/build-reading-audio.js` | Gemini TTS → `assets/audio/read/*.opus` + `data/audio.js`. **기사 단위** — 실패하면 그 기사 파일을 되돌린다 |
+| `tools/build-word-audio.js` | Gemini TTS → `assets/audio/word/*.opus`. 한 요청에 20단어씩 몰아 읽혀 무음으로 자른다. 한자 모드도 이 파일을 쓴다 |
 | `tools/build-manifest.js` | 덱 파일들을 세어 `data/manifest.js`. **덱을 다시 만들 때마다 같이 돌린다** |
 | `tools/reading-ko.tsv` | 기사 문장별 한국어 번역. 손으로 쓰는 유일한 읽기 데이터 |
 | `tools/next-chunks.js` | 아직 번역 안 된 청크 이름 출력 |

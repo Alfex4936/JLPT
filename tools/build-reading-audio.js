@@ -15,8 +15,10 @@
 //   DRY=1 node tools/build-reading-audio.js
 //   MANIFEST=1 node tools/build-reading-audio.js                          # 요청 없이 data/audio.js 만 다시 씀
 //
-// 무료 등급은 요청 한도가 10이다(`generate_content_free_tier_requests`). 기사 하나가
-// 문장 수 + 1 요청을 쓰므로 결제를 붙이지 않으면 기사 한 편도 못 끝낸다.
+// 429 는 자주 난다. 실측으로는 영구 한도가 아니라 창(window)이라 몇 분 뒤 같은 키로 다시 200 이 온다 —
+// 그래서 429 는 최대 8분까지 기다리며 재시도한다. 한 번 포기하면 그 기사가 만든 파일을 전부 되돌리므로
+// (반쪽 기사를 남기지 않으려고) 곧바로 포기하면 396요청짜리 작업이 첫 스로틀에서 끝나 버린다.
+// 그래도 멈추면 다시 실행하면 된다 — 없는 기사부터 이어서 만든다.
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
@@ -34,6 +36,7 @@ const LIMIT = Number(process.env.LIMIT || 0);
 const ONLY = (process.env.ONLY || '').split(',').map((s) => s.trim()).filter(Boolean);
 const DRY = !!process.env.DRY;
 const MANIFEST_ONLY = !!process.env.MANIFEST;
+const CHECK = !!process.env.CHECK;        // 요청 없이 이미 만든 파일만 점검
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -68,7 +71,7 @@ async function tts(text) {
       speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: VOICE } } }
     }
   };
-  for (let t = 0; t < 4; t++) {
+  for (let t = 0; t < 5; t++) {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': KEY },
@@ -81,11 +84,13 @@ async function tts(text) {
       if (audio) return Buffer.from(audio.inlineData.data, 'base64');
       console.log('    오디오 없는 응답 — 재시도 ' + (t + 1));
     } else if (res.status === 429) {
-      // 무료 등급 한도다. 기다려도 안 풀리니 바로 포기하고 기사를 되돌린다.
-      const t2 = await res.text();
-      const free = /free_tier/.test(t2);
-      console.log('    HTTP 429 — ' + (free ? '무료 등급 한도. 결제를 붙여야 한다.' : '할당량 초과'));
-      return null;
+      /* 429 는 대개 분당 창이라 기다리면 풀린다. 실측: 몇 분 뒤 같은 키로 200 이 돌아왔다.
+         그래서 곧바로 포기하지 않고 길게 쉰다 — 한 번 포기하면 기사 전체를 되돌리게 되고,
+         396요청짜리 작업이 첫 스로틀에서 멈춰 버린다. */
+      const wait = [60, 120, 240, 480][t] || 480;
+      console.log('    HTTP 429 — ' + wait + '초 대기 후 재시도 ' + (t + 1) + '/4');
+      await sleep(wait * 1000);
+      continue;
     } else {
       console.log('    HTTP ' + res.status + ' — 재시도 ' + (t + 1));
     }
@@ -120,8 +125,36 @@ function writeManifest(list) {
   return ids.length;
 }
 
+/* 만들어 둔 음원 점검. 커밋 전에 돌린다 — 9MB 를 눈으로 다 들을 수는 없다.
+   길이를 かな 글자 수로 나눈 값(모라당 초)이 정상 범위를 벗어나면 생성이 잘렸거나 모델이 딴소리를 한 것이다.
+   실측 기준: 통째로 생성한 발화가 모라당 약 0.17초였다. */
+function checkAudio(all) {
+  const bad = [];
+  let n = 0, sec = 0;
+  for (const a of all) {
+    for (let i = 0; i < a.rows.length; i++) {
+      const f = path.join(OUT, a.id + '-' + i + '.opus');
+      if (!fs.existsSync(f)) continue;
+      const d = Number(execFileSync('ffprobe',
+        ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', f]).toString().trim());
+      const mora = a.rows[i].length || 1;
+      const per = d / mora;
+      n++; sec += d;
+      const where = a.id + '-' + i + '  ' + mora + '모라 ' + d.toFixed(2) + 's (모라당 ' + per.toFixed(3) + 's)';
+      if (!d || d < 0.4) bad.push('너무 짧다: ' + where);
+      else if (per < 0.09) bad.push('말이 빠르거나 잘렸다: ' + where);
+      else if (per > 0.40) bad.push('너무 길다(딴소리 의심): ' + where);
+      if (fs.statSync(f).size < 400) bad.push('파일이 거의 비었다: ' + where);
+    }
+  }
+  console.log('점검 ' + n + '개 · 총 ' + (sec / 60).toFixed(1) + '분 · 이상 ' + bad.length + '건');
+  bad.forEach((b) => console.log('  ' + b));
+  return bad.length;
+}
+
 (async () => {
   const all = articles();
+  if (CHECK) { process.exit(checkAudio(all) ? 1 : 0); }
   if (MANIFEST_ONLY) { writeManifest(all); return; }
 
   let todo = all.filter((a) => !a.rows.every((_, i) => fs.existsSync(path.join(OUT, a.id + '-' + i + '.opus'))));

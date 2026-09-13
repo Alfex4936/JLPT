@@ -50,11 +50,11 @@ ShareAlike 이므로 이 필드를 포함한 데이터를 재배포할 때는 **
 - 기사마다 `u` 에 원문 주소가 있고, 앱이 카드 하단에 원문 링크·날짜·라이선스를 표시한다. 이 표시를 지우지 말 것 — CC BY 의 요구사항이다.
 - 후리가나(`r`)와 문장 かな 읽기(`k`)는 이 저장소에서 만든 파생물이고, 한국어 번역(`o`)도 이 저장소 생성물이다. 사람이 전수 검수하지 않았다.
 
-## 7. かな·기사 제목 음성 — Gemini TTS 로 생성
+## 7. かな·기사·단어 음성 — Gemini TTS 로 생성
 
-`assets/audio/*.opus` (かな 131음) 와 `assets/audio/read/*.opus` (기사 제목 46개) 는
+`assets/audio/*.opus` (かな 131음), `assets/audio/read/*.opus` (기사 제목·문장), `assets/audio/word/*.opus` (단어 읽기) 는
 Google Gemini TTS(`gemini-3.1-flash-tts-preview`, 음성 `Zephyr`)로 생성했다. `tools/build-kana-audio.js`
-와 `tools/build-reading-audio.js` 가 만든다.
+와 `tools/build-reading-audio.js`, `tools/build-word-audio.js` 가 만든다.
 
 - Gemini API 약관의 **Use of Generated Content**: "Google won't claim ownership over that content. ...
   You're responsible for your use of generated content, and for the use of that content by anyone you share it with."
@@ -66,7 +66,12 @@ Google Gemini TTS(`gemini-3.1-flash-tts-preview`, 음성 `Zephyr`)로 생성했�
   기사 음원은 한 편도 끝내지 못한다.
 - 기기 TTS 를 대체하는 게 아니라 앞에 둔다. 음원이 없으면 `speechSynthesis` 로 떨어진다.
 - 기사 음원은 `data/audio.js` 에 등재된 기사만 쓴다. **기사 하나가 단위다** — 제목과 모든 문장을 다 만들거나
-  아예 안 만든다. 반쪽 기사를 쓰면 한 기사 안에서 줄마다 화자가 바뀐다. 아직 등재된 기사는 0편이다.
+  아예 안 만든다. 반쪽 기사를 쓰면 한 기사 안에서 줄마다 화자가 바뀐다.
+- 파일은 요청 시점에만 받는다(`new Audio()`). 수십 MB 가 되지만 첫 화면 로딩에는 영향이 없다.
+- 단어 음원은 파일명이 읽기(かな) 그 자체라 매니페스트가 없다. 한자 모드도 이걸 쓴다 —
+  한자는 읽기를 정할 수 없어(日 = ニチ? ひ?) 대표 단어를 읽고, 그 읽기가 단어 덱 읽기에 100% 포함된다.
+- 단어 **예문 문장**은 만들지 않았다. 9,437문장이면 85MB 인데 `예문도 읽기` 는 기본값이 꺼져 있다 —
+  git 히스토리는 지워지지 않으므로 균형이 맞지 않는다. 예문은 기기 TTS 로 읽는다.
 
 ## 8. 폰트 — SIL OFL 1.1 + Apache-2.0
 
