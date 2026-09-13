@@ -61,7 +61,13 @@ function numCounter(n, counter) {
     case '分': {
       const last = n % 10;
       const p = (last === 1 || last === 3 || last === 4 || last === 6 || last === 8 || last === 0) ? 'ぷん' : 'ふん';
-      return (n === 4 ? 'よん' : NUM(n)) + p;
+      // 促音까지 가야 맞는다 — 16分 은 じゅうろくぷん 이 아니라 じゅうろっぷん 이다
+      const head = (n === 4 ? 'よん' : NUM(n))
+        .replace(/いち$/, last === 1 ? 'いっ' : 'いち')
+        .replace(/ろく$/, last === 6 ? 'ろっ' : 'ろく')
+        .replace(/はち$/, last === 8 ? 'はっ' : 'はち')
+        .replace(/じゅう$/, last === 0 ? 'じゅっ' : 'じゅう');
+      return head + p;
     }
     case '人': return n === 1 ? 'ひとり' : n === 2 ? 'ふたり' : NUM(n) + 'にん';
     case '月': return (n === 4 ? 'し' : n === 7 ? 'しち' : n === 9 ? 'く' : NUM(n)) + 'がつ';
@@ -70,7 +76,7 @@ function numCounter(n, counter) {
     case '号': return NUM(n) + 'ごう';
     case '番': return NUM(n) + 'ばん';
     case '位': return NUM(n) + 'い';
-    case '回': return NUM(n) + 'かい';
+    case '回': return (n === 1 ? 'いっ' : n === 6 ? 'ろっ' : n === 8 ? 'はっ' : n === 10 ? 'じゅっ' : NUM(n)) + 'かい';
     case '度': return NUM(n) + 'ど';
     case '両': return NUM(n) + 'りょう';
     case '歳': case '才': return (n === 1 ? 'いっ' : n === 8 ? 'はっ' : n === 10 ? 'じゅっ' : NUM(n)) + 'さい';
@@ -93,14 +99,135 @@ function numCounter(n, counter) {
   }
 }
 
+const WEEKDAY = { 月: 'げつ', 火: 'か', 水: 'すい', 木: 'もく', 金: 'きん', 土: 'ど', 日: 'にち' };
+
 function fixToken(toks, i) {
   const t = toks[i];
   const s = t.surface_form;
   const prev = i > 0 ? toks[i - 1].surface_form : '';
   const r = kataToHira(t.reading && t.reading !== '*' ? t.reading : '');
+  const next = toks[i + 1] ? toks[i + 1].surface_form : '';
   // 「〜の間」은 あいだ. kuromoji 는 문맥 없이 ま 로 붙인다.
   if (s === '間' && prev === 'の' && r === 'ま') return 'あいだ';
+  // 괄호에 홀로 든 요일. (月) 은 げつ 인데 kuromoji 는 つき 로, (日) 은 にち 인데 ひ 로 읽는다.
+  if (WEEKDAY[s] && /^[(（]$/.test(prev) && /^[)）]$/.test(next)) return WEEKDAY[s];
+  // 조사가 뒤에 붙은 他 는 ほか(共同通信他による). 명사가 붙으면 접두사 た 가 맞다(他教会).
+  if (s === '他' && r === 'た' && /^(に|の|と|が|は|で|から|より|も)$/.test(next)) return 'ほか';
   return r;
+}
+
+/* 검수에서 잡은 고유명사 읽기. 분석기는 지명·인명을 글자 단위로 읽어 틀린다
+   (森繁→もりしげる · 高城→たかぎ · 竹富町→たけとみまち · 雲慶院→くもけいいん).
+   사용자는 한자를 못 읽으므로 틀린 루비를 스스로 못 잡는다 — 검수에서 걸린 건 전부 여기 적는다.
+   키는 토큰 경계와 무관하게 표기 그대로 쓴다. 雲/慶/院 처럼 쪼개져 있어도 이어 붙여 맞춘다. */
+const WORDS = [
+  ['石垣島', 'いしがきじま'], ['竹富町', 'たけとみちょう'], ['雲慶院', 'うんけいいん'],
+  ['中浜町', 'なかはまちょう'], ['森繁', 'もりしげ'], ['高城', 'たかしろ'], ['沢尻', 'さわじり'],
+  ['弾き', 'ひき'], ['夫婦善哉', 'めおとぜんざい'], ['NATO', 'ナトー'], ['UH-1', 'ユーエイチワン'],
+  ['森重', 'もりしげ'], ['秋田魁新報', 'あきたさきがけしんぽう'],
+  ['W杯', 'ワールドカップ'],            // ダブリューはい 가 된다
+  ['1-0', 'いちたいゼロ'],              // 스코어. 하이픈이 그대로 박힌다
+  ['1日目', 'いちにちめ'],              // 日 의 DAY 표가 ついたちめ 로 만든다
+  ['月下旬', 'がつげじゅん'],           // 月下+旬 으로 쪼개져 げっかしゅん 이 된다
+  ['一回', 'いっかい'],                 // 한자 숫자라 numCounter 를 안 타고 いちかい 가 된다
+  ['沙保里', 'さおり'],                 // いさごほり
+  ['獣医師', 'じゅういし'],             // ししいし
+  ['清武町', 'きよたけちょう'],         // きよたけまち
+  ['中越', 'ちゅうえつ'],               // なかごえ
+  ['右投左打', 'みぎなげひだりうち'],   // みぎとうひだりだ
+  ['サル山', 'サルやま'],               // サルさん
+  ['不忍池', 'しのばずのいけ'],         // ふにんち
+  ['柵', 'さく'],                       // しがらみ
+  ['行名', 'こうめい']                  // くだりめい
+].sort((a, b) => b[0].length - a[0].length);
+
+const SYMBOL = { '%': 'パーセント', '％': 'パーセント', '+': 'プラス' };
+
+// kuromoji 는 「%、」 처럼 기호와 구두점을 한 토큰으로 붙여 내놓는다. 구두점은 그대로 두고 기호만 읽는다.
+function symbolRead(s) {
+  if (!SYMBOL[s[0]]) return null;
+  let out = '';
+  for (const ch of s) {
+    if (SYMBOL[ch]) out += SYMBOL[ch];
+    else if (/[、。]/.test(ch)) out += ch;
+    else return null;
+  }
+  return out;
+}
+
+function matchWord(toks, i) {
+  for (const [w, read] of WORDS) {
+    let j = i, s = '';
+    while (j < toks.length && s.length < w.length) s += toks[j++].surface_form;
+    if (s === w) return { s: s, read: read, next: j };
+  }
+  return null;
+}
+
+/* 표기의 가타카나는 읽기에서도 가타카나로 남아야 한다 — furigana 가 그 구간을 앵커로 쓴다.
+   토큰 전체가 가타카나일 때만 되돌리면 アメリカ合衆国 이 あめりかがっしゅうこく 가 되어 정렬이 깨진다. */
+function keepKata(surface, hira) {
+  let out = hira, from = 0;
+  for (const run of surface.match(/[ァ-ヺー・]+/g) || []) {
+    const at = out.indexOf(kataToHira(run), from);
+    if (at < 0) continue;
+    out = out.slice(0, at) + run + out.slice(at + run.length);
+    from = at + run.length;
+  }
+  return out;
+}
+
+// (UTC+9)·(UTC-7) 시차 표기. 하이픈을 따로 두면 읽기에 그대로 박힌다.
+function utcRun(toks, i) {
+  const s = toks[i].surface_form;
+  if (s !== 'UTC' && s !== 'GMT') return null;
+  const sign = (toks[i + 1] && toks[i + 1].surface_form) || '';
+  const num = toks[i + 2] && toks[i + 2].surface_form;
+  if (!/^[+\-−]$/.test(sign) || !num || !DIGITS.test(num)) return null;
+  const n = numHintsFor(String(Number(toAscii(num))))[0];
+  if (!n) return null;
+  const word = s === 'UTC' ? 'ユーティーシー' : 'ジーエムティー';
+  return { s: s + sign + num, read: word + (sign === '+' ? 'プラス' : 'マイナス') + n, next: i + 3 };
+}
+
+// 8:16 -> はちじじゅうろくふん. 콜론을 앵커로 두면 읽기에 콜론이 박힌다.
+function timeRun(toks, i) {
+  const c = toks[i + 1], b = toks[i + 2];
+  if (!c || c.surface_form !== ':' || !b) return null;
+  if (!DIGITS.test(toks[i].surface_form) || !DIGITS.test(b.surface_form)) return null;
+  const h = numCounter(Number(toAscii(toks[i].surface_form)), '時');
+  const m = numCounter(Number(toAscii(b.surface_form)), '分');
+  if (!h || !m) return null;
+  return { s: toks[i].surface_form + ':' + b.surface_form, read: h + m, next: i + 3 };
+}
+
+/* 자릿점·소수점으로 끊긴 숫자는 한 덩어리로 읽어야 한다. 1,300 의 토큰은 1 / , / 300 이라
+   따로 읽으면 いち,さんびゃく 가 되고 자릿점이 그대로 かな 에 박힌다. */
+function numRun(toks, i) {
+  if (!DIGITS.test(toks[i].surface_form)) return null;
+  let s = toks[i].surface_form, j = i + 1;
+  while (toks[j] && /^[,，]$/.test(toks[j].surface_form) && toks[j + 1] && DIGITS.test(toks[j + 1].surface_form)) {
+    s += toks[j].surface_form + toks[j + 1].surface_form;
+    j += 2;
+  }
+  let dec = '';
+  if (toks[j] && /^[.．]$/.test(toks[j].surface_form) && toks[j + 1] && DIGITS.test(toks[j + 1].surface_form)) {
+    dec = toAscii(toks[j + 1].surface_form);
+    s += toks[j].surface_form + toks[j + 1].surface_form;
+    j += 2;
+  }
+  const int = toAscii(s.split(/[.．]/)[0]);
+  const n = Number(int);
+  // 앞자리 0 은 자릿수가 아니라 표기다 — 0秒07 은 ゼロびょうゼロなな 이고 ゼロびょうなな 가 아니다
+  if (/^0\d/.test(int)) {
+    const each = [...int].map((c) => numHintsFor(c)[0]).join('');
+    return each ? { s: s, read: each, next: j, n: null } : null;
+  }
+  const head = Number.isFinite(n) ? numHintsFor(String(n))[0] : null;
+  if (!head) return null;
+  // 소수점 아래는 한 자씩 읽는다 — 5.614 는 ごてんろくいちよん
+  if (dec) return { s: s, read: head + 'てん' + [...dec].map((c) => numHintsFor(c)[0]).join(''), next: j, n: null };
+  return { s: s, read: head, next: j, n: n };
 }
 
 // 토큰 읽기를 이어 전체 かな 읽기를 만든다. 표기가 가타카나면 가타카나로 둔다(コーヒー).
@@ -112,21 +239,46 @@ function draftReading(toks) {
     const t = toks[i];
     const s = t.surface_form;
 
-    if (DIGITS.test(s)) {
-      const n = Number(toAscii(s));
-      const next = toks[i + 1] && toks[i + 1].surface_form;
-      const joint = (Number.isFinite(n) && next) ? numCounter(n, next) : null;
+    const w = matchWord(toks, i);
+    if (w) { out += w.read; segs.push({ s: w.s, read: w.read }); i = w.next - 1; continue; }
+
+    const utc = utcRun(toks, i);
+    if (utc) { out += utc.read; segs.push({ s: utc.s, read: utc.read }); i = utc.next - 1; continue; }
+
+    const tm = timeRun(toks, i);
+    if (tm) { out += tm.read; segs.push({ s: tm.s, read: tm.read }); i = tm.next - 1; continue; }
+
+    // kuromoji 가 「30分」·「2400円」 처럼 숫자와 조수사를 한 토큰으로 내놓기도 한다. 그러면 さんじゅうぶん 이 된다.
+    const glued = s.match(/^([0-9０-９][0-9０-９,，]*)(.+)$/);
+    if (glued) {
+      const gn = Number(toAscii(glued[1]));
+      const gr = Number.isFinite(gn) ? numCounter(gn, glued[2]) : null;
+      if (gr) { out += gr; segs.push({ s: s, read: gr }); continue; }
+    }
+
+    const num = numRun(toks, i);
+    if (num) {
+      const next = toks[num.next] && toks[num.next].surface_form;
+      // kuromoji 가 조수사에 조사를 붙여 한 토큰으로 내놓기도 한다(「分の」) — 그러면 조수사를 못 알아본다
+      const split = next && next.length > 1 ? next.match(/^(.)([ぁ-ゖ、。]+)$/) : null;
+      const counter = split ? split[1] : next;
+      const tail = split ? split[2] : '';
+      const joint = (num.n != null && counter) ? numCounter(num.n, counter) : null;
       if (joint) {                                  // 10日 -> とおか (두 토큰을 한 덩어리로)
-        out += joint;
-        segs.push({ s: s + next, read: joint });
-        i++;
+        out += joint + tail;
+        segs.push({ s: num.s + counter, read: joint });
+        if (tail) segs.push({ s: tail, read: null });
+        i = num.next;
         continue;
       }
-      const nr = Number.isFinite(n) ? numHintsFor(String(n))[0] : null;
-      out += nr || s;
-      segs.push({ s: s, read: nr });
+      out += num.read;
+      segs.push({ s: num.s, read: num.read });
+      i = num.next - 1;
       continue;
     }
+
+    const sym = symbolRead(s);
+    if (sym) { out += sym; segs.push({ s: s, read: sym }); continue; }
 
     if (KANA_ONLY.test(s)) { out += s; segs.push({ s: s, read: null }); continue; }
 
@@ -140,9 +292,9 @@ function draftReading(toks) {
 
     const r = fixToken(toks, i);
     if (!r) { out += s; segs.push({ s: s, read: null }); continue; }
-    const kata = /^[ァ-ヺー・]+$/.test(s);   // 전부 가타카나일 때만. 섞여 있으면 루비는 히라가나다
-    out += kata ? r.replace(/[ぁ-ゖ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60)) : r;
-    segs.push({ s: s, read: r });
+    const rr = keepKata(s, r);
+    out += rr;
+    segs.push({ s: s, read: rr });
   }
   return { read: out, segs: segs };
 }
@@ -153,7 +305,7 @@ const LETTER = { a: 'エー', b: 'ビー', c: 'シー', d: 'ディー', e: 'イ�
 // 단위는 철자로 읽지 않는다. km 은 ケーエム 이 아니라 キロメートル 이다.
 const UNIT = { km: 'キロメートル', kg: 'キログラム', cm: 'センチメートル', mm: 'ミリメートル',
   m: 'メートル', g: 'グラム', t: 'トン', l: 'リットル', ml: 'ミリリットル', ha: 'ヘクタール',
-  kw: 'キロワット', mw: 'メガワット', db: 'デシベル', hz: 'ヘルツ' };
+  kw: 'キロワット', mw: 'メガワット', db: 'デシベル', hz: 'ヘルツ', hpa: 'ヘクトパスカル' };
 /* 약어만 철자로 읽는다(SF -> エスエフ). Durian 같은 낱말을 철자로 읽으면
    ディーユーアールアイエーエヌ 이 되는데 실제 읽기는 ドリアン 이라 아예 틀린다.
    그런 건 읽기를 비워 두면 정렬이 실패해 검수 대상으로 걸러진다. */

@@ -15,7 +15,9 @@
 // 안 맞을 뿐이고 배치는 휴리스틱으로 돌아간다 — 틀린 힌트가 틀린 루비를 만들지는 못한다.
 
 const KANA = /[ぁ-ゖァ-ヺー゛゜ゝゞヽヾ]/;
-const NEEDS = /[一-鿿㐀-䶿々〆ヶ0-9０-９A-Za-zＡ-Ｚａ-ｚ]/;
+// %·자릿점·소수점·시각 콜론·부호도 읽기를 받는다. 앵커로 두면 かな 읽기에 그 글자가 그대로 박힌다(35.83% → さんじゅうご.はちじゅうさん%).
+const NEEDS = /[一-鿿㐀-䶿々〆ヶ0-9０-９A-Za-zＡ-Ｚａ-ｚ%％.,:+\-−]/;
+const CJK = /[一-鿿㐀-䶿々〆ヶ]/;
 
 const kataToHira = (s) => String(s || '').replace(/[ァ-ヴ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
 
@@ -29,7 +31,17 @@ const ONES = ['ゼロ', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', '�
 const ONES_ALT = { 0: ['れい', 'まる', 'お'], 1: [], 2: [], 3: [], 4: ['し', 'よ'], 5: [], 6: [], 7: ['しち'], 8: [], 9: ['く'] };
 function numHints(digits) {
   const n = Number(digits);
-  if (!Number.isFinite(n) || digits.length > 4) return [];
+  if (!Number.isFinite(n) || n < 0) return [];
+  // 만 단위로 끊는다. 15,000 = いちまんごせん — 네 자리 규칙만으로는 못 읽는다.
+  if (n >= 10000) {
+    if (n >= 1e8) return [];
+    const hi = numHints(String(Math.floor(n / 10000)));
+    const lo = n % 10000 ? numHints(String(n % 10000)) : [''];
+    const out = new Set();
+    for (const a of hi) for (const b of lo) out.add(a + 'まん' + b);
+    return [...out];
+  }
+  if (digits.length > 4) return [];
   const d = String(n);
   const out = new Set();
   const build = (lastVariant) => {
@@ -130,13 +142,17 @@ function buildRuns(s, segments) {
   return mergeAnchors(rs);
 }
 
+/* 런 하나가 가져갈 수 있는 かな 길이 범위. 최소값을 글자당 1모라로 잡으면 안 된다 —
+   숫자는 글자 수보다 짧게 읽히고(1,000人 = せんにん), 약어는 한 낱말로 읽힌다(NATO = ナトー). */
 function span(run) {
   let lo = 0, hi = 0;
   for (const ch of run.s) {
-    if (/[A-Za-zＡ-Ｚａ-ｚ]/.test(ch)) { lo += 1; hi += 6; }   // J=ジェー, W=ダブリュー
-    else { lo += 1; hi += 5; }                                 // 한자 1~5모라(承る=うけたまわる), 숫자도 비슷
+    if (/[A-Za-zＡ-Ｚａ-ｚ]/.test(ch)) { lo += 0.5; hi += 6; }   // J=ジェー, W=ダブリュー
+    else if (/[0-9０-９]/.test(ch)) { lo += 0.34; hi += 5; }     // 1,000 의 000 은 자리만 채우고 읽히지 않는다
+    else if (/[%％.,:+\-−]/.test(ch)) { hi += 6; }               // % = パーセント
+    else { lo += 1; hi += 5; }                                   // 한자 1~5모라(承る=うけたまわる)
   }
-  return { lo: Math.max(1, lo), hi: hi };
+  return { lo: Math.max(1, Math.ceil(lo)), hi: hi };
 }
 
 function cost(run, take) {
@@ -188,6 +204,13 @@ function furigana(s, r, segments) {
       }
       return;
     }
+    /* 읽기를 만들 수 없는 라틴 낱말은 표기가 읽기에 그대로 들어 있다(「サンサン」(Shanshan) · UTC-7 의 -).
+       그건 앵커로 통과시켜 루비 없이 내보낸다. 한자는 제외한다 — 한자에 かな 읽기가 없으면 그 문장은 버리는 게 맞다. */
+    if (!CJK.test(run.s) && read.startsWith(run.s, pos)) {
+      picked.push(null);
+      walk(i + 1, pos + run.s.length, acc + 1, picked);
+      picked.pop();
+    }
     const sp = spans[i];
     const room = read.length - pos - minRest[i + 1];
     const hi = Math.min(sp.hi, room);
@@ -226,14 +249,33 @@ function segmentsFromTokens(tokens) {
 module.exports = { furigana, readingOf, segmentsFromTokens, kataToHira, numHintsFor: numHints };
 
 if (require.main === module) {
+  /* 아래 케이스는 전부 한 번씩 배포된 덱을 깨뜨린 것들이다. 지우지 말 것.
+     숫자·기호 계열은 읽기가 かな 에 안 박히는지(자릿점·소수점·%·콜론),
+     가타카나 계열은 섞인 토큰에서 가타카나가 유지되는지(アメリカ合衆国),
+     라틴 계열은 읽기를 못 만든 낱말이 루비 없이 통과하는지를 본다. */
   const T = [
     ['毎朝コーヒーを飲みます。', 'まいあさコーヒーをのみます。'],
     ['約7時間運転を見合わせた。', 'やくななじかんうんてんをみあわせた。'],
     ['世界人口が80億人を超えた。', 'せかいじんこうがはちじゅうおくにんをこえた。'],
+    ['約1,000人もの行列ができた。', 'やくせんにんものぎょうれつができた。'],
+    ['この日だけでも、約1万4,000人が入場した。', 'このひだけでも、やくいちまんよんせんにんがにゅうじょうした。'],
+    ['投票率は35.83%。', 'とうひょうりつはさんじゅうごてんはちさんパーセント。'],
+    ['中心気圧は915hPa。', 'ちゅうしんきあつはきゅうひゃくじゅうごヘクトパスカル。'],
+    ['最大発電出力は15,000kW。', 'さいだいはつでんしゅつりょくはいちまんごせんキロワット。'],
+    ['午前8:16に死去した。', 'ごぜんはちじじゅうろっぷんにしきょした。'],
+    ['アメリカ合衆国に移住。', 'アメリカがっしゅうこくにいじゅう。'],
+    ['金メダルを獲得した。', 'きんメダルをかくとくした。'],
+    ['NATOのヘリコプターが墜落。', 'ナトーのヘリコプターがついらく。'],
+    ['現地25日(UTC-7)に行われた。', 'げんちにじゅうごにち(ユーティーシーマイナスなな)におこなわれた。'],
+    ['台風13号「サンサン」(Shanshan)が発生した。', 'たいふうじゅうさんごう「サンサン」(Shanshan)がはっせいした。'],
   ];
+  let bad = 0;
   for (const [s, r] of T) {
     const f = furigana(s, r);
-    if (!f) { console.log('FAIL', s); continue; }
-    console.log(f.map(([t, ru]) => (ru ? `${t}(${ru})` : t)).join(''), readingOf(f) === r ? '' : '  ← 재조립 불일치');
+    const ok = f && readingOf(f) === r;
+    if (!ok) bad++;
+    console.log((ok ? '  ' : '✗ ') + (f ? f.map(([t, ru]) => (ru ? `${t}(${ru})` : t)).join('') : '정렬 실패: ' + s));
   }
+  if (bad) { console.error('\n실패 ' + bad + '/' + T.length); process.exit(1); }
+  console.log('\n' + T.length + '건 통과');
 }
