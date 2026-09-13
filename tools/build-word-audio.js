@@ -33,6 +33,10 @@ const LIMIT = Number(process.env.LIMIT || 0);
 const SCOPE = process.env.SCOPE || 'all';         // all | kanji
 const DRY = !!process.env.DRY;
 
+/* 요청 간격. Gemini 3.1 Flash TTS 는 RPM 10 · RPD 100 이다(콘솔 확인).
+   400ms 로 쏘면 분당 150요청이라 대부분 즉시 429를 맞고, 그 재시도까지 RPD 에 카운트돼
+   하루 한도를 두 배로 태운다(실측: RPD 206/100). 6.5초면 분당 9요청으로 RPM 밑에 머문다. */
+const PACE = Number(process.env.PACE || 6500);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* 한자 모드가 쓰는 단어를 먼저 만든다 — 그게 이 작업의 목적이고, 중간에 멈춰도 값어치가 남는다.
@@ -162,7 +166,7 @@ function segments(wav, minSilence = 0.18, thresh = '-40dB') {
         path.join(OUT, chunk[i] + '.opus')]);
       made++;
     }
-    await sleep(400);
+    await sleep(PACE);
   }
 
   const files = fs.readdirSync(OUT).filter((f) => f.endsWith('.opus'));

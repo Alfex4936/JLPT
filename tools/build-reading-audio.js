@@ -38,6 +38,10 @@ const DRY = !!process.env.DRY;
 const MANIFEST_ONLY = !!process.env.MANIFEST;
 const CHECK = !!process.env.CHECK;        // 요청 없이 이미 만든 파일만 점검
 
+/* 요청 간격. Gemini 3.1 Flash TTS 는 RPM 10 · RPD 100 이다(콘솔 확인).
+   400ms 로 쏘면 분당 150요청이라 대부분 즉시 429를 맞고, 그 재시도까지 RPD 에 카운트돼
+   하루 한도를 두 배로 태운다(실측: RPD 206/100). 6.5초면 분당 9요청으로 RPM 밑에 머문다. */
+const PACE = Number(process.env.PACE || 6500);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function articles() {
@@ -194,7 +198,7 @@ function checkAudio(all) {
         '-af', 'silenceremove=start_periods=1:start_threshold=-50dB:start_silence=0.05,loudnorm=I=-16:TP=-1.5:LRA=11',
         '-ac', '1', '-c:a', 'libopus', '-b:a', BITRATE, dst]);
       written.push(dst);
-      await sleep(500);
+      await sleep(PACE);
     }
     if (!ok) {
       /* 만든 줄은 남긴다. 반쪽 기사가 노출될 걱정은 없다 — data/audio.js 가 모든 줄이 있는 기사만
