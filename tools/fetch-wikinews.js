@@ -83,6 +83,12 @@ function sentences(text) {
   return out.filter((s) => s.length > 1);
 }
 
+/* 서술문 개수. 뉴스 기사에는 표·목록이 본문처럼 섞여 들어온다 —
+   「準々決勝以降」「杉本憲也 43 無 新 13,522票」「2025年2月17日 (月): 台風1号 が発生」 같은 줄이다.
+   읽기 교재로는 쓸 수 없고(문장이 아니다), 이런 줄이 본문의 3분의 1을 넘으면 기사째로 버린다.
+   문장 단위로 남은 찌꺼기는 번역을 비워 두는 것으로 merge-reading 이 걸러낸다. */
+const prose = (sents) => sents.filter((s) => /[。？！」]$/.test(s)).length;
+
 /* 읽을 만한가. 낮을수록 쉽다.
    - 덱에 없는 한자가 많으면 벌점 (그 글자는 카드로 본 적이 없다)
    - 문장이 길수록 벌점
@@ -140,6 +146,7 @@ function score(sents, deck) {
       const sents = sentences(text);
       if (sents.length < 3 || sents.length > 18) continue;
       if (sents.some((s) => s.length > 180)) continue;
+      if (prose(sents) < 3 || (sents.length - prose(sents)) / sents.length > 1 / 3) continue;  // 표·목록이 본문인 기사
       const sc = score(sents, deck);
       if (!sc) continue;
       arts.push({
