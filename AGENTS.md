@@ -125,6 +125,7 @@ node tools/font-charset.js && ./tools/subset-fonts.sh   # 기사 한자가 덱 �
 | `tools/check-reading.js` | `data/reading.js` 검사기. 의존성 0, 문제가 있으면 종료 코드 1. **덱을 다시 만들면 반드시 돌린다** |
 | `tools/build-kana-audio.js` | Gemini TTS → `assets/audio/*.opus` (かな 131음). 덩어리로 읽혀 무음으로 자르고, 개수가 안 맞으면 버린다 |
 | `tools/build-reading-audio.js` | Gemini TTS → `assets/audio/read/*.opus` + `data/audio.js`. **기사 단위** — 실패하면 그 기사 파일을 되돌린다 |
+| `tools/audio-drive.sh` | 음원 생성을 끝까지 미는 드라이버. 할당량에 막히면 45분 쉬고 이어서 만든다. `GEMINI_API_KEY=... bash tools/audio-drive.sh` |
 | `tools/build-word-audio.js` | Gemini TTS → `assets/audio/word/*.opus`. 한 요청에 20단어씩 몰아 읽혀 무음으로 자른다. 한자 모드도 이 파일을 쓴다 |
 | `tools/build-manifest.js` | 덱 파일들을 세어 `data/manifest.js`. **덱을 다시 만들 때마다 같이 돌린다** |
 | `tools/reading-ko.tsv` | 기사 문장별 한국어 번역. 손으로 쓰는 유일한 읽기 데이터 |
