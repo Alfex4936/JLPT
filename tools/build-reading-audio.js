@@ -44,6 +44,8 @@ const CHECK = !!process.env.CHECK;        // 요청 없이 이미 만든 파일�
 const PACE = Number(process.env.PACE || 6500);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+let QUOTA_DAY = 0;   // 일일 한도에 걸렸을 때 서버가 알려준 대기 초. 0 이면 안 걸린 것
+
 function articles() {
   global.window = {};
   require(path.join(ROOT, 'data', 'reading.js'));
@@ -88,9 +90,16 @@ async function tts(text) {
       if (audio) return Buffer.from(audio.inlineData.data, 'base64');
       console.log('    오디오 없는 응답 — 재시도 ' + (t + 1));
     } else if (res.status === 429) {
-      /* 429 는 대개 분당 창이라 기다리면 풀린다. 실측: 몇 분 뒤 같은 키로 200 이 돌아왔다.
-         그래서 곧바로 포기하지 않고 길게 쉰다 — 한 번 포기하면 기사 전체를 되돌리게 되고,
-         396요청짜리 작업이 첫 스로틀에서 멈춰 버린다. */
+      /* 일일 한도와 분당 한도를 가른다. 분당이면 기다리면 풀리지만, 일일이면 재시도가 전부
+         헛되고 그 요청까지 한도에 카운트된다 — 실측: 100요청 한도에서 클립 33개만 나왔다. */
+      const body = await res.text();
+      if (/PerDay/.test(body)) {
+        const m = body.match(/"retryDelay":\s*"(\d+)s"/);
+        QUOTA_DAY = m ? Number(m[1]) : 3600;
+        console.log('    일일 한도 소진 — 재시도하지 않는다 (' + Math.round(QUOTA_DAY / 60) + '분 뒤 리셋)');
+        return null;
+      }
+      /* 분당 한도는 기다리면 풀린다. 실측: 몇 분 뒤 같은 키로 200 이 돌아왔다. */
       const wait = [60, 120, 240, 480][t] || 480;
       console.log('    HTTP 429 — ' + wait + '초 대기 후 재시도 ' + (t + 1) + '/4');
       await sleep(wait * 1000);
@@ -213,6 +222,12 @@ function checkAudio(all) {
   }
 
   const n = writeManifest(all);
+  if (QUOTA_DAY) {
+    // 드라이버가 이 줄을 읽어 리셋까지 잔다. 45분씩 깨서 남은 요청을 태우지 않게 한다.
+    console.log('\nQUOTA_DAY_SECONDS=' + QUOTA_DAY);
+    console.log('일일 한도 소진. ' + Math.round(QUOTA_DAY / 3600) + '시간 뒤 리셋되면 없는 줄부터 이어서 만든다.');
+    process.exit(3);
+  }
   if (stopped) {
     console.log('\n할당량에서 멈췄다. 결제를 붙인 뒤 다시 실행하면 없는 기사부터 이어서 만든다.');
     process.exit(n ? 0 : 1);

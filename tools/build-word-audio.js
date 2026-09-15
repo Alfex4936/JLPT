@@ -39,6 +39,8 @@ const DRY = !!process.env.DRY;
 const PACE = Number(process.env.PACE || 6500);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+let QUOTA_DAY = 0;   // 일일 한도에 걸렸을 때 서버가 알려준 대기 초. 0 이면 안 걸린 것
+
 /* 한자 모드가 쓰는 단어를 먼저 만든다 — 그게 이 작업의 목적이고, 중간에 멈춰도 값어치가 남는다.
    그다음 나머지 단어 덱. 읽기(かな)가 같은 단어는 파일 하나를 공유한다. */
 function wordList() {
@@ -91,6 +93,14 @@ async function tts(text) {
       if (a) return Buffer.from(a.inlineData.data, 'base64');
       console.log('    오디오 없는 응답 — 재시도 ' + (t + 1));
     } else if (res.status === 429) {
+      /* 일일 한도면 재시도가 전부 헛되고 그 요청까지 한도에 카운트된다. 분당 한도만 기다린다. */
+      const body = await res.text();
+      if (/PerDay/.test(body)) {
+        const m = body.match(/"retryDelay":\s*"(\d+)s"/);
+        QUOTA_DAY = m ? Number(m[1]) : 3600;
+        console.log('    일일 한도 소진 — 재시도하지 않는다 (' + Math.round(QUOTA_DAY / 60) + '분 뒤 리셋)');
+        return null;
+      }
       const wait = [60, 120, 240, 480][t] || 480;
       console.log('    HTTP 429 — ' + wait + '초 대기 후 재시도 ' + (t + 1));
       await sleep(wait * 1000);
@@ -149,7 +159,12 @@ function segments(wav, minSilence = 0.18, thresh = '-40dB') {
       + '読み上げるのは次の' + chunk.length + '語だけです。\n' + chunk.join('、');
     console.log('[' + (ci + 1) + '/' + chunks.length + '] ' + chunk.slice(0, 6).join(' ') + ' …');
     const pcm = await tts(text);
-    if (!pcm) { failed.push(ci); console.log('  ✗ 응답 실패'); continue; }
+    if (!pcm) {
+      failed.push(ci);
+      if (QUOTA_DAY) break;    // 남은 덩어리를 돌면 전부 429 고, 그 요청까지 내일 몫을 깎는다
+      console.log('  ✗ 응답 실패');
+      continue;
+    }
     const wav = path.join(TMP, 'c' + ci + '.wav');
     pcmToWav(pcm, wav);
     const segs = segments(wav);
@@ -173,4 +188,9 @@ function segments(wav, minSilence = 0.18, thresh = '-40dB') {
   const bytes = files.reduce((n, f) => n + fs.statSync(path.join(OUT, f)).size, 0);
   console.log('\n새로 ' + made + '개 · 총 ' + files.length + '/' + all.length + '개 · ' + (bytes / 1048576).toFixed(1) + ' MB');
   if (failed.length) console.log('실패 덩어리 ' + failed.length + '개 — 다시 실행하면 없는 것만 채운다.');
+  if (QUOTA_DAY) {
+    // 드라이버가 이 줄을 읽어 리셋까지 잔다.
+    console.log('QUOTA_DAY_SECONDS=' + QUOTA_DAY);
+    process.exit(3);
+  }
 })();
