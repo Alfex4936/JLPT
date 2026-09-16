@@ -11,9 +11,12 @@
 # 일일 한도에 걸리면 생성기가 종료 코드 3 으로 끝난다. 재시도를 하지 않으므로 막힌 회차는
 # 5요청이 아니라 1요청만 쓴다(실측: 재시도를 돌렸을 때 100요청 한도에서 클립 33개만 나왔다).
 #
-# RPD 는 태평양 자정에 리셋된다(문서). 9월은 PDT 라 16:00 KST 다 — 실측이 이걸 지지한다:
-# 09-15 16시에 클립 95개가 한꺼번에 나왔다. 응답의 retryDelay 는 23시간을 가리키지만
-# 그 시각과 안 맞으니 믿지 말고, 45분마다 깨서 한 번 찔러 본다.
+# 한도는 **롤링 24시간**이다. 문서는 "태평양 자정에 리셋" 이라고 하지만 실측이 다르다 —
+# 어제 그 시각에 쓴 만큼이 오늘 그 시각에 풀린다:
+#   09-15 17시 1요청 → 09-16 17시 2요청 · 18시 5 → 4 · 19시 0 → 0 · 20시 2 → 1 · 21시 0 → 0
+# 안 쓴 시간에는 아무것도 안 풀린다. 그래서 **계속 켜 두는 게 맞다** — 슬롯이 풀리는 순간
+# 돌고 있어야 줍는다. 껐다 켜면 그 사이에 풀린 몫을 놓친다.
+# 응답의 retryDelay 는 23시간을 가리키지만 45분 뒤에 이미 슬롯이 생긴다. 믿지 말 것.
 #
 # 한도는 프로젝트 단위다(문서: "applied per project, not per API key"). 키를 바꿔 봐야
 # 같은 프로젝트면 같은 100을 나눠 쓴다.
@@ -27,6 +30,22 @@ ROUNDS="${ROUNDS:-300}"
 IDLE_WAIT="${IDLE_WAIT:-2700}"   # 이유를 모르는 정체. 45분 쉰다
 LOG="${TMPDIR:-/tmp}/jlpt-audio-round.log"
 HIST="${TMPDIR:-/tmp}/jlpt-audio-history.log"   # 회차 로그는 다음 회차가 덮는다. 원인 추적용으로 쌓아 둔다
+
+# 두 세션이 같은 저장소를 본다. 동시에 돌면 같은 덩어리를 둘이 만들어 요청이 두 배로 든다.
+# mkdir 은 원자적이라 잠금으로 쓴다.
+LOCK="${TMPDIR:-/tmp}/jlpt-audio-drive.lock"
+if ! mkdir "$LOCK" 2>/dev/null; then
+  held=$(cat "$LOCK/pid" 2>/dev/null)
+  if [ -n "$held" ] && kill -0 "$held" 2>/dev/null; then
+    echo "이미 돌고 있다 (pid $held). 둘이 돌면 같은 단어를 두 번 만든다."
+    exit 1
+  fi
+  echo "죽은 잠금을 치운다 (pid ${held:-?})"
+  rm -rf "$LOCK"
+  mkdir "$LOCK" || exit 1
+fi
+echo $$ > "$LOCK/pid"
+trap 'rm -rf "$LOCK"' EXIT
 
 count() { ls -1 "$1"/*.opus 2>/dev/null | wc -l | tr -d ' '; }
 
