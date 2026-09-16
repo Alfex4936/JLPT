@@ -355,11 +355,15 @@ body.idle .kex-row{cursor:none}
 /* 기사 번호는 읽는 자리에서 그대로 고쳐 뛴다 */
 .counter .jump{display:inline-flex;align-items:center;gap:.1rem}
 .counter .jump input{
-  width:2.2em;padding:.1rem .1rem;text-align:center;
+  width:2.4em;padding:.1rem .1rem;text-align:center;
   font:inherit;font-variant-numeric:tabular-nums;
   color:var(--fg);background:var(--bg-elev);
   border:1px solid var(--line);border-radius:.35rem;
+  /* 스피너는 두 자리 숫자를 덮어 뭉갠다. ↑↓ 키는 스피너 없이도 그대로 듣는다 */
+  appearance:textfield;-moz-appearance:textfield;
 }
+.counter .jump input::-webkit-outer-spin-button,
+.counter .jump input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .counter .jump input:focus{outline:0;border-color:var(--accent)}
 .dockacts{display:flex;align-items:center;gap:.4rem;justify-self:end;flex-wrap:wrap;justify-content:flex-end}
 .star{font-size:1rem;line-height:1}

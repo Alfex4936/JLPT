@@ -1121,7 +1121,7 @@
     if (jumping) {
       jumpIn.max = deck.length;
       if (document.activeElement !== jumpIn) jumpIn.value = idx + 1;   // 타자 중이면 건드리지 않는다
-      jumpN.textContent = deck.length;
+      jumpN.textContent = '/' + deck.length;
       jumpSent.textContent = S.readOne
         ? '· ' + (sentIdx === 0 ? '제목' : '문장 ' + sentIdx + '/' + w.s.length) : '';
     } else {
