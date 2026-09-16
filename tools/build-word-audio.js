@@ -198,6 +198,9 @@ function sliceWords(wav, n, minSilence = 0.12, thresh = '-40dB') {
         path.join(OUT, chunk[i] + '.opus')]);
       made++;
     }
+    // 성공한 덩어리 wav 는 버린다 — 덩어리당 2.5MB 라 전체를 돌리면 460MB 가 쌓인다.
+    // 실패한 것만 남겨 둔다. 경계를 왜 못 가렸는지 그 wav 없이는 못 본다.
+    fs.unlinkSync(wav);
     await sleep(PACE);
   }
 
