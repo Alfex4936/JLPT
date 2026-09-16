@@ -365,7 +365,8 @@
       cMeans = $('cMeans'), meanWrap = $('meanWrap'), cEx = $('cEx'), ruleEx = $('ruleEx'),
       cExJ = $('cExJ'), cExK = $('cExK'), cExH = $('cExH'), cPron = $('cPron'), cExO = $('cExO'), cEn = $('cEn'),
       cKex = $('cKex'), cRead = $('cRead'), rule1 = $('rule1'),
-      bar = $('bar'), counter = $('counter'), deckinfo = $('deckinfo'),
+      bar = $('bar'), counterTxt = $('counterTxt'), deckinfo = $('deckinfo'),
+      readJump = $('readJump'), jumpIn = $('jumpIn'), jumpN = $('jumpN'), jumpSent = $('jumpSent'),
       panel = $('panel'), help = $('help'), icPlay = $('icPlay'),
       starGlyph = $('starGlyph'), btnFav = $('btnFav'),
       home = $('home'), summary = $('summary'), dock = document.querySelector('.dock'),
@@ -672,7 +673,7 @@
       var sel = window.getSelection && window.getSelection();
       if (sel && !sel.isCollapsed) return;
       var w = current(); if (!w || w.kind !== 'r') return;
-      if (S.readOne && i !== sentIdx) { sentIdx = i; paint(); return; }   // 미리보기 줄을 누르면 그리로
+      if (S.readOne && i !== sentIdx) { stopSpeak(); sentIdx = i; paint(); return; }   // 미리보기 줄을 누르면 그리로
       var s = i === 0 ? { k: w.tk } : w.s[i - 1];
       if (!s || !s.k) return;
       var rc = readClip(w, i);
@@ -713,20 +714,31 @@
 
   /* 읽기 이동: 한 문장씩 모드에서는 문장 단위로 움직이고, 끝에 닿으면 기사를 넘긴다.
      전체 보기 모드에서는 기사 단위로만 움직인다. */
+  var artMoveT = 0;
   function readMove(delta) {
     var w = current();
     if (!w || w.kind !== 'r') return;
     if (!S.readOne) { readArticle(delta); return; }
     var n = artRows(w).length;
     var next = sentIdx + delta;
-    if (next >= 0 && next < n) { sentIdx = next; paint(); return; }
+    if (next >= 0 && next < n) { stopSpeak(); sentIdx = next; paint(); return; }
     readArticle(delta, delta > 0 ? 'first' : 'last');
   }
+  /* 화살표를 누르고 있으면 기사가 훑고 지나가 아무것도 못 읽는다. 기사 이동만 막는다 —
+     문장 이동은 같은 기사 안이라 싸고, 번호로 뛰는 건 의도한 한 번이다. */
   function readArticle(delta, at) {
     if (!deck.length) return;
-    idx += delta;
+    var now = Date.now();
+    if (now - artMoveT < 280) return;
+    artMoveT = now;
+    readShow(idx + delta, at);
+  }
+  function readShow(n, at) {
+    if (!deck.length) return;
+    idx = n;
     if (idx >= deck.length) idx = 0;
     if (idx < 0) idx = deck.length - 1;
+    stopSpeak();                      // 넘긴 기사가 계속 읽히면 다음 기사 위에 겹친다
     var w = current();
     sentIdx = (at === 'last' && w) ? artRows(w).length - 1 : 0;
     elapsed = 0;
@@ -1101,13 +1113,21 @@
     if (atHome || atDone) { setDeckinfo([]); return; }
 
     // かな 는 카드 위치가 아니라 '이번 바퀴에 뗀 글자 수'가 진척이다 — 틀린 글자가 덱에 다시 들어오므로.
-    counter.textContent = kana
-      ? clearedN() + ' / ' + (roundN || deck.length)
-      : (deck.length ? (idx + 1) + ' / ' + deck.length : '0 / 0');
-    // 분수가 둘 붙으면 어느 쪽이 기사인지 알 수 없다 — 이름표를 붙여 둔다
-    if (reading && w) {
-      counter.textContent = '기사 ' + (idx + 1) + '/' + deck.length
-        + (S.readOne ? '  ·  ' + (sentIdx === 0 ? '제목' : '문장 ' + sentIdx + '/' + w.s.length) : '');
+    /* 읽기는 분수가 둘 붙어 어느 쪽이 기사인지 알 수 없다 — 이름표를 붙이고, 기사 번호는
+       읽는 자리에서 그대로 고쳐 뛸 수 있게 입력칸으로 둔다. */
+    var jumping = reading && !!w;
+    counterTxt.hidden = jumping;
+    readJump.hidden = !jumping;
+    if (jumping) {
+      jumpIn.max = deck.length;
+      if (document.activeElement !== jumpIn) jumpIn.value = idx + 1;   // 타자 중이면 건드리지 않는다
+      jumpN.textContent = deck.length;
+      jumpSent.textContent = S.readOne
+        ? '· ' + (sentIdx === 0 ? '제목' : '문장 ' + sentIdx + '/' + w.s.length) : '';
+    } else {
+      counterTxt.textContent = kana
+        ? clearedN() + ' / ' + (roundN || deck.length)
+        : (deck.length ? (idx + 1) + ' / ' + deck.length : '0 / 0');
     }
 
     $('grades').hidden = kana || reading || S.study === 'all';
@@ -1572,6 +1592,13 @@
   $('btnPlay').onclick = function () { setPlaying(!playing); };
   $('btnPrev').onclick = function () { go(-1); };
   $('btnNext').onclick = function () { go(1); };
+  // 기사 번호로 뛴다. change 는 Enter·포커스 이탈·스피너 모두에서 온다
+  jumpIn.onchange = function () {
+    var n = parseInt(jumpIn.value, 10);
+    if (!(n >= 1 && n <= deck.length)) { jumpIn.value = idx + 1; return; }
+    if (n - 1 !== idx) readShow(n - 1);
+  };
+  jumpIn.onkeydown = function (e) { if (e.key === 'Enter') jumpIn.blur(); };
   $('btnFirst').onclick = function () { idx = 0; elapsed = 0; markSeen(); paint(); if (S.ttsAuto) speak(); };
   $('btnSpeak').onclick = speak;
   cWord.onclick = speak;
