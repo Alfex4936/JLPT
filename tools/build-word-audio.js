@@ -4,8 +4,8 @@
 // 그 대표 단어 읽기는 단어 덱 읽기에 100% 포함돼 있다. 그래서 이 스크립트 하나로 두 모드가 같이 붙는다.
 //
 // **한 요청에 여러 단어를 몰아 읽히고 무음으로 자른다.** 8,017개를 따로 요청하면 8,017회인데
-// 20개씩 묶으면 약 400회다 — 속도도 429 위험도 20분의 1이다. かな 음원에서 검증된 방식이고,
-// 잘린 개수가 안 맞으면 그 덩어리를 버린다(어긋난 음원은 사용자가 한자를 못 읽어 확인할 방법이 없다).
+// 20개씩 묶으면 약 400회다 — 속도도 429 위험도 20분의 1이다. 경계를 못 가리면 그 덩어리를
+// 버린다(어긋난 음원은 사용자가 한자를 못 읽어 확인할 방법이 없다). 어떻게 가르는지는 sliceWords 를 볼 것.
 //
 // 파일명은 읽기(かな) 그 자체다. 그래서 매니페스트가 없다 — 앱이 w.k 로 경로를 만들고,
 // 없으면 onerror 로 기기 TTS 로 떨어진다. 기사 음원과 달리 단어는 서로 독립이라
@@ -113,8 +113,14 @@ async function tts(text) {
   return null;
 }
 
-// 소리 구간 목록. ffmpeg 은 silencedetect 를 stderr 로 뱉고, execFileSync 는 성공 시 그걸 안 준다.
-function segments(wav, minSilence = 0.18, thresh = '-40dB') {
+/* 단어 경계를 고른다. 무음마다 자르면 안 된다 — 촉음 っ 은 단어 안의 진짜 무음이라
+   がっこう 하나가 두 구간으로 갈린다. 실측: 덩어리 37개 중 20개가 21~22구간으로 나와
+   버려졌고, 요청 절반이 그렇게 샜다.
+   그래서 무음을 다 찾은 뒤 **긴 것 n-1 개만** 경계로 쓰고, 앞뒤 무음은 잘라낸다.
+   검증: 옛 방식이 성공한 17덩어리에서 20구간 중 19개가 경계까지 완전히 같았다(남은 1개는
+   선행 무음 0.14초를 이 방식이 더 잘라낸 차이). 성공 덩어리는 17 → 35 로 올랐다.
+   ffmpeg 은 silencedetect 를 stderr 로 뱉고 execFileSync 는 성공 시 그걸 안 준다 — spawnSync 로 받는다. */
+function sliceWords(wav, n, minSilence = 0.12, thresh = '-40dB') {
   const r = spawnSync('ffmpeg', ['-hide_banner', '-i', wav, '-af',
     'silencedetect=noise=' + thresh + ':d=' + minSilence, '-f', 'null', '-'], { encoding: 'utf8' });
   const log = r.stderr || '';
@@ -122,14 +128,25 @@ function segments(wav, minSilence = 0.18, thresh = '-40dB') {
     ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', wav]).toString().trim());
   const starts = [...log.matchAll(/silence_start: ([\d.]+)/g)].map((m) => Number(m[1]));
   const ends = [...log.matchAll(/silence_end: ([\d.]+)/g)].map((m) => Number(m[1]));
-  const segs = [];
-  let pos = 0;
+
+  let head = 0, tail = dur;
+  const inner = [];
   for (let i = 0; i < starts.length; i++) {
-    if (starts[i] - pos > 0.08) segs.push([pos, starts[i]]);
-    pos = ends[i] != null ? ends[i] : dur;
+    const s = starts[i], e = ends[i] != null ? ends[i] : dur;
+    if (s <= 0.05) head = Math.max(head, e);
+    else if (e >= dur - 0.05) tail = Math.min(tail, s);
+    else inner.push([s, e]);
   }
-  if (dur - pos > 0.08) segs.push([pos, dur]);
-  return segs;
+  if (inner.length < n - 1) return null;
+
+  const cuts = inner.slice().sort((a, b) => (b[1] - b[0]) - (a[1] - a[0])).slice(0, n - 1)
+    .sort((a, b) => a[0] - b[0]);
+  const segs = [];
+  let pos = head;
+  for (const [s, e] of cuts) { segs.push([pos, s]); pos = e; }
+  segs.push([pos, tail]);
+  // 0.15초보다 짧은 단어는 없다. 나오면 경계를 잘못 고른 것이라 이 덩어리를 버린다
+  return segs.some(([s, e]) => e - s < 0.15) ? null : segs;
 }
 
 (async () => {
@@ -167,9 +184,9 @@ function segments(wav, minSilence = 0.18, thresh = '-40dB') {
     }
     const wav = path.join(TMP, 'c' + ci + '.wav');
     pcmToWav(pcm, wav);
-    const segs = segments(wav);
-    if (segs.length !== chunk.length) {
-      console.log('  ✗ 구간 ' + segs.length + '개인데 단어는 ' + chunk.length + '개 — 이 덩어리는 버린다');
+    const segs = sliceWords(wav, chunk.length);
+    if (!segs) {
+      console.log('  ✗ 단어 ' + chunk.length + '개의 경계를 못 가렸다 — 이 덩어리는 버린다');
       failed.push(ci);
       continue;
     }
