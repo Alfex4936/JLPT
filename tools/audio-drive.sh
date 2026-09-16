@@ -26,6 +26,7 @@ export MODEL="${MODEL:-gemini-3.1-flash-tts-preview}"  # 2.5 로 바꾸면 음�
 ROUNDS="${ROUNDS:-300}"
 IDLE_WAIT="${IDLE_WAIT:-2700}"   # 이유를 모르는 정체. 45분 쉰다
 LOG="${TMPDIR:-/tmp}/jlpt-audio-round.log"
+HIST="${TMPDIR:-/tmp}/jlpt-audio-history.log"   # 회차 로그는 다음 회차가 덮는다. 원인 추적용으로 쌓아 둔다
 
 count() { ls -1 "$1"/*.opus 2>/dev/null | wc -l | tr -d ' '; }
 
@@ -38,6 +39,7 @@ run_until() {                     # $1=설명 $2=디렉터리 $3=목표 수 $4..
     [ "$before" -ge "$goal" ] && { echo "$label 완료 $before/$goal"; return 0; }
     "$@" > "$LOG" 2>&1
     rc=$?
+    { echo "### $label 회차 $i · 종료 $rc · $(date '+%m-%d %H:%M')"; cat "$LOG"; } >> "$HIST"
     tail -4 "$LOG"
     after=$(count "$dir")
     echo "-- 회차 $i: $before → $after  (종료 $rc, $(date '+%H:%M'))"
@@ -64,4 +66,4 @@ echo "=== 마무리 ==="
 MANIFEST=1 node tools/build-reading-audio.js
 CHECK=1 node tools/build-reading-audio.js | tail -2
 echo "읽기 $(count assets/audio/read)/396 · 단어 $(count assets/audio/word)/3718"
-echo "커밋 전에 git status 를 확인할 것."
+echo "커밋 전에 git status 를 확인할 것. 회차별 로그: $HIST"
