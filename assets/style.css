@@ -863,7 +863,9 @@ body.idle .art-jp{cursor:none}
   .dockrow.is-read .counter{grid-column:3;grid-row:1;justify-self:end}
   .dockrow.is-read .dockacts{grid-column:1 / -1;grid-row:2;justify-self:center}
   .dockrow.is-read .readacts kbd{display:none}
-  .dockrow.is-read .readacts .btn{padding:.42rem .45rem}
+  /* 버튼이 넷이라 기본 여백으로는 줄을 넘긴다 — 라벨은 줄이지 않고 여백만 조인다 */
+  .dockrow.is-read .readacts{gap:.22rem}
+  .dockrow.is-read .readacts .btn{padding:.42rem .32rem}
   /* 좁은 화면에서는 '기사' 이름표를 뺀다 — 넣으면 읽기 버튼들이 두 줄로 밀린다 */
   .counter .jump-lb{display:none}
 }

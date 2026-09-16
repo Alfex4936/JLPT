@@ -367,6 +367,7 @@
       cKex = $('cKex'), cRead = $('cRead'), rule1 = $('rule1'),
       bar = $('bar'), counterTxt = $('counterTxt'), deckinfo = $('deckinfo'),
       readJump = $('readJump'), jumpIn = $('jumpIn'), jumpN = $('jumpN'), jumpSent = $('jumpSent'),
+      rateLbl = $('rateLbl'),
       panel = $('panel'), help = $('help'), icPlay = $('icPlay'),
       starGlyph = $('starGlyph'), btnFav = $('btnFav'),
       home = $('home'), summary = $('summary'), dock = document.querySelector('.dock'),
@@ -1136,6 +1137,8 @@
     $('btnAllKo').classList.toggle('on', S.koAll);
     $('btnFuri').classList.toggle('on', S.furi);
     $('btnOne').classList.toggle('on', S.readOne);
+    rateLbl.textContent = S.rate + '×';
+    $('btnRate').classList.toggle('on', S.rate !== 1);
     dockrow.classList.toggle('is-drill', kana);
     dockrow.classList.toggle('is-read', reading);
     transport.hidden = kana;
@@ -1700,6 +1703,9 @@
     else if (letter === 'k' && S.set === 'reading') { e.preventDefault(); toggleAllKo(); }
     else if (letter === 'r' && S.set === 'reading') { e.preventDefault(); toggleFuri(); }
     else if (letter === 'o' && S.set === 'reading') { e.preventDefault(); toggleOne(); }
+    // 대괄호는 한글 입력 상태에서도 그대로 온다 — 두벌식이 자모를 얹지 않는 자리다
+    else if (raw === '[' && S.set === 'reading') { e.preventDefault(); stepRate(-1); }
+    else if (raw === ']' && S.set === 'reading') { e.preventDefault(); stepRate(1); }
   });
 
   /* ---------------- 스와이프 ---------------- */
@@ -2133,9 +2139,28 @@
     S.readOne = !S.readOne; save();
     drawReadSw(); paint();
   }
+  /* 발음 속도. 설정의 속도 슬라이더와 같은 S.rate 를 쓴다 — 읽기 전용 값을 따로 두면 어긋난다.
+     그래서 여기서 바꾸면 단어·한자 발음도 같이 바뀐다. 버튼 다섯 개를 둘 자리가 없어
+     하나가 단계를 돈다. d 를 주면 한 단계씩만 움직인다. */
+  var RATES = [0.5, 0.75, 1, 1.25, 1.5];
+  function stepRate(d) {
+    var i = 0, best = Infinity;              // 슬라이더가 단계 밖 값을 만들 수 있다. 가장 가까운 단계부터
+    for (var k = 0; k < RATES.length; k++) {
+      var gap = Math.abs(RATES[k] - S.rate);
+      if (gap < best) { best = gap; i = k; }
+    }
+    i = d ? Math.min(RATES.length - 1, Math.max(0, i + d)) : (i + 1) % RATES.length;
+    S.rate = RATES[i]; save();
+    $('rRate').value = String(Math.round(S.rate * 100));   // 설정 슬라이더는 초기화 때만 값을 읽는다
+    $('vRate').textContent = S.rate.toFixed(2) + '배';
+    each(clips, function (a) { a.playbackRate = S.rate; });   // 듣고 있던 문장부터 바뀐다
+    paintChrome();
+    toast('발음 속도 ' + S.rate + '배');
+  }
   $('btnAllKo').onclick = toggleAllKo;
   $('btnFuri').onclick = toggleFuri;
   $('btnOne').onclick = toggleOne;
+  $('btnRate').onclick = function () { stepRate(0); };
   var drawOneSw = sw('swReadOne', 'readOne', paint);
   var drawFuriSw = sw('swFuri', 'furi', applyFuri);
   var drawKoSw = sw('swKoAll', 'koAll', applyKoAll);

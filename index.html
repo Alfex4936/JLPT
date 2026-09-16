@@ -19,7 +19,7 @@ try{
 </script>
 
 <!-- ?v= 는 캐시 무효화용. CSS/JS 고칠 때 숫자만 올리면 새로고침에서 확실히 반영된다 -->
-<link rel="stylesheet" href="assets/style.css?v=45">
+<link rel="stylesheet" href="assets/style.css?v=46">
 
 <!-- 데이터: 없는 파일은 조용히 무시된다 (fetch 없음, script 태그만).
      여기 있는 건 시작 화면이 쓰는 것뿐이다 — 개수표와 かな(3KB).
@@ -201,6 +201,8 @@ try{
         <button class="btn" id="btnAllKo" type="button" title="번역 모두 보기 / 숨기기">번역 <kbd>K</kbd></button>
         <button class="btn" id="btnFuri" type="button" title="후리가나 켜기 / 끄기">후리가나 <kbd>R</kbd></button>
         <button class="btn" id="btnOne" type="button" title="한 문장씩 / 전체 보기">한 문장 <kbd>O</kbd></button>
+        <button class="btn" id="btnRate" type="button" title="발음 속도 — 설정의 속도와 같은 값. 눌러서 순환, [ ] 로 한 단계">
+          <span class="wide">속도 </span><span id="rateLbl">1×</span> <kbd>[ ]</kbd></button>
       </div>
 
       <div class="drillacts" id="drillActs" hidden>
@@ -495,6 +497,7 @@ try{
       <div><kbd>R</kbd> 후리가나 켜기 / 끄기</div>
       <div><kbd>←</kbd> <kbd>→</kbd> 이전 / 다음 문장 (끝에서 기사 이동)</div>
       <div><kbd>O</kbd> 한 문장씩 / 기사 전체 보기</div>
+      <div><kbd>[</kbd> <kbd>]</kbd> 발음 속도 0.5 ~ 1.5배 (버튼은 눌러서 순환. 설정의 속도와 같은 값)</div>
       <div>아래 <b>기사 번호칸</b>에 숫자를 넣고 <kbd>↵</kbd> 하면 그 기사로 바로 간다</div>
     </div>
     <p class="hint">문장을 누르면 그 문장을 읽어 줍니다. 눈 버튼은 그 문장의 번역만 엽니다.</p>
@@ -510,6 +513,6 @@ try{
   </div>
 </div>
 
-<script src="assets/app.js?v=52"></script>
+<script src="assets/app.js?v=53"></script>
 </body>
 </html>
