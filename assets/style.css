@@ -127,9 +127,13 @@ body.idle .chrome{opacity:0;pointer-events:none}
   display:flex;align-items:baseline;gap:.5rem;
   font:inherit;font-size:.82rem;letter-spacing:.02em;color:var(--fg-2);white-space:nowrap;
   background:none;border:0;padding:0;cursor:pointer;text-align:left;
+  transition:color .15s ease;
 }
 .mark:disabled{cursor:default}            /* 시작 화면에서는 갈 곳이 없다 */
-.mark:not(:disabled):hover b,.mark:not(:disabled):focus-visible b{color:var(--accent)}
+/* 마크 전체가 홈으로 가는 한 덩어리다. 예전엔 b 만 물들였는데 모드 목록이 길어지면서
+   '낱말' 만 반응하는 게 덩어리와 안 맞아 보였다 */
+.mark:not(:disabled):hover,.mark:not(:disabled):hover b,
+.mark:not(:disabled):focus-visible,.mark:not(:disabled):focus-visible b{color:var(--accent)}
 .mark b{font-family:var(--f-jp);font-weight:700;color:var(--fg);letter-spacing:.06em;transition:color .15s ease}
 .deckinfo{
   margin-left:auto;display:flex;align-items:center;gap:.9rem;
