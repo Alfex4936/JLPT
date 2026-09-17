@@ -1003,14 +1003,14 @@ body.idle .art-jp{cursor:none}
   /* '낱말' 글자 폭이 24px 이라 여백으로 44 를 만든다. 음수 마진으로 원래 정렬을 지킨다 */
   .mark{padding:.78rem .65rem;margin-left:-.65rem}
 
-  /* 독은 한 줄이어야 한다. 보이는 크기를 키우면 줄이 넘치므로 누르는 영역만 넓힌다 —
-     탭 면적은 44px 로 같고 레이아웃은 그대로다. 버튼 간격이 6px 이라 겹침도 없다. */
-  .topacts .btn,.transport .btn,.dockacts .btn,.readacts .btn,.drillacts .btn,.grades .btn,.sw{position:relative}
-  .topacts .btn::before,.transport .btn::before,.dockacts .btn::before,.readacts .btn::before,
-  .drillacts .btn::before,.grades .btn::before,.sw::before{
-    content:"";position:absolute;top:50%;left:50%;
-    min-width:44px;min-height:44px;width:100%;height:100%;transform:translate(-50%,-50%);
-  }
+  /* 스위치만 AA 미달이다(40x22, 기준 24px). 위아래 3px 씩 넓혀 28px 로 올린다.
+     행 간격이 34px 이라 이웃과 겹치지 않는다.
+     나머지 독 버튼(27~42px)은 AA 를 이미 통과한다. 예전에 이걸 전부 44px 로 넓혔더니
+     줄이 넘칠 때 히트박스가 13px 겹쳐 옆 버튼이 탭을 가로챘다 — 라벨과 다른 동작이 실행됐다
+     (실측: 390px 한 문장 모드에서 번역 아래를 누르면 elementFromPoint 가 btnOne). 44px 는 AAA 기준이고,
+     그걸 맞추려고 옳은 동작을 잃는 건 거래가 안 된다. */
+  .sw{position:relative}
+  .sw::before{content:"";position:absolute;left:0;right:0;top:-3px;bottom:-3px}
   /* input 은 ::before 를 못 가진다. 오버레이는 입력을 막고, 44px 로 넓히면 카운터가 커져
      독이 두 줄로 밀린다. 31x36 은 AA(2.5.8, 24px)를 통과한다 — 44px 는 AAA(2.5.5) 기준이다. */
   #jumpIn{height:2.25rem}
