@@ -180,6 +180,8 @@ body.idle .chrome{opacity:0;pointer-events:none}
   overflow:hidden;
   touch-action:pan-y;
 }
+/* 배율 하한까지 줄여도 안 들어가면 자르지 말고 스크롤한다. 글자를 읽을 수 없게 만드는 것보다 낫다 */
+.stage[data-tall="1"]{overflow-y:auto;align-items:flex-start}
 /* 블록은 가운데, 글줄은 왼쪽 정렬 - 카드가 바뀌어도 시선 기준선이 고정된다 */
 .card{
   width:100%;max-width:min(76ch,100%);
@@ -191,7 +193,7 @@ body.idle .chrome{opacity:0;pointer-events:none}
 
 .meta{
   display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;
-  font-size:calc(clamp(.68rem,.6vmin + .58rem,.95rem) * var(--scale));
+  font-size:max(11px,calc(clamp(.68rem,.6vmin + .58rem,.95rem) * var(--scale)));
   color:var(--fg-3);letter-spacing:.06em;
 }
 .lv{
@@ -239,7 +241,7 @@ body.idle .chrome{opacity:0;pointer-events:none}
    서브셋도 그 경계에 맞춰 글자를 담는다 (tools/font-charset.js). */
 .hjp{
   display:flex;gap:.9rem;flex-wrap:wrap;
-  font-size:calc(clamp(.8rem,.9vmin + .48rem,1.15rem) * var(--scale));
+  font-size:max(11px,calc(clamp(.8rem,.9vmin + .48rem,1.15rem) * var(--scale)));
   color:var(--fg-3);
 }
 .hjp i{font-style:normal;display:inline-flex;align-items:baseline;gap:.18em}
@@ -258,9 +260,11 @@ body.idle .chrome{opacity:0;pointer-events:none}
 .means li{display:flex;gap:.5em;align-items:baseline}
 .means li em{
   font-style:normal;font-weight:400;color:var(--fg-3);
-  font-size:.5em;font-variant-numeric:tabular-nums;min-width:1.2em;
+  font-size:max(11px,.5em);font-variant-numeric:tabular-nums;min-width:1.2em;
 }
 .meanwrap.masked .means{visibility:hidden}
+/* 예문 번역과 영어 뜻에 답이 그대로 들어 있다. 뜻만 가리면 회상 장치가 헛돈다 */
+:root[data-masked="1"] .ex-o,:root[data-masked="1"] .en{visibility:hidden}
 .mask{
   display:none;position:absolute;inset:0;
   align-items:center;justify-content:flex-start;gap:.6rem;
@@ -289,7 +293,7 @@ body.idle .ex{cursor:none}
 .ex-j{font-family:var(--f-jp);color:var(--fg)}
 .ex-k{font-family:var(--f-jp);color:var(--fg-2)}
 /* 예문 한글 발음: 어절 사이를 넉넉히 벌려 읽기 단위가 보이게 */
-.ex-h{font-family:var(--f-kr);color:var(--fg-2);opacity:.82;word-spacing:.35em}
+.ex-h{font-family:var(--f-kr);color:var(--fg-3);word-spacing:.35em}   /* opacity:.82 는 4.5:1 을 3.83 으로 깎았다 */
 /* 발음 보조 묶음: 예문·뜻이 본문, かな와 한글 발음은 그 아래 딸린 발음 표기 */
 .pron{
   display:flex;flex-direction:column;gap:.15em;
@@ -318,14 +322,13 @@ body.idle .kex-row{cursor:none}
 .kex-h{font-family:var(--f-kr);color:var(--fg-3)}
 .kex-k,.kex-h{font-size:max(11px,calc(clamp(.72rem,.85vmin + .32rem,1rem) * var(--scale)))}
 .kex-row em{font-family:var(--f-kr);font-style:normal;color:var(--fg-3);margin-left:auto;
-  font-size:calc(clamp(.8rem,1vmin + .35rem,1.1rem) * var(--scale))}
+  font-size:max(11px,calc(clamp(.8rem,1vmin + .35rem,1.1rem) * var(--scale)))}
 /* 훈독은 음독과 구별되게 — 음독이 한국 한자음과 이어지는 쪽이다 */
-.hjp i.is-kun b{color:var(--fg-3)}
-.hjp i.is-kun{opacity:.85}
+.hjp i.is-kun b{color:var(--fg-2)}   /* opacity 로 흐리게 하면 4.5:1 을 다시 깎는다 (실측 3.82:1) */
 .hjp.k-read i:first-child::before,
 .hjp.k-read i.kun-first::before{
   font-family:var(--f-kr);font-size:.8em;color:var(--fg-3);
-  margin-right:.15em;opacity:.75;
+  margin-right:.15em;
 }
 .hjp.k-read i:first-child::before{content:"음"}
 .hjp.k-read i.kun-first::before{content:"훈"}
@@ -379,6 +382,12 @@ body.idle .kex-row{cursor:none}
 .counter .jump input:focus{outline:0;border-color:var(--accent)}
 .dockacts{display:flex;align-items:center;gap:.4rem;justify-self:end;flex-wrap:wrap;justify-content:flex-end}
 
+/* ---------- 소리가 나는 동안 ----------
+   이 앱에서 가장 자주 하는 동작인데 관측 가능한 변화가 하나도 없었다. 재생 중이면
+   발음 버튼과 스피커가 액센트로 물든다. 애니메이션이 아니라 상태다 — 한 번만 바뀐다. */
+:root[data-speaking="1"] #btnSpeak,
+:root[data-speaking="1"] #btnMute:not(.on){color:var(--accent);border-color:var(--accent)}
+
 /* ---------- 음량 팝오버 ---------- */
 .volwrap{position:relative;display:inline-flex}
 .volpop{
@@ -430,10 +439,14 @@ body.idle .kex-row{cursor:none}
   position:fixed;top:0;right:0;bottom:0;width:min(24rem,100vw);
   background:var(--bg-elev);border-left:1px solid var(--line);
   display:flex;flex-direction:column;
-  transform:translateX(101%);transition:transform .3s cubic-bezier(.16,1,.3,1);
+  transform:translateX(101%);
+  /* visibility 로 탭 순서에서 뺀다 — transform 만으로 닫으면 화면 밖 컨트롤 59개가 탭 가능하고
+     스크린 리더가 71개를 전부 읽는다. 지연을 줘서 미끄러져 나가는 동안은 보이게 둔다. */
+  visibility:hidden;
+  transition:transform .3s cubic-bezier(.16,1,.3,1),visibility 0s .3s;
   z-index:20;
 }
-.panel[data-open="1"]{transform:none}
+.panel[data-open="1"]{transform:none;visibility:visible;transition:transform .3s cubic-bezier(.16,1,.3,1),visibility 0s 0s}
 .panel header{
   display:flex;align-items:center;justify-content:space-between;gap:1rem;
   padding:1rem 1.25rem;border-bottom:1px solid var(--line);flex-shrink:0;
@@ -824,6 +837,10 @@ select:disabled{opacity:.4;cursor:not-allowed}
 .sum-rec{font-size:.78rem;color:var(--fg-3);line-height:1.6;margin:.25rem 0 0;
   font-variant-numeric:tabular-nums;word-break:keep-all}
 .sum-rec:empty{display:none}
+/* 정답률은 따로 줄을 둔다 — 글자 수와 시도 수는 분모가 달라서 한 문장에 넣으면 같은 것으로 읽힌다 */
+.sum-rate{font-size:.85rem;color:var(--fg-2);margin:.15rem 0 0;font-variant-numeric:tabular-nums}
+/* 만점은 액센트로, 실패는 중립으로. 예전에는 실패만 화면을 받았다 */
+.summary[data-perfect="1"] .sum-h{color:var(--accent)}
 /* 글자 고르기 표와 같은 셀 어휘를 쓴다 — 같은 것을 보고 있다는 신호 */
 .sum-grid{
   display:grid;grid-template-columns:repeat(auto-fill,minmax(6.2rem,1fr));gap:.4rem;
@@ -961,14 +978,19 @@ body.idle .art-jp{cursor:none}
   padding-left:1em;
 }
 /* 다음에 올 문장. 읽는 자리를 잃지 않게 자리만 알려 주고 눈은 끌지 않는다 */
-.art-body.one .art-row.is-next{opacity:.4;border-top:1px solid var(--line-soft)}
+/* 다음 문장 미리보기는 색으로 물린다. opacity 로 흐리게 하면 이미 4.5:1 인 값을 배율로 깎아
+   .4 에서 2.13:1, .22 에서 1.43:1 이 됐고 경계선은 1.04:1 이었다 — 읽으라고 띄운 글이 안 읽혔다.
+   같은 위계를 --fg-3(4.52:1)으로 낸다. hover 로 --fg 까지 올린다. */
+.art-body.one .art-row.is-next{border-top:1px solid var(--line-soft)}
+.art-body.one .art-row.is-next .art-jp{color:var(--fg-3)}
+.art-body.one .art-row.is-next rt{color:var(--fg-3)}
 .art-body.one .art-row.is-next .art-jp{
   font-size:calc(clamp(.85rem,1vmin + .45rem,1.05rem) * var(--scale));
   line-height:1.9;
 }
-.art-body.one .art-row.is-next + .art-row.is-next{opacity:.22}
+.art-body.one .art-row.is-next + .art-row.is-next .art-jp{font-size:.92em}   /* 두 번째 미리보기는 크기로 더 물린다 */
 .art-body.one .art-row.is-next .art-ko{display:none}
-.art-body.one .art-row.is-next:hover{opacity:.7}
+.art-body.one .art-row.is-next:hover .art-jp,.art-body.one .art-row.is-next:hover rt{color:var(--fg)}
 .art-body.one .eye{width:2.2rem;height:2.2rem}
 .art-body.one .eye svg{width:1.25rem;height:1.25rem}
 

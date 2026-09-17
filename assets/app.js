@@ -551,7 +551,7 @@
       } else mn.li.hidden = true;
     }
     revealed = !S.hide;
-    meanWrap.classList.toggle('masked', !revealed);
+    drawMask();
 
     cEx.hidden = true;
     var ex = Array.isArray(w.ex) ? w.ex.slice(0, 3) : [];
@@ -888,11 +888,9 @@
     idx++;
     if (idx >= deck.length) {           // 한 바퀴 끝
       recordRound();
-      if (missList().length) { screen = 'done'; stopSpeak(); kanaIn.blur(); paint(); return; }
-      // 다 맞혔으면 보여줄 게 없다. 멈추지 않고 다음 바퀴로 — 지금까지의 동작 그대로.
-      toast('한 바퀴 완료 · 정답률 ' + pct(roundOk, roundOk + roundNg)
-        + (KREC.streak > 1 ? ' · 만점 ' + KREC.streak + '연속' : ''));
-      nextRound();
+      /* 만점도 같은 화면에서 끝낸다. 예전에는 틀렸을 때만 전체 화면 요약을 띄우고 만점은
+         13px 토스트로 넘겼다 — 이 앱의 유일한 의식 화면이 실패 보고서였다는 뜻이다. */
+      screen = 'done'; stopSpeak(); kanaIn.blur(); paint();
       return;
     }
     markSeen(); resetDrill(); paint(); focusDrill();
@@ -938,8 +936,15 @@
   function paintSummary() {
     var miss = missList(), box = $('sumGrid');
     var total = roundN || 1;
-    // clearedN() 은 '떼어낸 글자'라 틀린 뒤 다시 맞힌 것도 들어간다. 여기서는 틀린 글자 수를 쓴다.
-    $('sumLine').textContent = total + '자 중 ' + miss.length + '자를 틀렸습니다 · 정답률 '
+    var perfect = !miss.length;
+    $('summary').dataset.perfect = perfect ? '1' : '0';
+    $('sumH').textContent = perfect ? '한 바퀴 만점' : '한 바퀴 완료';
+    /* 분모가 둘이면 한 문장에 담지 않는다. 예전엔 '5자 중 2자를 틀렸습니다 · 정답률 71%' 였는데
+       앞은 글자 수, 뒤는 시도 수라 읽는 사람이 둘을 같은 것으로 읽었다. */
+    $('sumLine').textContent = perfect
+      ? total + '자를 한 번에 다 맞혔습니다'
+      : total + '자 중 ' + miss.length + '자를 틀렸습니다';
+    $('sumRate').textContent = '입력 ' + (roundOk + roundNg) + '번 중 ' + roundOk + '번 정답 · '
       + pct(roundOk, roundOk + roundNg);
     $('sumRec').textContent = recLine();
     box.textContent = '';
@@ -952,6 +957,8 @@
       el.appendChild(b); el.appendChild(r); el.appendChild(n);
       box.appendChild(el);
     }
+    $('btnRetryMiss').hidden = perfect;
+    if (perfect) { $('btnNextRound').textContent = '새 바퀴'; return; }
     $('btnRetryMiss').textContent = '틀린 ' + miss.length + '자만 다시';
     var kb = document.createElement('kbd'); kb.textContent = '↵';
     $('btnRetryMiss').appendChild(document.createTextNode(' '));
@@ -1041,7 +1048,7 @@
       } else mn.li.hidden = true;
     }
     revealed = !S.hide;
-    meanWrap.classList.toggle('masked', !revealed);
+    drawMask();
 
     // 예문
     var showEx = S.showEx && !!(w.e || w.ek || w.eo);
@@ -1257,7 +1264,13 @@
     var base = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale')) || 1;
     var sp = getComputedStyle(stage);
     var avail = stage.clientHeight - parseFloat(sp.paddingTop) - parseFloat(sp.paddingBottom);
-    var lo = base * 0.5;
+    /* 하한은 배율이 아니라 결과 글자 크기로 잡는다. base*0.5 로 막으면 390x560 에서
+       예문이 8.65px, 뜻 번호가 6.15px 까지 내려가는데 화면은 멀쩡해 보인다.
+       카드에서 가장 작은 기능 텍스트를 재서 그게 11px 밑으로 가지 않는 배율을 구한다.
+       그래도 안 들어가면 배율을 더 깎지 말고 스테이지를 스크롤한다. */
+    var probe = cExJ && !cEx.hidden ? cExJ : cPos;
+    var atBase = parseFloat(getComputedStyle(probe).fontSize) / base || 12;
+    var lo = Math.min(base, Math.max(base * 0.5, 11 / atBase));
     if (avail > 40 && card.getBoundingClientRect().height > avail) {
       var h1 = card.getBoundingClientRect().height;
       card.style.setProperty('--scale', lo);
@@ -1266,6 +1279,8 @@
       var s = slope > 0 ? (avail - (h1 - slope * base)) / slope : lo;
       card.style.setProperty('--scale', Math.min(base, Math.max(lo, s)));
     }
+    // 하한까지 줄여도 넘치면 자르지 말고 스크롤한다
+    stage.dataset.tall = card.getBoundingClientRect().height > avail + 1 ? '1' : '0';
 
     var box = card.clientWidth;
     var size = parseFloat(getComputedStyle(cWord).fontSize) || 48;
@@ -1359,7 +1374,13 @@
     if (elapsed >= dur) go(1);
   }
 
-  function reveal() { revealed = true; meanWrap.classList.remove('masked'); }
+  /* 예문 번역에 뜻이 그대로 들어 있는 카드가 많다(실측: 뜻 '전문가' / 예문 '…전문가 수준이다').
+     뜻만 가리면 회상 장치가 아무 일도 하지 않는다. 같이 가리고 같이 공개한다. */
+  function drawMask() {
+    meanWrap.classList.toggle('masked', !revealed);
+    document.documentElement.dataset.masked = revealed ? '0' : '1';
+  }
+  function reveal() { revealed = true; drawMask(); }
 
   /* ---------------- 발음 ---------------- */
   var SS = window.speechSynthesis || null, voices = [], voiceTries = 0;
@@ -1430,6 +1451,8 @@
     var u = new SpeechSynthesisUtterance(text);
     u.lang = 'ja-JP'; u.volume = S.vol; u.rate = S.rate;
     for (var i = 0; i < voices.length; i++) if (voices[i].name === S.voice) { u.voice = voices[i]; break; }
+    u.onstart = sayState;                                  // 기기 TTS 도 같은 표시를 쓴다
+    u.addEventListener('end', function () { setTimeout(sayState, 0); });
     return u;
   }
   /* 발화를 큐에 몰아넣으면 단어와 예문이 숨도 안 쉬고 붙어 나와 어디서 예문이 시작되는지 모른다.
@@ -1446,6 +1469,7 @@
     for (var i = 0; i < clips.length; i++) { try { clips[i].pause(); } catch (e) {} }
     clips.length = 0;
     if (SS) { try { SS.cancel(); } catch (e) {} }
+    sayState();
   }
   function speakChain(items, seq) {
     if (!items.length || seq !== speakSeq) return;
@@ -1494,14 +1518,30 @@
     var drop = function () {
       var i = clips.indexOf(a);
       if (i >= 0) clips.splice(i, 1);
+      sayState();
     };
     // 파일이 없거나 코덱을 못 읽으면 조용히 죽지 말고 기기 TTS 로 넘긴다
     a.onerror = function () {
       drop();
       if (SS && voices.length) speakChain([text], speakSeq);
     };
+    a.onplaying = sayState;
     a.onended = drop;
-    try { a.play()['catch'](function () {}); } catch (e) {}
+    /* 거부를 삼키면 안 된다. 자동재생이 막히거나 기기가 무음이면 소리도 표시도 없어서
+       앱이 고장난 것과 구별되지 않았다. 거부는 기기 TTS 로 넘기고, 그것도 없으면 말해 준다. */
+    try {
+      var pr = a.play();
+      if (pr && pr['catch']) pr['catch'](function () {
+        drop();
+        if (SS && voices.length) speakChain([text], speakSeq);
+        else toast('소리를 낼 수 없습니다 · 화면을 한 번 누르거나 기기 음소거를 확인하세요');
+      });
+    } catch (e) { drop(); }
+  }
+  /* 소리가 나는 동안 보이는 상태. 이 앱에서 가장 자주 하는 동작인데 아무 변화가 없었다. */
+  function sayState() {
+    var on = clips.some(function (a) { return !a.paused && !a.ended; }) || (SS && SS.speaking);
+    document.documentElement.dataset.speaking = on ? '1' : '0';
   }
   function speakOne(text) {
     if (!S.tts || !text) return;
@@ -1775,7 +1815,7 @@
   rng('rGap', 'vGap', 'ttsGap', function (v) { return v ? (v / 1000).toFixed(1) + '초' : '없음'; }, 1);
 
   sw('swShuffle', 'shuffle', function () { var w = current(); buildDeck(w && uid(w)); });
-  sw('swHide', 'hide', function () { revealed = !S.hide; meanWrap.classList.toggle('masked', !revealed); });
+  sw('swHide', 'hide', function () { revealed = !S.hide; drawMask(); });
   /* 음소거: 설정의 '발음 사용' 스위치와 같은 값(S.tts)을 공유한다.
      상태를 둘로 나누면 서로 어긋나므로 조작 경로만 둘로 둔다. */
   var drawTts = sw('swTts', 'tts', function () { syncMute(); drawVol(); paintChrome(); });
