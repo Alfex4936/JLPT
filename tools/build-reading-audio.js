@@ -196,9 +196,13 @@ function checkAudio(all) {
     for (let i = 0; i < a.rows.length; i++) {
       const dst = path.join(OUT, a.id + '-' + i + '.opus');
       if (fs.existsSync(dst)) continue;
+      /* 「言い換えないで」를 붙인 이유: 모델이 「とされている」를 「とされています」로 읽어 버렸다
+         (r39239 2번 문장, 사용자 신고). 화면의 표기는 ウィキニュース 원문이라 못 고치니 음성이 맞춰야 한다.
+         「ニュースを読むように」는 남긴다 — 빼면 낭독 톤이 달라져 이미 만든 395개와 안 섞인다. */
+      const keep = '書かれている語尾をそのまま読み、です・ます調に言い換えないでください。\n';
       const lead = i === 0
-        ? '次の日本語のニュース見出しを、落ち着いた声で自然に読み上げてください。\n'
-        : '次の日本語の文を、ニュースを読むように自然に読み上げてください。\n';
+        ? '次の日本語のニュース見出しを、落ち着いた声で自然に読み上げてください。\n' + keep
+        : '次の日本語の文を、ニュースを読むように自然に読み上げてください。\n' + keep;
       const pcm = await tts(lead + a.rows[i]);
       if (!pcm) { ok = false; break; }
       const wav = path.join(TMP, a.id + '-' + i + '.wav');

@@ -152,7 +152,10 @@
   /* ---------------- 덱 불러오기 ----------------
      클래식 script 태그다 — file:// 에서도 동작하고 fetch 를 쓰지 않는다 (절대 규칙 1).
      ?v= 는 index.html 의 데이터 태그와 같은 값이어야 한다. 데이터를 다시 만들면 둘 다 올린다. */
-  var DATA_V = '?v=30';
+  var DATA_V = '?v=31';
+  /* 음원은 따로 센다. 한 값으로 묶어 두면 기사 한 줄만 고쳐도 16MB 를 전원 다시 받는다.
+     음원 파일을 덮어쓸 때만 올린다 — 새 파일이 늘어나는 건 이름이 달라서 상관없다. */
+  var AUDIO_V = '?v=30';
   var WORD_FILES = ['data/words-n5.js', 'data/words-n4.js', 'data/words-n3.js',
                     'data/words-n2.js', 'data/words-n1.js'];
   var got = {}, waiting = {};
@@ -1464,13 +1467,13 @@
   function kanaClip(text) {
     if (!KANA || !text) return null;
     var m = KANA.i[text];                       // 한 글자만 — 문장(기사 제목)은 걸리지 않는다
-    return m && m.r ? 'assets/audio/' + encodeURIComponent(m.r) + '.opus' + DATA_V : null;
+    return m && m.r ? 'assets/audio/' + encodeURIComponent(m.r) + '.opus' + AUDIO_V : null;
   }
   /* 단어 음원. 파일명이 읽기(かな) 그 자체라 매니페스트가 없다 — 없으면 onerror 로 기기 TTS 로 떨어진다.
      기사와 달리 단어는 서로 독립이라 절반만 있어도 된다(한 카드 안에서 화자가 섞이지 않는다).
      한자 모드도 이걸 쓴다 — 한자는 읽기를 정할 수 없어서 대표 단어를 읽고, 그 읽기가 여기 있다. */
   function wordClip(text) {
-    return text ? 'assets/audio/word/' + encodeURIComponent(text) + '.opus' + DATA_V : null;
+    return text ? 'assets/audio/word/' + encodeURIComponent(text) + '.opus' + AUDIO_V : null;
   }
   /* 기사 줄 음원. i = 0 이 제목, 1부터 문장 (artRows 와 같은 순서).
      매니페스트에 없는 기사는 null — 그 기사는 제목도 문장도 전부 기기 TTS 로 읽는다. */
@@ -1478,7 +1481,7 @@
     if (!w || w.kind !== 'r' || !w.i) return null;
     var n = AUD[w.i];
     if (!n || i == null || i < 0 || i >= n) return null;
-    return 'assets/audio/read/' + encodeURIComponent(w.i) + '-' + i + '.opus' + DATA_V;
+    return 'assets/audio/read/' + encodeURIComponent(w.i) + '-' + i + '.opus' + AUDIO_V;
   }
   function playClip(url, text) {
     var a = new Audio(url);
