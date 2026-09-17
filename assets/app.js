@@ -1508,8 +1508,37 @@
     stopSpeak();
     speakChain([text], speakSeq);
   }
+  /* 음원과 기기 TTS 를 섞어 이어 읽는다. items = [{t:텍스트, clip:음원을 찾아볼지}].
+     예전에는 읽을 게 둘 이상이면 통째로 기기 TTS 로 넘겼다 — '두 번 읽기'나 '예문도 읽기'를
+     켜면 번들 음원이 설정 하나로 조용히 꺼졌다(단어 모드 0%, 한자 모드도 같이). */
+  function sayChain(items, seq) {
+    if (!items.length || seq !== speakSeq) return;
+    var it = items[0], rest = items.slice(1);
+    var next = function () {
+      if (seq !== speakSeq || !rest.length) return;
+      gapT = setTimeout(function () { gapT = 0; sayChain(rest, seq); }, S.ttsGap);
+    };
+    var viaTts = function () {
+      if (!SS || !voices.length) { next(); return; }
+      var u = utter(it.t);
+      u.onend = u.onerror = next;
+      try { SS.speak(u); } catch (e) { next(); }
+    };
+    var url = it.clip ? wordClip(it.t) : null;
+    if (!url) { viaTts(); return; }
+    var a = new Audio(url);
+    clips.push(a);
+    a.volume = S.vol;
+    a.playbackRate = S.rate;
+    var drop = function () { var i = clips.indexOf(a); if (i >= 0) clips.splice(i, 1); };
+    a.onended = function () { drop(); next(); };
+    a.onerror = function () { drop(); viaTts(); };   // 그 항목만 기기 TTS 로 떨어진다
+    try { a.play()['catch'](function () {}); } catch (e) {}
+  }
+
   function speak() {
-    if (!SS || !S.tts || !voices.length) return;
+    // 기기 음성이 없어도 번들 음원은 재생돼야 한다 — 없는 항목만 sayChain 이 떨어뜨린다
+    if (!S.tts) return;
     var w = current(); if (!w) return;
     // かな 카드는 답하기 전에 읽어주면 정답을 알려주는 셈이다
     if (w.kind === 'n') { if (drillShown || drillDone) speakOne(w.c); return; }
@@ -1523,20 +1552,16 @@
     // 한자 한 글자는 음성이 읽기를 고를 수 없다 (日 = ニチ? ひ?). 대표 단어를 읽어 준다.
     if (w.kind === 'k') {
       var q2 = [];
-      for (var i = 0; i < w.ex.length && q2.length < (S.ttsEx ? 3 : 1); i++) q2.push(w.ex[i][1]);
+      for (var i = 0; i < w.ex.length && q2.length < (S.ttsEx ? 3 : 1); i++) q2.push({ t: w.ex[i][1], clip: 1 });
       if (!q2.length) return;
-      // 첫 단어는 음원이 있으면 음원으로. 뒤따르는 것까지 음원으로 이으려면 재생 완료를 물려야 해서
-      // 여기서는 첫 단어만 음원을 쓰고, 여러 개를 읽는 경우는 기기 TTS 에 맡긴다.
-      if (q2.length === 1) { playClip(wordClip(q2[0]), q2[0]); return; }
-      speakChain(S.ttsTwice ? [q2[0]].concat(q2) : q2, speakSeq);
+      sayChain(S.ttsTwice ? [q2[0]].concat(q2) : q2, speakSeq);
       return;
     }
-    var t = w.k || w.w, q = [t];
-    if (S.ttsTwice) q.push(t);
-    if (S.ttsEx && (w.ek || w.e)) q.push(w.ek || w.e);
-    // 단어 하나만 읽는 기본 설정이면 음원을 쓴다. 두 번 읽기·예문 읽기는 이어 재생이 필요해 TTS 로.
-    if (q.length === 1) { playClip(wordClip(t), t); return; }
-    speakChain(q, speakSeq);
+    var t = w.k || w.w, q = [{ t: t, clip: 1 }];
+    if (S.ttsTwice) q.push({ t: t, clip: 1 });
+    // 예문은 문장이라 음원이 없다(만들지 않았다 — ATTRIBUTION 7번). 찾아보지 않고 바로 기기 TTS 로
+    if (S.ttsEx && (w.ek || w.e)) q.push({ t: w.ek || w.e, clip: 0 });
+    sayChain(q, speakSeq);
   }
   // 예문만 읽기. ek(かな)를 먼저 쓴다 — 한자 표기는 음성이 읽기를 틀릴 수 있다.
   function speakEx() {
