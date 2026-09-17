@@ -372,7 +372,7 @@
       readJump = $('readJump'), jumpIn = $('jumpIn'), jumpN = $('jumpN'), jumpSent = $('jumpSent'),
       rateLbl = $('rateLbl'),
       panel = $('panel'), help = $('help'), icPlay = $('icPlay'),
-      starGlyph = $('starGlyph'), btnFav = $('btnFav'),
+      btnFav = $('btnFav'),
       home = $('home'), summary = $('summary'), dock = document.querySelector('.dock'),
       dockrow = document.querySelector('.dockrow'),
       transport = document.querySelector('.transport'), progress = document.querySelector('.progress'),
@@ -422,6 +422,9 @@
   var ICON_PAUSE = 'M7 4h4v16H7zm6 0h4v16h-4z';
   // 스피커 + 음파 / 스피커 + 사선(음소거)
   var ICON_SOUND = 'M4 9v6h3l5 4V5L7 9H4zm11.5.5a4 4 0 010 5v-5zm1.8-2.3a7 7 0 010 9.6l1.1 1.1a8.5 8.5 0 000-11.8l-1.1 1.1z';
+  /* 별은 채움/윤곽 두 벌이다. 유니코드 ★☆ 은 글꼴마다 폭과 획이 달라 옆 아이콘과 안 맞았다. */
+  var ICON_STAR_ON = 'M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8L3.6 9.7l5.8-.8z';
+  var ICON_STAR_OFF = 'M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8L3.6 9.7l5.8-.8zm0 3.4L10.6 9.9l-3 .4 2.2 2.1-.5 3 2.7-1.5 2.7 1.5-.5-3 2.2-2.1-3-.4z';
   var ICON_MUTED = 'M4 9v6h3l5 4V5L7 9H4zm14.6 0L17.2 7.6 15 9.8l-2.2-2.2v2.1l1.1 1.1-1.1 1.1v2.1L15 14.2l2.2 2.2 1.4-1.4-2.2-2.2 2.2-2.2-1.4-1.4z';
 
   /* ---------------- 렌더 ---------------- */
@@ -1175,7 +1178,7 @@
 
     var fav = w ? !!FAV[uid(w)] : false;
     btnFav.setAttribute('aria-pressed', fav ? 'true' : 'false');
-    starGlyph.textContent = fav ? '★' : '☆';
+    $('icStar').setAttribute('d', fav ? ICON_STAR_ON : ICON_STAR_OFF);
     btnFav.disabled = !w;
     // かな 카드에서 답하기 전에 발음을 들려주면 정답을 알려주는 셈이다
     var canSay = voices.length || (w && w.kind === 'n' && kanaClip(w.c));

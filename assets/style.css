@@ -48,7 +48,7 @@
   --bg-sunk:#090b0c;
   --fg:#f3f2ef;
   --fg-2:#a3a19b;
-  --fg-3:#6c6a65;
+  --fg-3:#82807b;          /* 4.52:1 on --bg-elev. #6c6a65 는 3.30 이었다 */
   --line:#23282b;
   --line-soft:#191c1f;
   --accent:#f06a4c;
@@ -76,7 +76,7 @@
   --bg-sunk:#e9ebec;
   --fg:#15181b;
   --fg-2:#585c60;
-  --fg-3:#8a8f93;
+  --fg-3:#666b6f;          /* 4.51:1 on --bg-sunk. #8a8f93 는 2.73 이었다 */
   --line:#dcdfe1;
   --line-soft:#e7e9ea;
   --accent:#bf3d24;
@@ -101,10 +101,18 @@ h1,h2,h3,p,ol,ul,figure{margin:0}
 ol{padding:0;list-style:none}
 kbd{
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-  font-size:.78em;border:1px solid var(--line);border-radius:var(--r);
+  font-size:max(.78em,11px);border:1px solid var(--line);border-radius:var(--r);
   padding:.1em .38em;color:var(--fg-2);background:var(--bg-sunk);
 }
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r)}
+/* 우리가 그리지 않은 표면도 이 팔레트를 따라야 한다 */
+::selection{background:var(--accent-sunk);color:var(--fg)}
+:root{scrollbar-color:var(--line) transparent;scrollbar-width:thin}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:999px}
+::-webkit-scrollbar-thumb:hover{background:var(--fg-3)}
+a{color:var(--accent);text-underline-offset:.18em;text-decoration-thickness:1px}
 
 /* ---------- 셸 ---------- */
 #app{
@@ -224,7 +232,7 @@ body.idle .chrome{opacity:0;pointer-events:none}
 }
 .hanja.is-same small::after{content:" = 한국어";letter-spacing:0}
 .hanja small{
-  font-weight:400;font-size:.62em;letter-spacing:.1em;
+  font-weight:400;font-size:max(11px,.62em);letter-spacing:.1em;
   color:var(--fg-3);margin-right:.45em;
 }
 /* 한자별 한자음은 아래 .hjp i b / .hjp i span 에서 이미 한자=Klee, 한글=KR 로 나뉘어 있다.
@@ -308,7 +316,7 @@ body.idle .kex-row{cursor:none}
   font-size:calc(clamp(1rem,1.6vmin + .5rem,1.7rem) * var(--scale))}
 .kex-k{font-family:var(--f-jp);color:var(--fg-2)}
 .kex-h{font-family:var(--f-kr);color:var(--fg-3)}
-.kex-k,.kex-h{font-size:calc(clamp(.72rem,.85vmin + .32rem,1rem) * var(--scale))}
+.kex-k,.kex-h{font-size:max(11px,calc(clamp(.72rem,.85vmin + .32rem,1rem) * var(--scale)))}
 .kex-row em{font-family:var(--f-kr);font-style:normal;color:var(--fg-3);margin-left:auto;
   font-size:calc(clamp(.8rem,1vmin + .35rem,1.1rem) * var(--scale))}
 /* 훈독은 음독과 구별되게 — 음독이 한국 한자음과 이어지는 쪽이다 */
@@ -380,7 +388,6 @@ body.idle .kex-row{cursor:none}
   display:flex;align-items:center;gap:.55rem;
   padding:.5rem .7rem;white-space:nowrap;
   background:var(--bg-elev);border:1px solid var(--line);border-radius:.5rem;
-  box-shadow:0 8px 28px rgba(0,0,0,.34);
   opacity:0;pointer-events:none;
   transition:opacity .16s ease,transform .16s cubic-bezier(.2,.8,.2,1);
 }
@@ -413,7 +420,10 @@ body.idle .kex-row{cursor:none}
   /* 팝오버에 마우스가 올라가 있어도 버튼이 켜진 것처럼 보이게 — 둘이 한 덩어리로 읽힌다 */
   .volwrap:hover .btn,.volwrap:focus-within .btn{color:var(--fg);border-color:var(--line)}
 }
-.star{font-size:1rem;line-height:1}
+/* 독 버튼 안의 아이콘. .lbl 이 숨는 좁은 화면에서도 버튼이 비지 않게 하는 역할이다 */
+.btn .ic{width:1.05rem;height:1.05rem;fill:currentColor;flex-shrink:0}
+.btn:has(.ic){display:inline-flex;align-items:center;gap:.35rem}
+.star{width:1.05rem;height:1.05rem}
 
 /* ---------- 설정 패널 ---------- */
 .panel{
@@ -526,6 +536,8 @@ select:disabled{opacity:.4;cursor:not-allowed}
   .dockacts .btn span.lbl{display:none}
 }
 
+
+
 /* ---------- 키보드가 올라온 타자 화면 ----------
    안드로이드 키보드는 세로를 절반으로 가져간다. 1000x310 에서 상단 바 70 + 독 67 =
    137px, 화면의 44% 가 크롬이었고 글자는 59px 까지 쪼그라들었다.
@@ -552,9 +564,14 @@ select:disabled{opacity:.4;cursor:not-allowed}
 }
 
 /* ---------- 모션 축소 ---------- */
+/* 움직임 축소: 장식은 끄고 상태 변화는 남긴다. 전역으로 전환을 0 으로 죽이면
+   스위치·팝오버·토스트가 '바뀌었다'는 신호를 잃어 무엇이 켜졌는지 알 수 없다. */
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important}
   .card.enter{animation:none}
+  /* 위치가 움직이는 것만 끈다 */
+  .volpop,.toast,.panel{transition-property:opacity !important}
+  .btn:active{transform:none}
 }
 .alt{font-size:.72em;color:var(--fg-3);font-family:var(--f-jp);letter-spacing:.02em}
 
@@ -732,12 +749,12 @@ select:disabled{opacity:.4;cursor:not-allowed}
 .kcol.on:hover{background:color-mix(in srgb,var(--accent) 22%,transparent)}
 .kcell{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.05em;
-  width:2.9rem;height:2.7rem;
+  width:3.05rem;height:2.8rem;
 }
 .kcell b{font-family:var(--f-jp);font-weight:400;font-size:1.02rem;line-height:1.1;color:var(--fg-3)}
-.kcell i{font-style:normal;font-size:.6rem;line-height:1;color:var(--fg-3);opacity:.6;letter-spacing:.01em}
+.kcell i{font-style:normal;font-size:.7rem;line-height:1;color:var(--fg-3);letter-spacing:.01em}
 .kcol.on .kcell b{color:var(--fg)}
-.kcol.on .kcell i{color:var(--fg-2);opacity:1}
+.kcol.on .kcell i{color:var(--fg-2)}
 
 /* ============================================================
    글꼴 고르기 타일
@@ -754,7 +771,7 @@ select:disabled{opacity:.4;cursor:not-allowed}
 .ftile.on{color:var(--accent);border-color:var(--accent);background:var(--accent-sunk)}
 .ftile b{font-weight:400;font-size:1.6rem;line-height:1.15;color:var(--fg)}
 .ftile.on b{color:var(--accent)}
-.ftile span{font-size:.62rem;line-height:1.25;color:var(--fg-3);text-align:center;letter-spacing:.01em}
+.ftile span{font-size:.7rem;line-height:1.25;color:var(--fg-3);text-align:center;letter-spacing:.01em}
 .ftile.on span{color:var(--fg-2)}
 
 /* 좁은 화면에서 상단 바가 넘치면 버튼이 화면 밖으로 밀린다. 라벨을 짧은 쪽으로 바꿔 끼운다 */
@@ -966,4 +983,35 @@ body.idle .art-jp{cursor:none}
   /* 좁은 화면에서는 다음 문장 하나만. 두 줄이면 지금 읽는 문장과 자리를 다툰다 */
   .art-body.one .art-row.is-next + .art-row.is-next{display:none}
   .art-body.one .art-row.is-next .art-jp{font-size:calc(clamp(.8rem,.9vmin + .42rem,.95rem) * var(--scale))}
+}
+
+/* ============================================================
+   터치 타겟 (WCAG 2.5.5, 44px)
+   포인터가 없는 기기에서만 넓힌다. 마우스에는 이 크기가 필요 없고, 독은 한 줄을 지켜야 한다.
+   이 블록이 파일 끝에 있는 이유: .eye 같은 규칙이 뒤에 정의돼 있어서 앞에 두면 덮인다.
+   ============================================================ */
+@media (hover:none){
+  /* 팝오버는 레이아웃에서 뺀다. opacity:0 으로만 숨기면 상자가 남아 좁은 화면에서
+     뷰포트를 넘어가고 가로 스크롤이 생겼다(실측: 카나 화면 390px 에서 17px). */
+  .volpop{display:none}
+
+  /* 세로가 남는 자리는 실제로 키운다 */
+  .panel .btn,.sheet-wide .btn,.sum-acts .btn{min-height:2.75rem}
+  .eye,.art-body.one .eye{width:2.75rem;height:2.75rem}
+  input[type=range]{height:2.75rem}          /* 트랙은 2px 이라 손가락이 닿을 자리가 없다 */
+  #kanaIn{min-height:2.75rem}
+  /* '낱말' 글자 폭이 24px 이라 여백으로 44 를 만든다. 음수 마진으로 원래 정렬을 지킨다 */
+  .mark{padding:.78rem .65rem;margin-left:-.65rem}
+
+  /* 독은 한 줄이어야 한다. 보이는 크기를 키우면 줄이 넘치므로 누르는 영역만 넓힌다 —
+     탭 면적은 44px 로 같고 레이아웃은 그대로다. 버튼 간격이 6px 이라 겹침도 없다. */
+  .topacts .btn,.transport .btn,.dockacts .btn,.readacts .btn,.drillacts .btn,.grades .btn,.sw{position:relative}
+  .topacts .btn::before,.transport .btn::before,.dockacts .btn::before,.readacts .btn::before,
+  .drillacts .btn::before,.grades .btn::before,.sw::before{
+    content:"";position:absolute;top:50%;left:50%;
+    min-width:44px;min-height:44px;width:100%;height:100%;transform:translate(-50%,-50%);
+  }
+  /* input 은 ::before 를 못 가진다. 오버레이는 입력을 막고, 44px 로 넓히면 카운터가 커져
+     독이 두 줄로 밀린다. 31x36 은 AA(2.5.8, 24px)를 통과한다 — 44px 는 AAA(2.5.5) 기준이다. */
+  #jumpIn{height:2.25rem}
 }
