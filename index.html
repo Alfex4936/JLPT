@@ -19,7 +19,7 @@ try{
 </script>
 
 <!-- ?v= 는 캐시 무효화용. CSS/JS 고칠 때 숫자만 올리면 새로고침에서 확실히 반영된다 -->
-<link rel="stylesheet" href="assets/style.css?v=46">
+<link rel="stylesheet" href="assets/style.css?v=47">
 
 <!-- 데이터: 없는 파일은 조용히 무시된다 (fetch 없음, script 태그만).
      여기 있는 건 시작 화면이 쓰는 것뿐이다 — 개수표와 かな(3KB).
@@ -185,9 +185,16 @@ try{
         <button class="btn btn-quiet" id="btnFav" type="button" title="즐겨찾기 (S)" aria-pressed="false">
           <span class="star" id="starGlyph">☆</span> <span class="lbl">즐겨찾기</span>
         </button>
-        <button class="btn btn-quiet btn-icon" id="btnMute" type="button" title="음소거 (M)" aria-pressed="false" aria-label="음소거">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path id="icMute" d=""/></svg>
-        </button>
+        <!-- 음량은 호버로 펼친다. 클릭은 음소거 그대로 — 탭이 둘 다 하면 충돌한다 -->
+        <div class="volwrap">
+          <div class="volpop" id="volPop">
+            <input type="range" id="rVolDock" min="0" max="100" step="5" aria-label="음량">
+            <span class="volnum" id="vVolDock">90%</span>
+          </div>
+          <button class="btn btn-quiet btn-icon" id="btnMute" type="button" title="음소거 (M)" aria-pressed="false" aria-label="음소거">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path id="icMute" d=""/></svg>
+          </button>
+        </div>
         <button class="btn btn-quiet" id="btnSpeak" type="button" title="발음 듣기 (V)"><span class="lbl">발음</span></button>
       </div>
 
@@ -513,6 +520,6 @@ try{
   </div>
 </div>
 
-<script src="assets/app.js?v=55"></script>
+<script src="assets/app.js?v=56"></script>
 </body>
 </html>

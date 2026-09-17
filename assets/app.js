@@ -1767,7 +1767,7 @@
 
   rng('rSec', 'vSec', 'sec', function (v) { return v + '초'; }, 1, function () { if (elapsed > S.sec * 1000) elapsed = 0; });
   rng('rHideDelay', 'vHideDelay', 'hideDelay', function (v) { return v + '초'; }, 1);
-  rng('rVol', 'vVol', 'vol', function (v) { return Math.round(v * 100) + '%'; }, 100);
+  // 음량은 rng 를 안 쓴다 — 0 = 음소거라 S.vol 만 쓰는 게 아니고 setVol 이 S.tts 까지 만진다
   rng('rRate', 'vRate', 'rate', function (v) { return v.toFixed(2) + '배'; }, 100);
   rng('rGap', 'vGap', 'ttsGap', function (v) { return v ? (v / 1000).toFixed(1) + '초' : '없음'; }, 1);
 
@@ -1775,7 +1775,7 @@
   sw('swHide', 'hide', function () { revealed = !S.hide; meanWrap.classList.toggle('masked', !revealed); });
   /* 음소거: 설정의 '발음 사용' 스위치와 같은 값(S.tts)을 공유한다.
      상태를 둘로 나누면 서로 어긋나므로 조작 경로만 둘로 둔다. */
-  var drawTts = sw('swTts', 'tts', function () { syncMute(); paintChrome(); });
+  var drawTts = sw('swTts', 'tts', function () { syncMute(); drawVol(); paintChrome(); });
   function syncMute() {
     var muted = !S.tts;
     $('icMute').setAttribute('d', muted ? ICON_MUTED : ICON_SOUND);
@@ -1783,17 +1783,36 @@
     $('btnMute').setAttribute('aria-label', muted ? '음소거 해제' : '음소거');
     $('btnMute').title = (muted ? '음소거 해제' : '음소거') + ' (M)';
     $('btnMute').classList.toggle('on', muted);
-    $('btnMute').disabled = !SS || !voices.length;
+    // 기기 음성이 없어도 번들 음원은 나온다 — 그래서 끌 수 있어야 한다
   }
+  /* 음량 0 = 음소거. 슬라이더를 0 으로 내리면 S.tts 를 끄고, 올리면 켠다.
+     S.vol 에는 0 을 넣지 않는다 — 음소거를 풀 때 돌아갈 값이 남아야 한다. */
+  function setVol(v) {
+    if (v <= 0) { if (S.tts) { S.tts = false; stopSpeak(); } }
+    else { S.vol = v; S.tts = true; }
+    save(); drawTts(); syncMute(); drawVol(); paintChrome();
+  }
+  function drawVol() {
+    var shown = S.tts ? S.vol : 0;
+    var pct = Math.round(shown * 100);
+    each([['rVol', 'vVol'], ['rVolDock', 'vVolDock']], function (p) {
+      var el = $(p[0]); if (!el) return;
+      if (document.activeElement !== el) el.value = String(pct);
+      $(p[1]).textContent = pct + '%';
+    });
+  }
+  each(['rVol', 'rVolDock'], function (id) {
+    var el = $(id); if (!el) return;
+    el.oninput = function () { setVol(Number(el.value) / 100); };
+  });
   function toggleMute() {
-    if (!SS || !voices.length) return;
     S.tts = !S.tts; save();
     if (!S.tts) stopSpeak();   // 재생 중인 발화와 대기 중인 다음 발화를 즉시 끊는다
-    drawTts(); syncMute(); paintChrome();
-    toast(S.tts ? '소리 켜짐' : '음소거');
+    drawTts(); syncMute(); drawVol(); paintChrome();
+    toast(S.tts ? '소리 켜짐 · ' + Math.round(S.vol * 100) + '%' : '음소거');
   }
   $('btnMute').onclick = toggleMute;
-  syncMute();
+  syncMute(); drawVol();
   sw('swAuto', 'ttsAuto');
   sw('swTwice', 'ttsTwice');
   sw('swExSpeak', 'ttsEx');

@@ -370,6 +370,31 @@ body.idle .kex-row{cursor:none}
 .counter .jump input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .counter .jump input:focus{outline:0;border-color:var(--accent)}
 .dockacts{display:flex;align-items:center;gap:.4rem;justify-self:end;flex-wrap:wrap;justify-content:flex-end}
+
+/* ---------- 음량 팝오버 ---------- */
+.volwrap{position:relative;display:inline-flex}
+.volpop{
+  position:absolute;bottom:calc(100% + .4rem);left:50%;
+  transform:translateX(-50%) translateY(.25rem);
+  display:flex;align-items:center;gap:.55rem;
+  padding:.5rem .7rem;white-space:nowrap;
+  background:var(--bg-elev);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:0 6px 24px rgba(0,0,0,.3);
+  opacity:0;pointer-events:none;
+  transition:opacity .14s ease,transform .14s ease;
+}
+.volpop input[type=range]{width:7rem}
+.volnum{
+  font-size:.74rem;color:var(--fg-2);
+  font-variant-numeric:tabular-nums;min-width:2.6em;text-align:right;
+}
+/* 포인터가 있는 기기에서만 펼친다. 터치는 hover 가 없고 탭은 음소거라 자리가 겹친다 —
+   모바일은 시스템 음량이 있고 설정 패널에도 같은 슬라이더가 있다 */
+@media (hover:hover){
+  .volwrap:hover .volpop,.volwrap:focus-within .volpop{
+    opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0);
+  }
+}
 .star{font-size:1rem;line-height:1}
 
 /* ---------- 설정 패널 ---------- */
