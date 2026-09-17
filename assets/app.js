@@ -1210,6 +1210,10 @@
       setPlaying(S.set !== 'kana' && S.set !== 'reading' && deck.length > 0);
       markSeen();
       paint();
+      /* 첫 카드도 읽어야 한다. 예전에는 speak() 를 go() 에서만 불러서 모드에 들어온 직후
+         한 장이 조용했다 — '카드마다 자동 읽기' 가 켜져 있는데 첫 장만 빠지는 셈이었다.
+         かな 는 speak() 안에서 스스로 막는다(답을 보기 전에 읽어주면 정답을 알려준다). */
+      if (S.ttsAuto) speak();
       syncHash();
       focusDrill();
       wake();
