@@ -79,10 +79,13 @@ run_until() {                     # $1=설명 $2=디렉터리 $3=목표 수 $4..
 }
 
 run_until "읽기 기사" assets/audio/read 396 node tools/build-reading-audio.js
-run_until "단어(한자 예시)" assets/audio/word 3718 env SCOPE=kanji node tools/build-word-audio.js
+# 한자 예시 3,718개를 먼저 끝냈다(한자 모드가 그걸 쓴다). 이제 단어 덱 전체 8,017 읽기.
+# 빠진 4,299개는 대부분 카나 단어와 외래어라 어떤 한자의 대표 단어도 될 수 없었다 —
+# どうして·やはり·ペン·ニュース 같은 것들이다.
+run_until "단어(덱 전체)" assets/audio/word 8017 env SCOPE=all node tools/build-word-audio.js
 
 echo "=== 마무리 ==="
 MANIFEST=1 node tools/build-reading-audio.js
 CHECK=1 node tools/build-reading-audio.js | tail -2
-echo "읽기 $(count assets/audio/read)/396 · 단어 $(count assets/audio/word)/3718"
+echo "읽기 $(count assets/audio/read)/396 · 단어 $(count assets/audio/word)/8017"
 echo "커밋 전에 git status 를 확인할 것. 회차별 로그: $HIST"
