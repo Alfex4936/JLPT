@@ -397,8 +397,9 @@ body.idle .kex-row{cursor:none}
   position:absolute;bottom:calc(100% + 7px);left:50%;
   transform:translateX(-50%) scale(.96);
   transform-origin:bottom center;       /* 버튼에서 자라 나오게 */
-  display:flex;align-items:center;gap:.55rem;
-  padding:.5rem .7rem;white-space:nowrap;
+  /* 음량과 속도 두 줄. 라벨 / 슬라이더 / 값 세 칸을 맞춘다 */
+  display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:.32rem .55rem;
+  padding:.55rem .7rem;white-space:nowrap;
   background:var(--bg-elev);border:1px solid var(--line);border-radius:var(--r);
   opacity:0;pointer-events:none;
   transition:opacity .16s ease,transform .16s cubic-bezier(.2,.8,.2,1);
@@ -414,6 +415,7 @@ body.idle .kex-row{cursor:none}
 .volpop::before{top:100%;border-width:7px 7px 0;border-top-color:var(--line)}
 .volpop::after{top:calc(100% - 1px);border-width:6px 6px 0;border-top-color:var(--bg-elev)}
 .volpop input[type=range]{width:7rem}
+.vol-lb{font-size:.72rem;color:var(--fg-3);letter-spacing:.02em}
 .volnum{
   font-size:.74rem;color:var(--fg-2);
   font-variant-numeric:tabular-nums;min-width:2.6em;text-align:right;

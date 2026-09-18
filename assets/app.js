@@ -1815,7 +1815,7 @@
   rng('rSec', 'vSec', 'sec', function (v) { return v + '초'; }, 1, function () { if (elapsed > S.sec * 1000) elapsed = 0; });
   rng('rHideDelay', 'vHideDelay', 'hideDelay', function (v) { return v + '초'; }, 1);
   // 음량은 rng 를 안 쓴다 — 0 = 음소거라 S.vol 만 쓰는 게 아니고 setVol 이 S.tts 까지 만진다
-  rng('rRate', 'vRate', 'rate', function (v) { return v.toFixed(2) + '배'; }, 100);
+  // 속도는 rng 를 안 쓴다 — 만지는 자리가 셋이라 setRate/drawRate 가 함께 그린다
   rng('rGap', 'vGap', 'ttsGap', function (v) { return v ? (v / 1000).toFixed(1) + '초' : '없음'; }, 1);
 
   sw('swShuffle', 'shuffle', function () { var w = current(); buildDeck(w && uid(w)); });
@@ -1859,7 +1859,7 @@
     toast(S.tts ? '소리 켜짐 · ' + Math.round(S.vol * 100) + '%' : '음소거');
   }
   $('btnMute').onclick = toggleMute;
-  syncMute(); drawVol();
+  syncMute(); drawVol(); drawRate();
   sw('swAuto', 'ttsAuto');
   sw('swTwice', 'ttsTwice');
   sw('swExSpeak', 'ttsEx');
@@ -2237,6 +2237,27 @@
      그래서 여기서 바꾸면 단어·한자 발음도 같이 바뀐다. 버튼 다섯 개를 둘 자리가 없어
      하나가 단계를 돈다. d 를 주면 한 단계씩만 움직인다. */
   var RATES = [0.5, 0.75, 1, 1.25, 1.5];
+  /* 속도를 만지는 자리가 셋이다 — 독 버튼(읽기), 팝오버 슬라이더(모든 모드), 설정 슬라이더.
+     값은 S.rate 하나라 서로 어긋날 수 없고, 바꾼 쪽이 나머지를 다시 그린다. 음량과 같은 구조다. */
+  function setRate(v) {
+    S.rate = Math.min(1.5, Math.max(0.5, v)); save();
+    drawRate();
+    each(clips, function (a) { a.playbackRate = S.rate; });   // 듣고 있던 문장부터 바뀐다
+    paintChrome();
+  }
+  function drawRate() {
+    var pct = String(Math.round(S.rate * 100));
+    var txt = S.rate.toFixed(2) + '배';
+    each([['rRate', 'vRate'], ['rRateDock', 'vRateDock']], function (p) {
+      var el = $(p[0]); if (!el) return;
+      if (document.activeElement !== el) el.value = pct;    // 타자/드래그 중이면 건드리지 않는다
+      $(p[1]).textContent = txt;
+    });
+  }
+  each(['rRate', 'rRateDock'], function (id) {
+    var el = $(id); if (!el) return;
+    el.oninput = function () { setRate(Number(el.value) / 100); };
+  });
   function stepRate(d) {
     var i = 0, best = Infinity;              // 슬라이더가 단계 밖 값을 만들 수 있다. 가장 가까운 단계부터
     for (var k = 0; k < RATES.length; k++) {
@@ -2244,11 +2265,7 @@
       if (gap < best) { best = gap; i = k; }
     }
     i = d ? Math.min(RATES.length - 1, Math.max(0, i + d)) : (i + 1) % RATES.length;
-    S.rate = RATES[i]; save();
-    $('rRate').value = String(Math.round(S.rate * 100));   // 설정 슬라이더는 초기화 때만 값을 읽는다
-    $('vRate').textContent = S.rate.toFixed(2) + '배';
-    each(clips, function (a) { a.playbackRate = S.rate; });   // 듣고 있던 문장부터 바뀐다
-    paintChrome();
+    setRate(RATES[i]);
     toast('발음 속도 ' + S.rate + '배');
   }
   $('btnAllKo').onclick = toggleAllKo;

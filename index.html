@@ -19,7 +19,7 @@ try{
 </script>
 
 <!-- ?v= 는 캐시 무효화용. CSS/JS 고칠 때 숫자만 올리면 새로고침에서 확실히 반영된다 -->
-<link rel="stylesheet" href="assets/style.css?v=62">
+<link rel="stylesheet" href="assets/style.css?v=63">
 
 <!-- 데이터: 없는 파일은 조용히 무시된다 (fetch 없음, script 태그만).
      여기 있는 건 시작 화면이 쓰는 것뿐이다 — 개수표와 かな(3KB).
@@ -190,8 +190,12 @@ try{
         <!-- 음량은 호버로 펼친다. 클릭은 음소거 그대로 — 탭이 둘 다 하면 충돌한다 -->
         <div class="volwrap">
           <div class="volpop" id="volPop">
+            <span class="vol-lb">음량</span>
             <input type="range" id="rVolDock" min="0" max="100" step="5" aria-label="음량">
             <span class="volnum" id="vVolDock">90%</span>
+            <span class="vol-lb">속도</span>
+            <input type="range" id="rRateDock" min="50" max="150" step="5" aria-label="발음 속도">
+            <span class="volnum" id="vRateDock">1.00배</span>
           </div>
           <button class="btn btn-quiet btn-icon" id="btnMute" type="button" title="음소거 (M)" aria-pressed="false" aria-label="음소거">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path id="icMute" d=""/></svg>
@@ -496,6 +500,7 @@ try{
       <div><kbd>S</kbd> 즐겨찾기 토글</div>
       <div><kbd>V</kbd> 발음 듣기</div>
       <div><kbd>M</kbd> 음소거 / 해제</div>
+      <div>스피커 아이콘에 마우스를 올리면 <b>음량과 발음 속도</b> 슬라이더가 열린다 (모든 모드)</div>
       <div><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> 채점 — 몰라요 / 애매 / 알아요 (복습 간격이 이걸로 정해짐)</div>
       <div><kbd>F</kbd> 전체화면</div>
       <div><kbd>H</kbd> 학습 선택으로</div>
@@ -524,6 +529,6 @@ try{
   </div>
 </div>
 
-<script src="assets/app.js?v=59"></script>
+<script src="assets/app.js?v=60"></script>
 </body>
 </html>
