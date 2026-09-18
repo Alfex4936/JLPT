@@ -66,10 +66,14 @@ Google Gemini TTS(`gemini-3.1-flash-tts-preview`, 음성 `Zephyr`)로 생성했�
   You're responsible for your use of generated content, and for the use of that content by anyone you share it with."
   즉 구글이 소유권을 주장하지 않고, 공유를 전제로 쓰인 조항이다.
 - **CC 표기를 붙이지 말 것.** 구글이 CC 라이선스를 준 게 아니다. 3번 항목(Claude 생성물)과 같이 출처만 밝힌다.
-- **지금 실린 かな 음원은 무료 등급(Unpaid Services)에서 생성됐다.** 재배포는 문제없지만(Use of Generated Content),
-  무료 등급은 구글이 입출력을 제품 개선에 쓰고 사람이 검토할 수 있다. 앞으로 다시 만들 때는 결제를 붙여 유료
-  할당량으로 돌리는 게 맞다 — 무료 등급은 요청 한도가 10이라(`generate_content_free_tier_requests`)
+- **등급이 갈린다. かな 131음은 무료 등급(Unpaid Services)에서 만들었고, 기사 396클립과 단어 3,718클립은
+  결제를 붙인 유료 등급(Tier 1)에서 만들었다.** 재배포는 둘 다 문제없지만(Use of Generated Content),
+  무료 등급은 구글이 입출력을 제품 개선에 쓰고 사람이 검토할 수 있다. かな 를 다시 만들 일이 있으면
+  유료 할당량으로 돌릴 것. 무료 등급은 요청 한도가 10이라(`generate_content_free_tier_requests`)
   기사 음원은 한 편도 끝내지 못한다.
+- **완료 상태**: かな 131/131, 기사 396/396(46편 전부), 단어 3,718/3,718. 단어는 한자 예시 범위이고
+  한자 모드 대표 단어는 2,142/2,142 다 — 한자 카드는 기기 TTS 로 떨어지지 않는다.
+  단어 덱 기준으로는 4,848/9,543(51%)이 상한이다(읽기가 같은 단어가 파일 하나를 공유한다).
 - 기기 TTS 를 대체하는 게 아니라 앞에 둔다. 음원이 없으면 `speechSynthesis` 로 떨어진다.
 - 기사 음원은 `data/audio.js` 에 등재된 기사만 쓴다. **기사 하나가 단위다** — 제목과 모든 문장을 다 만들거나
   아예 안 만든다. 반쪽 기사를 쓰면 한 기사 안에서 줄마다 화자가 바뀐다.
