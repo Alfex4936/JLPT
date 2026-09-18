@@ -139,14 +139,25 @@ function sliceWords(wav, n, minSilence = 0.12, thresh = '-40dB') {
   }
   if (inner.length < n - 1) return null;
 
-  const cuts = inner.slice().sort((a, b) => (b[1] - b[0]) - (a[1] - a[0])).slice(0, n - 1)
-    .sort((a, b) => a[0] - b[0]);
+  const byLen = inner.slice().sort((a, b) => (b[1] - b[0]) - (a[1] - a[0]));
+  const picked = byLen.slice(0, n - 1), dropped = byLen.slice(n - 1);
+
+  /* 경계를 제대로 골랐는지는 '구간이 얼마나 짧은가' 가 아니라 '간격 분포가 갈리는가' 로 본다.
+     단어 사이 쉼은 1초 넘게 벌어지고 단어 안 휴지는 0.3초를 넘지 않아서, 제대로 고르면 둘이
+     몇 배로 갈린다(실측: 3.1~14.9배). 하나라도 놓쳐 단어 안 휴지를 경계로 쓰면 그 배수가 1 근처로 내려온다.
+     예전에는 '구간이 0.15초보다 짧으면 버린다' 였는데, 1모라짜리 단어가 0.13초라서 제대로 잘린
+     덩어리를 계속 버렸다 — 남은 40단어가 그것 때문에 45분마다 2요청씩 태우며 못 만들어졌다. */
+  const minPick = Math.min(...picked.map(([s, e]) => e - s));
+  const maxDrop = dropped.length ? Math.max(...dropped.map(([s, e]) => e - s)) : 0;
+  if (maxDrop && minPick < maxDrop * 2) return null;
+
+  const cuts = picked.slice().sort((a, b) => a[0] - b[0]);
   const segs = [];
   let pos = head;
   for (const [s, e] of cuts) { segs.push([pos, s]); pos = e; }
   segs.push([pos, tail]);
-  // 0.15초보다 짧은 단어는 없다. 나오면 경계를 잘못 고른 것이라 이 덩어리를 버린다
-  return segs.some(([s, e]) => e - s < 0.15) ? null : segs;
+  // 소리가 아예 없는 구간만 거른다. 단어 길이는 가정하지 않는다
+  return segs.some(([s, e]) => e - s < 0.08) ? null : segs;
 }
 
 (async () => {
