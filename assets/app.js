@@ -1522,6 +1522,13 @@
     if (!n || i == null || i < 0 || i >= n) return null;
     return 'assets/audio/read/' + encodeURIComponent(w.i) + '-' + i + '.opus' + AUDIO_V;
   }
+  /* 예문 음원. 단어·기사와 달리 파일명이 내용이 아니라 단어 id 다(문장은 파일명이 될 수 없다).
+     N5·N4 만 만들었으므로 나머지는 null 이고, 그 카드는 예문을 기기 TTS 로 읽는다. */
+  function exClip(w) {
+    // 단어 카드만 kind 가 없다 (한자 'k' · かな 'n' · 읽기 'r'). 예문이 있는 건 단어뿐이다
+    return w && !w.kind && w.i != null
+      ? 'assets/audio/ex/' + encodeURIComponent(String(w.i)) + '.opus' + AUDIO_V : null;
+  }
   function playClip(url, text) {
     var a = new Audio(url);
     clips.push(a);
@@ -1587,7 +1594,7 @@
       u.onend = u.onerror = next;
       try { SS.speak(u); } catch (e) { next(); }
     };
-    var url = it.clip ? wordClip(it.t) : null;
+    var url = it.url || (it.clip ? wordClip(it.t) : null);
     if (!url) { viaTts(); return; }
     var a = new Audio(url);
     clips.push(a);
@@ -1623,15 +1630,15 @@
     var t = w.k || w.w, q = [{ t: t, clip: 1 }];
     if (S.ttsTwice) q.push({ t: t, clip: 1 });
     // 예문은 문장이라 음원이 없다(만들지 않았다 — ATTRIBUTION 7번). 찾아보지 않고 바로 기기 TTS 로
-    if (S.ttsEx && (w.ek || w.e)) q.push({ t: w.ek || w.e, clip: 0 });
+    if (S.ttsEx && (w.ek || w.e)) q.push({ t: w.ek || w.e, url: exClip(w) });
     sayChain(q, speakSeq);
   }
   // 예문만 읽기. ek(かな)를 먼저 쓴다 — 한자 표기는 음성이 읽기를 틀릴 수 있다.
   function speakEx() {
-    if (!SS || !S.tts || !voices.length) return;
+    if (!S.tts) return;                       // 음원이 있으면 기기 음성이 없어도 읽는다
     var w = current(); if (!w || !(w.ek || w.e)) return;
     stopSpeak();
-    speakChain([w.ek || w.e], speakSeq);
+    sayChain([{ t: w.ek || w.e, url: exClip(w) }], speakSeq);
   }
 
   /* ---------------- 화면 절전 방지 ---------------- */
