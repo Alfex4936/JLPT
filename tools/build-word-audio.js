@@ -14,6 +14,7 @@
 // 실행:
 //   GEMINI_API_KEY=... node tools/build-word-audio.js                  # 한자 대표 단어부터 전부
 //   GEMINI_API_KEY=... SCOPE=kanji node tools/build-word-audio.js       # 한자 예시만 (3,718)
+//   GEMINI_API_KEY=... SCOPE=kanjiread node tools/build-word-audio.js   # 한자 음독·훈독
 //   GEMINI_API_KEY=... LIMIT=10 node tools/build-word-audio.js          # 덩어리 10개만
 //   DRY=1 node tools/build-word-audio.js
 const fs = require('fs');
@@ -30,7 +31,7 @@ const VOICE = process.env.VOICE || 'Zephyr';      // かな·기사 음원과 �
 const BITRATE = process.env.BITRATE || '24k';
 const CHUNK = Number(process.env.CHUNK || 20);
 const LIMIT = Number(process.env.LIMIT || 0);
-const SCOPE = process.env.SCOPE || 'all';         // all | kanji
+const SCOPE = process.env.SCOPE || 'all';         // all | kanji | kanjiread
 const DRY = !!process.env.DRY;
 
 /* 요청 간격. Gemini 3.1 Flash TTS 는 RPM 10 · RPD 100 이다(콘솔 확인).
@@ -50,6 +51,17 @@ function wordList() {
   const prio = [];
   const seen = new Set();
   const add = (r) => { if (r && !seen.has(r)) { seen.add(r); prio.push(r); } };
+  /* 한자 카드의 음독·훈독. 한 글자는 소리로 정할 수 없지만(日 = ニチ? ひ?) 읽기 하나하나는 소리가 있다.
+     훈독은 대부분 단어라 이미 만들어져 있고(2,448종 중 1,620), 음독 카나가 거의 다 빈다. */
+  if (SCOPE === 'kanjiread') {
+    const rd = [];
+    const got = new Set();
+    for (const k of K) {
+      for (const r of (k.on || [])) if (r && !got.has(r)) { got.add(r); rd.push(r); }
+      for (const r of (k.kun || [])) if (r && !got.has(r)) { got.add(r); rd.push(r); }
+    }
+    return rd;
+  }
   for (let i = 0; i < 3; i++) for (const k of K) if (k.ex && k.ex[i]) add(k.ex[i][1]);
   if (SCOPE === 'kanji') return prio;
 

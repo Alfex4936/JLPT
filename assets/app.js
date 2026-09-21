@@ -397,6 +397,14 @@
     ii.appendChild(bb); ii.appendChild(ss); ii.hidden = true;
     cHjp.appendChild(ii);
     hjpNodes.push({ el: ii, k: bb, h: ss });
+    /* 한자 카드에서만 누를 수 있다. 단어 카드의 hjp 는 글자별 한자음이라 소리가 없다 */
+    (function (node) {
+      node.el.onclick = function () {
+        var w = current();
+        if (!w || w.kind !== 'k') return;
+        sayWord(node.k.textContent);
+      };
+    })(hjpNodes[hjpNodes.length - 1]);
   }
   // 한자 카드의 예시 단어 3줄. 줄을 클릭하면 그 단어를 읽는다.
   var kexNodes = [];
@@ -413,7 +421,7 @@
     (function (nodeIdx) {
       row.onclick = function () {
         var w = current(); if (!w || w.kind !== 'k' || !w.ex[nodeIdx]) return;
-        speakOne(w.ex[nodeIdx][1]);
+        sayWord(w.ex[nodeIdx][1]);
       };
     })(kx);
   }
@@ -1546,6 +1554,14 @@
   function sayState() {
     var on = clips.some(function (a) { return !a.paused && !a.ended; }) || (SS && SS.speaking);
     document.documentElement.dataset.speaking = on ? '1' : '0';
+  }
+  /* 단어 하나를 소리로 — 음원이 있으면 음원, 없으면 그 항목만 기기 TTS.
+     speakOne 은 kanaClip 만 보므로 かな 한 글자에만 맞는다. 예시 단어와 음독·훈독은
+     여러 글자라 음원이 있어도 기기 TTS 로 새고 있었다. */
+  function sayWord(text) {
+    if (!S.tts || !text) return;
+    stopSpeak();
+    sayChain([{ t: text, clip: 1 }], speakSeq);
   }
   function speakOne(text) {
     if (!S.tts || !text) return;

@@ -83,6 +83,9 @@ run_until "읽기 기사" assets/audio/read 396 node tools/build-reading-audio.j
 # 빠진 4,299개는 대부분 카나 단어와 외래어라 어떤 한자의 대표 단어도 될 수 없었다 —
 # どうして·やはり·ペン·ニュース 같은 것들이다.
 run_until "단어(덱 전체)" assets/audio/word 8017 env SCOPE=all node tools/build-word-audio.js
+# 한자 카드의 음독·훈독. 훈독은 대부분 단어라 이미 있고(2,448종 중 1,620) 음독 카나가 거의 다 빈다.
+# 같은 word/ 디렉터리에 읽기 그대로 저장하니 목표 수는 덱 전체(8,017) + 새로 만들 것이다.
+run_until "한자 음독·훈독" assets/audio/word 9181 env SCOPE=kanjiread node tools/build-word-audio.js
 
 echo "=== 마무리 ==="
 MANIFEST=1 node tools/build-reading-audio.js

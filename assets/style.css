@@ -248,6 +248,10 @@ body.idle .chrome{opacity:0;pointer-events:none}
   color:var(--fg-3);
 }
 .hjp i{font-style:normal;display:inline-flex;align-items:baseline;gap:.18em}
+/* 한자 카드에서는 읽기 하나하나가 눌러서 듣는 자리다. 커서만으로는 안 보이니 밑줄을 깐다 */
+.hjp.k-read i{cursor:pointer;border-bottom:1px solid transparent;transition:border-color .15s ease,color .15s ease}
+.hjp.k-read i:hover{border-bottom-color:var(--fg-3)}
+.hjp.k-read i:hover b{color:var(--fg)}
 .hjp i b{font-family:var(--f-word);font-weight:400;color:var(--fg-2);font-size:1.25em}
 .hjp i span{font-family:var(--f-kr)}
 
