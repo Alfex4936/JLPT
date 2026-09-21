@@ -85,7 +85,7 @@ run_until "읽기 기사" assets/audio/read 396 node tools/build-reading-audio.j
 run_until "단어(덱 전체)" assets/audio/word 8017 env SCOPE=all node tools/build-word-audio.js
 # 한자 카드의 음독·훈독. 훈독은 대부분 단어라 이미 있고(2,448종 중 1,620) 음독 카나가 거의 다 빈다.
 # 같은 word/ 디렉터리에 읽기 그대로 저장하니 목표 수는 덱 전체(8,017) + 새로 만들 것이다.
-run_until "한자 음독·훈독" assets/audio/word 9181 env SCOPE=kanjiread node tools/build-word-audio.js
+run_until "한자 음독·훈독" assets/audio/word 9178 env SCOPE=kanjiread node tools/build-word-audio.js
 # 예문은 N5+N4 만 한다. 문장은 묶어 자를 수 없어 요청 수가 클립 수와 같고(1,368회 = 14일),
 # 전 급수로 넓히면 9,437클립 258MB 라 git 히스토리에 영구히 남는다 — 저장소가 6배가 된다.
 run_until "예문 N5+N4" assets/audio/ex 1368 node tools/build-example-audio.js
@@ -93,5 +93,5 @@ run_until "예문 N5+N4" assets/audio/ex 1368 node tools/build-example-audio.js
 echo "=== 마무리 ==="
 MANIFEST=1 node tools/build-reading-audio.js
 CHECK=1 node tools/build-reading-audio.js | tail -2
-echo "읽기 $(count assets/audio/read)/396 · 단어 $(count assets/audio/word)/9181 · 예문 $(count assets/audio/ex)/1368"
+echo "읽기 $(count assets/audio/read)/396 · 단어 $(count assets/audio/word)/9178 · 예문 $(count assets/audio/ex)/1368"
 echo "커밋 전에 git status 를 확인할 것. 회차별 로그: $HIST"

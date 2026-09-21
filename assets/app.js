@@ -1567,8 +1567,11 @@
      여러 글자라 음원이 있어도 기기 TTS 로 새고 있었다. */
   function sayWord(text) {
     if (!S.tts || !text) return;
+    // 앞뒤 '-' 는 KANJIDIC 접사 표시다. 화면에는 남기되 소리와 파일 이름에서는 뺀다
+    var t = String(text).replace(/^-+|-+$/g, '');
+    if (!t) return;
     stopSpeak();
-    sayChain([{ t: text, clip: 1 }], speakSeq);
+    sayChain([{ t: t, clip: 1 }], speakSeq);
   }
   function speakOne(text) {
     if (!S.tts || !text) return;

@@ -56,9 +56,15 @@ function wordList() {
   if (SCOPE === 'kanjiread') {
     const rd = [];
     const got = new Set();
+    /* 앞뒤 '-' 는 KANJIDIC 의 접사 표시이지 발음이 아니다(-ノン·-ノウ·-ネン 3종).
+       그대로 두면 모델이 읽어 버리고, 하이픈으로 시작하는 파일명은 셸에서 옵션으로 읽힌다.
+       앱도 같은 규칙으로 벗기고 찾는다 — 양쪽이 어긋나면 파일이 있어도 못 쓴다. */
+    const bare = (r) => String(r).replace(/^-+|-+$/g, '');
     for (const k of K) {
-      for (const r of (k.on || [])) if (r && !got.has(r)) { got.add(r); rd.push(r); }
-      for (const r of (k.kun || [])) if (r && !got.has(r)) { got.add(r); rd.push(r); }
+      for (const r of [].concat(k.on || [], k.kun || [])) {
+        const t = bare(r);
+        if (t && !got.has(t)) { got.add(t); rd.push(t); }
+      }
     }
     return rd;
   }
