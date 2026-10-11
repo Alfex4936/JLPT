@@ -56,24 +56,24 @@ ShareAlike 이므로 이 필드를 포함한 데이터를 재배포할 때는 **
 - `data/reading.js` 는 `tools/merge-reading.js` 가 만드는 생성 파일이다. 위 손수정은 다시 빌드하면 사라진다 —
   덱을 다시 만들면 이 목록을 보고 되먹여야 한다.
 
-## 7. かな·기사·단어 음성 — Gemini TTS 로 생성
+## 7. かな·기사·단어·예문 음성 — Gemini TTS 로 생성
 
-`assets/audio/*.opus` (かな 131음), `assets/audio/read/*.opus` (기사 제목·문장), `assets/audio/word/*.opus` (단어 읽기) 는
-Google Gemini TTS(`gemini-3.1-flash-tts-preview`, 음성 `Zephyr`)로 생성했다. `tools/build-kana-audio.js`
-와 `tools/build-reading-audio.js`, `tools/build-word-audio.js` 가 만든다.
+`assets/audio/*.opus` (かな 131음), `assets/audio/read/*.opus` (기사 제목·문장), `assets/audio/word/*.opus` (단어·한자 읽기),
+`assets/audio/ex/*.opus` (예문) 는 Google Gemini TTS(`gemini-3.1-flash-tts-preview`, 음성 `Zephyr`)로 생성했다.
+`tools/build-kana-audio.js`, `tools/build-reading-audio.js`, `tools/build-word-audio.js`, `tools/build-example-audio.js` 가 만든다.
 
 - Gemini API 약관의 **Use of Generated Content**: "Google won't claim ownership over that content. ...
   You're responsible for your use of generated content, and for the use of that content by anyone you share it with."
   즉 구글이 소유권을 주장하지 않고, 공유를 전제로 쓰인 조항이다.
 - **CC 표기를 붙이지 말 것.** 구글이 CC 라이선스를 준 게 아니다. 3번 항목(Claude 생성물)과 같이 출처만 밝힌다.
-- **등급이 갈린다. かな 131음은 무료 등급(Unpaid Services)에서 만들었고, 기사 396클립과 단어 3,718클립은
+- **등급이 갈린다. かな 131음은 무료 등급(Unpaid Services)에서 만들었고, 기사·단어·한자 읽기·예문은
   결제를 붙인 유료 등급(Tier 1)에서 만들었다.** 재배포는 둘 다 문제없지만(Use of Generated Content),
   무료 등급은 구글이 입출력을 제품 개선에 쓰고 사람이 검토할 수 있다. かな 를 다시 만들 일이 있으면
   유료 할당량으로 돌릴 것. 무료 등급은 요청 한도가 10이라(`generate_content_free_tier_requests`)
   기사 음원은 한 편도 끝내지 못한다.
-- **완료 상태**: かな 131/131, 기사 396/396(46편 전부), 단어 8,017/8,017. 단어 덱 9,543항목과
-  한자 2,142자 전부가 음원을 가진다 — 두 모드 어디서도 기기 TTS 로 떨어지지 않는다.
-  한자 음독·훈독(2,788종)과 예문(N5+N4 1,368문장)은 생성 중이다.
+- **완료 상태**: かな 131/131, 기사 396/396(46편 전부), 단어 8,017/8,017, 한자 음독·훈독 2,785/2,785,
+  예문 N5+N4 1,368/1,368. 단어 덱 9,543항목과 한자 2,142자 전부가 음원을 가진다 —
+  두 모드 어디서도 기기 TTS 로 떨어지지 않는다. N3~N1 예문만 기기 TTS 로 읽는다.
 - 기기 TTS 를 대체하는 게 아니라 앞에 둔다. 음원이 없으면 `speechSynthesis` 로 떨어진다.
 - 기사 음원은 `data/audio.js` 에 등재된 기사만 쓴다. **기사 하나가 단위다** — 제목과 모든 문장을 다 만들거나
   아예 안 만든다. 반쪽 기사를 쓰면 한 기사 안에서 줄마다 화자가 바뀐다.
