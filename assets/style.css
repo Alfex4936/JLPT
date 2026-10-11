@@ -51,8 +51,9 @@
   --fg-3:#82807b;          /* 4.52:1 on --bg-elev. #6c6a65 는 3.30 이었다 */
   --line:#23282b;
   --line-soft:#191c1f;
-  --accent:#f06a4c;
-  --accent-sunk:rgba(240,106,76,.14);
+  --accent:#2fb3b5;        /* 浅葱. 6.99:1 on --bg-elev */
+  --accent-sunk:rgba(47,179,181,.14);
+  --ng:#f06a4c;            /* 오답 전용. accent 로 칠하면 틀린 글자가 맞은 쪽 색이 된다 */
   --r:3px;
   --scale:1;
   /* --f-sel 은 글꼴 설정이 고른 일본어 글꼴(쉼표까지 포함한 조각)이다. 비어 있으면 지금까지의 스택 그대로다.
@@ -79,8 +80,9 @@
   --fg-3:#666b6f;          /* 4.51:1 on --bg-sunk. #8a8f93 는 2.73 이었다 */
   --line:#dcdfe1;
   --line-soft:#e7e9ea;
-  --accent:#bf3d24;
-  --accent-sunk:rgba(191,61,36,.10);
+  --accent:#006f75;        /* 4.97:1 on --bg-sunk */
+  --accent-sunk:rgba(0,111,117,.10);
+  --ng:#bf3d24;
   color-scheme:light;
 }
 
@@ -711,8 +713,8 @@ select:disabled{opacity:.4;cursor:not-allowed}
 
 /* 채점 피드백. 색 하나로 맞고 틀림을 다 표현할 수 없으니 움직임으로 나눈다 —
    틀리면 흔들리고, 맞으면 커진다. 색맹·모션 축소 환경에서도 정답 줄이 남는다. */
-.card.ng .word{color:var(--accent);animation:shake .32s cubic-bezier(.36,.07,.19,.97) both}
-.card.ng .drill-in{border-bottom-color:var(--accent);color:var(--accent)}
+.card.ng .word{color:var(--ng);animation:shake .32s cubic-bezier(.36,.07,.19,.97) both}
+.card.ng .drill-in{border-bottom-color:var(--ng);color:var(--ng)}
 .card.ok .word{animation:pop .26s cubic-bezier(.16,1,.3,1) both}
 @keyframes shake{
   10%,90%{transform:translateX(-2px)}
