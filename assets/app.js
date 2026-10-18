@@ -632,8 +632,8 @@
     cDrill.hidden = false;
 
     card.classList.remove('enter'); void card.offsetWidth; card.classList.add('enter');
+    paintChrome();   // data-drill 이 먼저 서야 fit() 이 접힌 크롬 기준으로 잰다
     fit();
-    paintChrome();
   }
 
   function drawAnswerLine(withAlt) {
@@ -1280,9 +1280,11 @@
        예문이 8.65px, 뜻 번호가 6.15px 까지 내려가는데 화면은 멀쩡해 보인다.
        카드에서 가장 작은 기능 텍스트를 재서 그게 11px 밑으로 가지 않는 배율을 구한다.
        그래도 안 들어가면 배율을 더 깎지 말고 스테이지를 스크롤한다. */
-    var probe = cExJ && !cEx.hidden ? cExJ : cPos;
+    // かな 카드에서 줄어드는 건 큰 글자뿐이다. cPos 는 max(11px) 라 하한이 1 로 붙어 전혀 못 줄었다
+    var drill = S.set === 'kana';
+    var probe = drill ? cWord : cExJ && !cEx.hidden ? cExJ : cPos;
     var atBase = parseFloat(getComputedStyle(probe).fontSize) / base || 12;
-    var lo = Math.min(base, Math.max(base * 0.5, 11 / atBase));
+    var lo = Math.min(base, Math.max(drill ? 0 : base * 0.5, (drill ? 48 : 11) / atBase));
     if (avail > 40 && card.getBoundingClientRect().height > avail) {
       var h1 = card.getBoundingClientRect().height;
       card.style.setProperty('--scale', lo);
