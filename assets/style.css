@@ -165,7 +165,7 @@ body.idle .chrome{opacity:0;pointer-events:none}
 .btn[aria-pressed="true"],.btn.on{color:var(--accent);border-color:var(--accent);background:var(--accent-sunk)}
 /* 독의 상태 토글은 여러 개가 동시에 켜진다 — 넷이 액센트를 두르면 액센트가 뜻을 잃는다.
    설정의 선택 버튼은 그룹당 하나만 켜지므로 '이게 지금 값' 이라는 액센트 의미가 살아 있다. */
-.readacts .btn.on,.drillacts .btn.on{color:var(--fg);border-color:var(--fg-3);background:transparent}
+.readacts .btn.on,.drillacts .btn.on,#btnRate.on{color:var(--fg);border-color:var(--fg-3);background:transparent}
 .btn:disabled{opacity:.4;cursor:not-allowed}
 .btn-quiet{border-color:transparent}
 .btn-quiet:hover{border-color:var(--line)}
@@ -952,7 +952,8 @@ body.idle .art-jp{cursor:none}
 .art-src a{color:var(--fg-2);text-decoration:none;border-bottom:1px solid var(--line)}
 .art-src a:hover{color:var(--accent);border-bottom-color:var(--accent)}
 .readacts{display:flex;gap:.35rem;flex-wrap:wrap}
-.readacts .btn{font-size:.74rem;padding:.42rem .55rem;display:inline-flex;align-items:center;gap:.35rem}
+.readacts .btn,#btnRate{font-size:.74rem;padding:.42rem .55rem;display:inline-flex;align-items:center;gap:.35rem}
+#btnRate[hidden]{display:none}
 .dockrow.is-read{grid-template-columns:auto auto 1fr auto}
 .dockrow.is-read .transport{grid-column:1;grid-row:1;justify-self:start}
 .dockrow.is-read .readacts{grid-column:2;grid-row:1;justify-self:start}
@@ -967,7 +968,7 @@ body.idle .art-jp{cursor:none}
   .dockrow.is-read .readacts{grid-column:2;grid-row:1;justify-self:center}
   .dockrow.is-read .counter{grid-column:3;grid-row:1;justify-self:end}
   .dockrow.is-read .dockacts{grid-column:1 / -1;grid-row:2;justify-self:center}
-  .dockrow.is-read .readacts kbd{display:none}
+  .dockrow.is-read .readacts kbd,#btnRate kbd{display:none}
   /* 버튼이 넷이라 기본 여백으로는 줄을 넘긴다 — 라벨은 줄이지 않고 여백만 조인다 */
   .dockrow.is-read .readacts{gap:.22rem}
   .dockrow.is-read .readacts .btn{padding:.42rem .32rem}

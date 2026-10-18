@@ -1160,6 +1160,7 @@
     $('btnOne').classList.toggle('on', S.readOne);
     rateLbl.textContent = S.rate + '×';
     $('btnRate').classList.toggle('on', S.rate !== 1);
+    $('btnRate').hidden = kana;           // かな 는 정답 뒤에 한 음만 읽는다
     dockrow.classList.toggle('is-drill', kana);
     dockrow.classList.toggle('is-read', reading);
     transport.hidden = kana;
@@ -1807,8 +1808,8 @@
     else if (letter === 'r' && S.set === 'reading') { e.preventDefault(); toggleFuri(); }
     else if (letter === 'o' && S.set === 'reading') { e.preventDefault(); toggleOne(); }
     // 대괄호는 한글 입력 상태에서도 그대로 온다 — 두벌식이 자모를 얹지 않는 자리다
-    else if (raw === '[' && S.set === 'reading') { e.preventDefault(); stepRate(-1); }
-    else if (raw === ']' && S.set === 'reading') { e.preventDefault(); stepRate(1); }
+    else if (raw === '[' && S.set !== 'kana') { e.preventDefault(); stepRate(-1); }
+    else if (raw === ']' && S.set !== 'kana') { e.preventDefault(); stepRate(1); }
   });
 
   /* ---------------- 스와이프 ---------------- */
@@ -2265,7 +2266,7 @@
      그래서 여기서 바꾸면 단어·한자 발음도 같이 바뀐다. 버튼 다섯 개를 둘 자리가 없어
      하나가 단계를 돈다. d 를 주면 한 단계씩만 움직인다. */
   var RATES = [0.5, 0.75, 1, 1.25, 1.5];
-  /* 속도를 만지는 자리가 셋이다 — 독 버튼(읽기), 팝오버 슬라이더(모든 모드), 설정 슬라이더.
+  /* 속도를 만지는 자리가 셋이다 — 독 버튼(かな 빼고 전부), 팝오버 슬라이더(모든 모드), 설정 슬라이더.
      값은 S.rate 하나라 서로 어긋날 수 없고, 바꾼 쪽이 나머지를 다시 그린다. 음량과 같은 구조다. */
   function setRate(v) {
     S.rate = Math.min(1.5, Math.max(0.5, v)); save();

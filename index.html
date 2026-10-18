@@ -19,7 +19,7 @@ try{
 </script>
 
 <!-- ?v= 는 캐시 무효화용. CSS/JS 고칠 때 숫자만 올리면 새로고침에서 확실히 반영된다 -->
-<link rel="stylesheet" href="assets/style.css?v=66">
+<link rel="stylesheet" href="assets/style.css?v=67">
 
 <!-- 데이터: 없는 파일은 조용히 무시된다 (fetch 없음, script 태그만).
      여기 있는 건 시작 화면이 쓰는 것뿐이다 — 개수표와 かな(3KB).
@@ -183,6 +183,9 @@ try{
       <p class="counter" id="counter"><span id="counterTxt"></span><span class="jump" id="readJump" hidden><span class="jump-lb">기사</span><input id="jumpIn" type="number" min="1" step="1" inputmode="numeric" aria-label="기사 번호로 이동" title="번호를 넣고 Enter"><b id="jumpN"></b><span id="jumpSent"></span></span></p>
 
       <div class="dockacts">
+        <!-- 속도는 모든 모드에 한 값이다. 터치에는 팝오버가 없어서 단어·한자도 버튼이 있어야 한다 -->
+        <button class="btn" id="btnRate" type="button" title="발음 속도 — 설정의 속도와 같은 값. 눌러서 순환, [ ] 로 한 단계">
+          <span class="wide">속도 </span><span id="rateLbl">1×</span> <kbd>[ ]</kbd></button>
         <button class="btn btn-quiet" id="btnFav" type="button" title="즐겨찾기 (S)" aria-pressed="false">
           <svg class="ic star" id="starGlyph" viewBox="0 0 24 24" aria-hidden="true"><path id="icStar" fill-rule="evenodd" d=""/></svg>
           <span class="lbl">즐겨찾기</span>
@@ -216,8 +219,6 @@ try{
         <button class="btn" id="btnAllKo" type="button" title="번역 모두 보기 / 숨기기">번역 <kbd>K</kbd></button>
         <button class="btn" id="btnFuri" type="button" title="후리가나 켜기 / 끄기">후리가나 <kbd>R</kbd></button>
         <button class="btn" id="btnOne" type="button" title="한 문장씩 / 전체 보기">한 문장 <kbd>O</kbd></button>
-        <button class="btn" id="btnRate" type="button" title="발음 속도 — 설정의 속도와 같은 값. 눌러서 순환, [ ] 로 한 단계">
-          <span class="wide">속도 </span><span id="rateLbl">1×</span> <kbd>[ ]</kbd></button>
       </div>
 
       <div class="drillacts" id="drillActs" hidden>
@@ -500,6 +501,7 @@ try{
       <div><kbd>S</kbd> 즐겨찾기 토글</div>
       <div><kbd>V</kbd> 발음 듣기</div>
       <div><kbd>M</kbd> 음소거 / 해제</div>
+      <div><kbd>[</kbd> <kbd>]</kbd> 발음 속도 0.5 ~ 1.5배 (아래 속도 버튼은 눌러서 순환. 모든 모드가 같은 값)</div>
       <div>스피커 아이콘에 마우스를 올리면 <b>음량과 발음 속도</b> 슬라이더가 열린다 (모든 모드)</div>
       <div><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> 채점 — 몰라요 / 애매 / 알아요 (복습 간격이 이걸로 정해짐)</div>
       <div><kbd>F</kbd> 전체화면</div>
@@ -513,7 +515,6 @@ try{
       <div><kbd>R</kbd> 후리가나 켜기 / 끄기</div>
       <div><kbd>←</kbd> <kbd>→</kbd> 이전 / 다음 문장 (끝에서 기사 이동)</div>
       <div><kbd>O</kbd> 한 문장씩 / 기사 전체 보기</div>
-      <div><kbd>[</kbd> <kbd>]</kbd> 발음 속도 0.5 ~ 1.5배 (버튼은 눌러서 순환. 설정의 속도와 같은 값)</div>
       <div>아래 <b>기사 번호칸</b>에 숫자를 넣고 <kbd>↵</kbd> 하면 그 기사로 바로 간다</div>
     </div>
     <p class="hint">문장을 누르면 그 문장을 읽어 줍니다. 눈 버튼은 그 문장의 번역만 엽니다.</p>
@@ -529,6 +530,6 @@ try{
   </div>
 </div>
 
-<script src="assets/app.js?v=63"></script>
+<script src="assets/app.js?v=64"></script>
 </body>
 </html>
